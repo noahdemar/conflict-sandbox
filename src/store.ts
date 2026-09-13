@@ -284,7 +284,13 @@ interface StoreState {
   newScenario: () => void;
   loadDemo: () => void;
   exportScenario: () => string;
-  importScenario: (json: string) => boolean;
+  /** Load a scenario file; `persist: false` loads it for viewing without replacing the saved scenario */
+  importScenario: (json: string, opts?: { persist?: boolean }) => boolean;
+  /** Read-only presentation mode (opened from a view link) */
+  viewer: boolean;
+  setViewer: (viewer: boolean) => void;
+  /** Suspend saving during a drag; resuming saves the current scenario once */
+  setPersistPaused: (paused: boolean) => void;
 }
 
 /** Identifies exported scenario files. */
@@ -303,7 +309,10 @@ export interface ScenarioFile {
   scenario: Scenario;
 }
 
+let persistPaused = false;
+
 function persist(s: Scenario) {
+  if (persistPaused) return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
   } catch {
@@ -821,7 +830,13 @@ export const useStore = create<StoreState>((set, get) => {
       };
       return JSON.stringify(file, null, 2);
     },
-    importScenario: (json) => {
+    viewer: false,
+    setViewer: (viewer) => set({ viewer }),
+    setPersistPaused: (paused) => {
+      persistPaused = paused;
+      if (!paused) persist(get().scenario);
+    },
+    importScenario: (json, opts) => {
       try {
         const raw = JSON.parse(json) as Partial<ScenarioFile> & Partial<Scenario>;
         // accept both the wrapped file format and older bare scenario JSON
@@ -846,12 +861,14 @@ export const useStore = create<StoreState>((set, get) => {
           if (i >= 0) lib[i] = { ...lib[i], ...e };
           else lib.push({ ...e });
         }
-        try {
-          localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
-        } catch {
-          /* ignore */
+        if (opts?.persist !== false) {
+          try {
+            localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+          } catch {
+            /* ignore */
+          }
         }
-        persist(s);
+        if (opts?.persist !== false) persist(s);
         set({
           scenario: s,
           unitLibrary: lib,

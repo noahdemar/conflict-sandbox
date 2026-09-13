@@ -1635,3 +1635,288 @@ input[type='color'] {
 .look-briefing .reticle {
   filter: none;
 }
+
+/* ---------- share dialog ---------- */
+.share-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 20, 26, 0.25);
+}
+
+.share-dialog {
+  position: relative;
+  width: min(520px, calc(100% - 32px));
+  padding-bottom: 12px;
+}
+
+.share-row {
+  padding: 6px 12px;
+}
+
+.share-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12.5px;
+  margin-bottom: 4px;
+}
+
+.share-row-head span {
+  color: var(--text-dim);
+  font-size: 11.5px;
+}
+
+.share-field {
+  display: flex;
+  gap: 6px;
+}
+
+.share-field input {
+  flex: 1;
+  font-size: 11.5px;
+}
+
+.share-note {
+  margin: 6px 12px 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+/* ---------- read-only viewer ---------- */
+.viewer .topbar,
+.viewer .toolbar,
+.viewer .roster-panel,
+.viewer .right-stack,
+.viewer .tl-duration,
+.viewer .tl-narration,
+.viewer .rec-btn,
+.viewer .tl-controls .icon-btn[title^='Add camera'],
+.viewer .tl-tracks-btn {
+  display: none !important;
+}
+
+.viewer-bar {
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 6px 14px;
+  z-index: 22;
+}
+
+.viewer-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.presenting .viewer-bar {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+/* ---------- timeline tracks ---------- */
+.tl-tracks {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 70px;
+  width: min(1100px, calc(100% - 40px));
+  max-height: 42vh;
+  display: flex;
+  flex-direction: column;
+  z-index: 12;
+  user-select: none;
+}
+
+.trk-head {
+  display: grid;
+  grid-template-columns: 150px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 4px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.trk-head-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.trk-hint {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.trk-ruler {
+  position: relative;
+  height: 22px;
+  cursor: col-resize;
+  border-radius: 4px;
+  background: var(--hover);
+}
+
+.trk-tick {
+  position: absolute;
+  top: 3px;
+  translate: -50% 0;
+  font-size: 9.5px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.trk-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: var(--danger);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.trk-body {
+  overflow-y: auto;
+  padding: 4px 8px 8px 12px;
+}
+
+.trk-group + .trk-group {
+  margin-top: 6px;
+}
+
+.trk-group-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 2px;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.trk-group-name i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fc, #888);
+}
+
+.trk-row {
+  display: grid;
+  grid-template-columns: 150px 1fr 28px;
+  gap: 8px;
+  align-items: start;
+  border-top: 1px solid var(--hairline);
+}
+
+.trk-row.sel {
+  background: var(--accent-soft);
+}
+
+.trk-row-name {
+  padding: 3px 0;
+  font-size: 11.5px;
+  text-align: left;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trk-lanes {
+  position: relative;
+}
+
+.trk-bar {
+  position: absolute;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  min-width: 6px;
+  border-radius: 3px;
+  cursor: grab;
+  font-size: 9px;
+  line-height: 1;
+  color: #fff;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.trk-bar:active {
+  cursor: grabbing;
+}
+
+.trk-bar span {
+  padding: 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.trk-bar.life {
+  background: color-mix(in srgb, var(--bc) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bc) 45%, transparent);
+}
+
+.trk-bar.life.dies::after {
+  content: '✕';
+  position: absolute;
+  right: 3px;
+  font-size: 9px;
+  color: var(--bc);
+  pointer-events: none;
+}
+
+.trk-bar.route {
+  height: 8px;
+  margin-top: 2px;
+  background: var(--bc);
+  opacity: 0.9;
+}
+
+.trk-bar.strike {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--bc) 35%, transparent), var(--bc));
+}
+
+.trk-bar.effect {
+  background: var(--bc);
+}
+
+.trk-bar.sel,
+.trk-bar.hover {
+  box-shadow: 0 0 0 1.5px var(--text);
+  z-index: 2;
+}
+
+.trk-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  z-index: 1;
+}
+
+.trk-handle.l {
+  left: 0;
+}
+
+.trk-handle.r {
+  right: 0;
+}
+
+.trk-bar.hover .trk-handle {
+  background: rgba(255, 255, 255, 0.45);
+}

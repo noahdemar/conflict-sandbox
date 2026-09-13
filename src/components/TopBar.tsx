@@ -1,6 +1,8 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import ShareDialog from './ShareDialog';
 import {
   FileText,
+  Share2,
   Shapes,
   Box,
   Download,
@@ -27,6 +29,7 @@ export default function TopBar() {
   const setIconStyle = useStore((s) => s.setIconStyle);
   const setUse3d = useStore((s) => s.setUse3d);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [sharing, setSharing] = useState(false);
 
   const doExport = () => {
     const blob = new Blob([exportScenario()], { type: 'application/json' });
@@ -96,6 +99,10 @@ export default function TopBar() {
         <button onClick={loadDemo} title="Load the Battle of Khasham demo">
           Demo
         </button>
+        <button className="top-btn" onClick={() => setSharing(true)} title="Create a shareable link">
+          <Share2 size={14} />
+          Share
+        </button>
         <button className="top-btn" onClick={doExport} title="Export scenario JSON">
           <Download size={14} />
           Export
@@ -120,6 +127,7 @@ export default function TopBar() {
           }}
         />
       </div>
+      {sharing && <ShareDialog onClose={() => setSharing(false)} />}
     </div>
   );
 }

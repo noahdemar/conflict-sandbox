@@ -11,6 +11,7 @@ import { narrate, stopNarration } from './narration';
 import { boom } from './audio';
 import { expandStrikes } from './particles';
 import { startRouting } from './routing';
+import { clearShareHash, readShareLink } from './share';
 import { lossesByFaction } from './combat';
 import { hourAt } from './environment';
 import EnvironmentPanel from './components/EnvironmentPanel';
@@ -97,9 +98,30 @@ function TacticalHud() {
   );
 }
 
+/** Minimal chrome for read-only view links. */
+function ViewerBar() {
+  const name = useStore((s) => s.scenario.name);
+  const openInEditor = () => {
+    const st = useStore.getState();
+    // keep a copy in this browser, then drop the read-only mode
+    st.importScenario(st.exportScenario());
+    st.setViewer(false);
+    clearShareHash();
+  };
+  return (
+    <div className="panel viewer-bar">
+      <span className="viewer-title">{name}</span>
+      <button className="top-btn" onClick={openInEditor} title="Save a copy and open it in the editor">
+        Open in editor
+      </button>
+    </div>
+  );
+}
+
 export default function App() {
   const playing = useStore((s) => s.playing);
   const look = useStore((s) => s.look);
+  const viewer = useStore((s) => s.viewer);
   const spokenRef = useRef<string | null>(null);
   const prevTimeRef = useRef(0);
 
@@ -142,6 +164,24 @@ export default function App() {
   // snap ground movement to real roads
   useEffect(() => startRouting(), []);
 
+  // open scenarios carried in a share link
+  useEffect(() => {
+    readShareLink().then((shared) => {
+      if (!shared) return;
+      const st = useStore.getState();
+      if (shared.mode === 'view') {
+        if (st.importScenario(shared.json, { persist: false })) {
+          st.setViewer(true);
+          st.setCameraLock(true);
+        }
+      } else if (st.importScenario(shared.json)) {
+        clearShareHash();
+      } else {
+        alert('This share link is damaged or incomplete.');
+      }
+    });
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
@@ -167,7 +207,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className={`app ${playing ? 'presenting' : ''} look-${look}`}>
+    <div className={`app ${playing ? 'presenting' : ''} look-${look} ${viewer ? 'viewer' : ''}`}>
       <div className="letterbox top" />
       <div className="letterbox bottom" />
       <div className="vignette" />
@@ -182,6 +222,7 @@ export default function App() {
       </div>
       <Timeline />
       <CaptionOverlay />
+      {viewer && <ViewerBar />}
       <TacticalHud />
     </div>
   );

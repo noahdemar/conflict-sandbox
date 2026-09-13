@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Circle,
   Diamond,
+  Rows3,
   Pause,
   Play,
   SkipBack,
@@ -17,6 +18,7 @@ import {
   webSpeechVoices,
 } from '../narration';
 import { startRecording, stopRecording } from '../recorder';
+import TimelineTracks from './TimelineTracks';
 
 export default function Timeline() {
   const time = useStore((s) => s.time);
@@ -41,6 +43,7 @@ export default function Timeline() {
   const [voices, setVoices] = useState(webSpeechVoices());
   const [kokoroMsg, setKokoroMsg] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
+  const [tracksOpen, setTracksOpen] = useState(false);
 
   // Auto-stop recording when playback ends or is paused
   useEffect(() => {
@@ -119,6 +122,8 @@ export default function Timeline() {
   ];
 
   return (
+    <>
+    {tracksOpen && !playing && <TimelineTracks onClose={() => setTracksOpen(false)} />}
     <div className="panel timeline">
       <div className="tl-controls">
         <button
@@ -160,6 +165,13 @@ export default function Timeline() {
           onClick={toggleRecord}
         >
           <Circle size={13} fill="currentColor" />
+        </button>
+        <button
+          className={`icon-btn tl-tracks-btn ${tracksOpen ? 'narr-on' : ''}`}
+          title="Edit timing on per-unit tracks"
+          onClick={() => setTracksOpen(!tracksOpen)}
+        >
+          <Rows3 size={15} />
         </button>
         <select
           className="tl-speed"
@@ -285,5 +297,6 @@ export default function Timeline() {
         <div className="tl-kokoro-status">{kokoroMsg}</div>
       )}
     </div>
+    </>
   );
 }
