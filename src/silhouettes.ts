@@ -18,7 +18,11 @@ export type SilhouetteKey =
   | 'howitzer'
   | 'troops'
   | 'ship'
-  | 'hq';
+  | 'hq'
+  | 'soldier'
+  | 'dog'
+  | 'satellite'
+  | 'flyingwing';
 
 const SHAPES: Record<SilhouetteKey, { body: string; detail: string; scale: number }> = {
   jet: {
@@ -101,6 +105,29 @@ const SHAPES: Record<SilhouetteKey, { body: string; detail: string; scale: numbe
     body: 'M50 2 Q64 22 64 46 L63 92 Q50 98 37 92 L36 46 Q36 22 50 2 Z',
     detail: '<rect x="43" y="40" width="14" height="22" rx="2"/><circle cx="50" cy="26" r="4"/><rect x="45" y="70" width="10" height="14" opacity=".3"/>',
   },
+  // single dismounted person, top-down: helmet, shoulders, weapon forward
+  soldier: {
+    scale: 0.42,
+    body: 'M50 28 a15 15 0 1 1 -0.1 0 Z M26 50 Q26 40 38 40 L62 40 Q74 40 74 50 L74 62 Q74 72 62 72 L38 72 Q26 72 26 62 Z M60 6 L66 6 L66 44 L60 44 Z',
+    detail: '<circle cx="50" cy="43" r="10" opacity=".35"/><rect x="59" y="6" width="8" height="10" rx="1"/>',
+  },
+  dog: {
+    scale: 0.4,
+    body: 'M44 14 Q50 4 56 14 L58 30 Q64 34 64 44 L63 78 Q62 88 50 90 Q38 88 37 78 L36 44 Q36 34 42 30 Z M48 88 L52 88 L51 98 L49 98 Z',
+    detail: '<circle cx="46" cy="16" r="2"/><circle cx="54" cy="16" r="2"/><rect x="38" y="44" width="24" height="8" rx="3" opacity=".4"/>',
+  },
+  satellite: {
+    scale: 1.1,
+    body: 'M40 36 L60 36 L60 64 L40 64 Z M2 42 L34 42 L34 58 L2 58 Z M66 42 L98 42 L98 58 L66 58 Z M34 48 L40 48 L40 52 L34 52 Z M60 48 L66 48 L66 52 L60 52 Z',
+    detail:
+      '<path d="M10 42 V58 M18 42 V58 M26 42 V58 M74 42 V58 M82 42 V58 M90 42 V58" stroke="rgba(20,24,28,.5)" stroke-width="1.2"/><circle cx="50" cy="50" r="6" opacity=".45"/><path d="M50 36 V26" stroke="rgba(20,24,28,.6)" stroke-width="2"/>',
+  },
+  // tailless stealth UAV
+  flyingwing: {
+    scale: 1.1,
+    body: 'M50 26 Q56 30 60 38 L96 60 L92 66 L66 60 L58 68 L50 64 L42 68 L34 60 L8 66 L4 60 L40 38 Q44 30 50 26 Z',
+    detail: '<path d="M46 36 Q50 32 54 36 L53 46 L47 46 Z" opacity=".35"/>',
+  },
   hq: {
     scale: 1,
     body: 'M20 30 L80 30 L80 80 L20 80 Z',
@@ -122,12 +149,17 @@ const BY_TYPE: Record<UnitType, SilhouetteKey> = {
 export function silhouetteFor(u: Unit, rosterName?: string): SilhouetteKey {
   const n = `${u.name} ${rosterName ?? ''}`.toLowerCase();
   if (u.type === 'air') {
+    if (/satellite|sat\b|satcom/.test(n)) return 'satellite';
+    if (/flying ?wing|stealth uav/.test(n)) return 'flyingwing';
+    if (/mh-?47|ch-?47|chinook/.test(n)) return 'heli';
     if (/ac-?130|c-?130|gunship|transport|awacs/.test(n)) return 'gunship';
-    if (/ah-?64|apache|heli|mi-?\d|ka-?52|black ?hawk|uh-?60/.test(n)) return 'heli';
+    if (/ah-?64|apache|heli|mi-?\d|ka-?52|black ?hawk|[um]h-?60/.test(n)) return 'heli';
     if (/mq-?\d|reaper|predator|drone|uav|shahed|bayraktar/.test(n)) return 'drone';
     if (/b-?52|b-?2\b|b-?21|bomber|tu-?\d/.test(n)) return 'bomber';
     return 'jet';
   }
+  if (/\bk-?9\b|dog/.test(n)) return 'dog';
+  if (/operator|seal\b|interpreter|courier|occupant|combatant|guard|hvt|rifleman|sniper|person/.test(n)) return 'soldier';
   if (/bmp|btr|ifv|apc|bradley|m113|stryker/.test(n)) return 'ifv';
   if (/technical|truck|convoy|pickup|civilian/.test(n)) return 'truck';
   if (/himars|mlrs|grad|bm-?\d|launcher|s-?300|s-?400|patriot/.test(n)) return 'launcher';

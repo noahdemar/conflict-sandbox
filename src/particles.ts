@@ -184,7 +184,7 @@ export type WeaponKind = 'missile' | 'bomb' | 'gun' | 'shell';
 /** Classify a strike by its weapon name for in-flight visuals. */
 export function weaponKind(name: string): WeaponKind {
   const n = name.toLowerCase();
-  if (/\b(20|23|25|30)\s?mm|chain ?gun|cannon|gun ?run|strafe|gau|minigun|machine ?gun/.test(n)) return 'gun';
+  if (/\b(20|23|25|30)\s?mm|chain ?gun|cannon|gun ?run|strafe|gau|minigun|machine ?gun|rifle|carbine|small arms|pistol|gunfire|shots?\b/.test(n)) return 'gun';
   if (/jdam|gbu|mk ?8\d|bomb|glide|kab|fab/.test(n)) return 'bomb';
   if (/howitzer|\d{3}\s?mm|shell|mortar|fire mission|artillery/.test(n)) return 'shell';
   return 'missile';

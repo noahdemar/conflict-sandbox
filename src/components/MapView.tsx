@@ -160,6 +160,10 @@ export default function MapView() {
           return [1800, 20];
         case 'bomber':
           return [3800, 28];
+        case 'flyingwing':
+          return [3000, 40];
+        case 'satellite':
+          return [60000, 600];
         default:
           return [2400, 14];
       }
@@ -188,7 +192,8 @@ export default function MapView() {
       const L = pathMeters(path);
       if (L <= 0) return clamp01(e / D);
       const [r, period] = orbitFor(u);
-      const vOrbit = (2 * Math.PI * r) / period;
+      // landing aircraft slow to a hover; others hand off to orbit speed
+      const vOrbit = u.landAtEnd ? 0 : (2 * Math.PI * r) / period;
       const ta = Math.min(D * 0.3, 4); // accelerate
       const td = Math.min(D * 0.3, 4); // decelerate into orbit
       const cruiseT = Math.max(0, D - ta - td);
@@ -209,6 +214,31 @@ export default function MapView() {
         dist = (ta * (v0 + vc)) / 2 + vc * cruiseT + vc * x + ((vOrbit - vc) / (2 * td)) * x * x;
       }
       return clamp01(dist / L);
+    };
+
+    /**
+     * Timed waypoints: position interpolates between the two points bracketing
+     * t; while stationary, keeps facing the direction of its last movement.
+     */
+    const timedPose = (pts: LngLat[], times: number[], t: number): { point: LngLat; bearing: number } => {
+      const n = pts.length;
+      let i = 0;
+      while (i < n - 2 && t >= times[i + 1]) i++;
+      const span = times[i + 1] - times[i];
+      const f = span > 0 ? clamp01((t - times[i]) / span) : 1;
+      const a = pts[i];
+      const b = pts[Math.min(n - 1, i + 1)];
+      const point: LngLat = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+      let bearing = 0;
+      for (let k = Math.min(n - 1, i + 1); k > 0; k--) {
+        const p0 = pts[k - 1];
+        const p1 = pts[k];
+        if (p0[0] !== p1[0] || p0[1] !== p1[1]) {
+          bearing = (Math.atan2((p1[0] - p0[0]) * Math.cos((p0[1] * Math.PI) / 180), p1[1] - p0[1]) * 180) / Math.PI;
+          break;
+        }
+      }
+      return { point, bearing };
     };
 
     /** Gap kept between vehicles queued on or halted at the end of a shared route. */
@@ -271,11 +301,17 @@ export default function MapView() {
         if (arrow) {
           const path = arrowPath(arrow);
           const end = arrow.appearAt + arrow.duration;
+          if (air && t > end && u.landAtEnd) {
+            return smoothPoseAlongPath(path, 1);
+          }
           if (air && t > end) {
             // aircraft never park: loiter over the end of their route
             const arrive = pointAlongPath(path, 1);
             const [r, period] = orbitFor(u);
             return orbitPose(arrive.point, arrive.bearing, t - end, r, period);
+          }
+          if (arrow.times && arrow.times.length === arrow.points.length) {
+            return timedPose(arrow.points, arrow.times, t);
           }
           if (!air) {
             const spaced = formationPose(u, arrow, path, t);
@@ -596,6 +632,7 @@ export default function MapView() {
       const headFeats: GeoJSON.Feature[] = [];
       for (const a of st.scenario.arrows) {
         const path = arrowPath(a);
+        if (a.hideLine) continue;
         const flyer = st.scenario.units.find((u) => u.arrowId === a.id && u.type === 'air');
         const prog = flyer
           ? airProgress(flyer, a, path, st.time)
@@ -918,6 +955,11 @@ export default function MapView() {
         tagMk.setLngLat(pose.point);
         el.classList.toggle('destroyed', destroyed);
         tagEl.classList.toggle('destroyed', destroyed);
+        // side is exposed for styling (e.g. hostiles glow red in thermal)
+        {
+          const aff = factionAffiliation(st.scenario.factions.find((f) => f.id === u.factionId), st.scenario.factions);
+          for (const k of ['friend', 'hostile', 'neutral', 'unknown']) el.classList.toggle(`aff-${k}`, aff === k);
+        }
         // status effects: badges, radio waves, panic shake, damage/ammo states
         const fxNow = destroyed
           ? []
@@ -963,7 +1005,8 @@ export default function MapView() {
           }
         }
         mk.setLngLat(unitPose(u).point);
-        el.style.display = st.time >= u.appearAt ? '' : 'none';
+        el.style.display =
+          st.time >= u.appearAt && !(u.leavesAt !== undefined && st.time >= u.leavesAt) ? '' : 'none';
         tagEl.style.display = el.style.display;
         tagEl.classList.toggle('selected', sel?.kind === 'unit' && sel.id === u.id);
         el.classList.toggle('selected', sel?.kind === 'unit' && sel.id === u.id);
@@ -985,7 +1028,7 @@ export default function MapView() {
       // target reticles over strike aim points shortly before and during impact
       const seenR = new Set<string>();
       for (const x of resolvedStrikes()) {
-        if (x.targetStrikeId) continue;
+        if (x.targetStrikeId || weaponKind(x.name) === 'gun') continue; // no target marker for gunfire
         const from = (x.launchAt ?? x.appearAt - 3) - 1.2;
         const to = x.appearAt + 1.4;
         const visible = st.time >= from && st.time <= to;
@@ -1596,10 +1639,6 @@ export default function MapView() {
         string,
         { obj: THREE.Group; shadow: THREE.Mesh; sig: string }
       >();
-      const impactRings = new Map<
-        string,
-        { ring: THREE.Mesh; flash: THREE.Mesh }
-      >();
       const strikeFx = new Map<string, THREE.Mesh>();
       const particles = new ParticleSystem();
       particles.addTo(scene);
@@ -1651,7 +1690,6 @@ export default function MapView() {
         depthWrite: false,
       });
       const ringGeo = new THREE.RingGeometry(0.8, 1, 40);
-      const flashGeo = new THREE.SphereGeometry(0.22, 12, 10);
 
       map.addLayer({
         id: 'units-3d',
@@ -1732,72 +1770,6 @@ export default function MapView() {
               scene.remove(rec.obj);
               scene.remove(rec.shadow);
               unit3d.delete(id);
-            }
-          }
-
-          // ---- impact effects at arrowheads ----
-          const activeArrows = new Set<string>();
-          for (const a of st.scenario.arrows) {
-            const prog = (st.time - a.appearAt) / a.duration;
-            const active = prog > 0.05 && prog < 1.35;
-            if (!active || a.points.length < 2) continue;
-            activeArrows.add(a.id);
-            let fx = impactRings.get(a.id);
-            if (!fx) {
-              const color = factionColor(a.factionId);
-              const ring = new THREE.Mesh(
-                ringGeo,
-                new THREE.MeshBasicMaterial({
-                  color,
-                  transparent: true,
-                  opacity: 0.8,
-                  depthWrite: false,
-                  side: THREE.DoubleSide,
-                }),
-              );
-              const flash = new THREE.Mesh(
-                flashGeo,
-                new THREE.MeshBasicMaterial({
-                  color: 0xffd27a,
-                  transparent: true,
-                  opacity: 0.9,
-                  depthWrite: false,
-                }),
-              );
-              scene.add(ring, flash);
-              fx = { ring, flash };
-              impactRings.set(a.id, fx);
-            }
-            const head = pointAlongPath(arrowPath(a), clamp01(prog));
-            const mc = merc(head.point[0], head.point[1]);
-            const phase = (st.time * 1.6) % 1;
-            const ringScale = s * (0.35 + phase * 1.1);
-            fx.ring.matrixAutoUpdate = false;
-            fx.ring.matrix
-              .makeTranslation(mc.x, mc.y, mc.z + s * 0.02)
-              .scale(new THREE.Vector3(ringScale, -ringScale, ringScale))
-              .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-            (fx.ring.material as THREE.MeshBasicMaterial).opacity =
-              0.85 * (1 - phase);
-            const flashScale = s * (prog >= 1 ? 1.6 - (prog - 1) * 4 : 0.9);
-            fx.flash.matrixAutoUpdate = false;
-            fx.flash.matrix
-              .makeTranslation(mc.x, mc.y, mc.z + s * 0.12)
-              .scale(
-                new THREE.Vector3(
-                  Math.max(0.01, flashScale),
-                  Math.max(0.01, flashScale),
-                  Math.max(0.01, flashScale),
-                ),
-              );
-            (fx.flash.material as THREE.MeshBasicMaterial).opacity =
-              prog >= 1 ? Math.max(0, 1.35 - prog) * 2.2 : 0.55;
-          }
-          for (const [id, fx] of impactRings) {
-            if (!activeArrows.has(id)) {
-              scene.remove(fx.ring);
-              scene.remove(fx.flash);
-              impactRings.delete(id);
             }
           }
 
@@ -1899,7 +1871,8 @@ export default function MapView() {
             const f = (st.time - arc.launchAt) / (x.appearAt - arc.launchAt);
             if (f <= 0 || f >= 1) continue;
             const mAt = maplibregl.MercatorCoordinate.fromLngLat({ lng: x.lng, lat: x.lat }).meterInMercatorCoordinateUnits() * fxScale;
-            particles.projectile(x.id, arc.kind, (ff) => arcPos(arc, ff), f, mAt);
+            const kindScale = arc.kind === 'gun' ? Math.min(1, x.size * 3) : 1;
+            particles.projectile(x.id, arc.kind, (ff) => arcPos(arc, ff), f, mAt * kindScale);
             if (arc.kind === 'gun') continue; // tracers are particles only
             flying.add(x.id);
             let fx = missileFx.get(x.id);
@@ -1968,7 +1941,8 @@ export default function MapView() {
             const alpha = base * Math.min(1, Math.max(0, 1 - (after - hold) / (TRAIL_LINGER - hold)));
             const mTrail =
               maplibregl.MercatorCoordinate.fromLngLat({ lng: x.lng, lat: x.lat }).meterInMercatorCoordinateUnits() *
-              fxScale;
+              fxScale *
+              (arc.kind === 'gun' ? Math.min(1, x.size * 3) : 1);
             particles.trail(x.id, (ff) => arcPos(arc, ff), Math.min(1, f, cut), mTrail, c.r, c.g, c.b, alpha);
           }
 
@@ -1992,7 +1966,7 @@ export default function MapView() {
             const from = x.fromUnitId
               ? st.scenario.units.find((u) => u.id === x.fromUnitId)
               : undefined;
-            if (from && from.type !== 'air' && x.launchAt !== undefined) {
+            if (from && from.type !== 'air' && x.launchAt !== undefined && weaponKind(x.name) !== 'gun') {
               const lp = unitPose(from).point;
               particles.muzzle(x.id, merc(lp[0], lp[1]), m, st.time - x.launchAt);
             }
@@ -2040,11 +2014,14 @@ export default function MapView() {
             }
           }
           for (const u of st.scenario.units) {
-            if (st.time < u.appearAt) continue;
+            if (st.time < u.appearAt || (u.leavesAt !== undefined && st.time >= u.leavesAt)) continue;
             const pose = unitPose(u);
             const m = meters(pose.point[0], pose.point[1]);
             if (u.destroyedAt !== undefined && st.time >= u.destroyedAt) {
-              particles.wreck(u.id, merc(pose.point[0], pose.point[1]), m, st.time - u.destroyedAt, st.time);
+              // only vehicles and equipment burn; fallen personnel are just marked
+              if (u.type !== 'infantry') {
+                particles.wreck(u.id, merc(pose.point[0], pose.point[1]), m, st.time - u.destroyedAt, st.time);
+              }
               continue;
             }
             const hurt = (st.scenario.effects ?? []).find(

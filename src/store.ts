@@ -17,7 +17,7 @@ import type {
   UnitType,
 } from './types';
 import type { CameraPose } from './geo';
-import { DEMO_ROSTER, demoScenario } from './demoScenario';
+import { DEMOS, type DemoId } from './demos';
 
 export interface MapApi {
   getCamera: () => CameraPose;
@@ -282,7 +282,7 @@ interface StoreState {
   eraseAt: (lat: number, lng: number) => void;
 
   newScenario: () => void;
-  loadDemo: () => void;
+  loadDemo: (id?: DemoId) => void;
   exportScenario: () => string;
   /** Load a scenario file; `persist: false` loads it for viewing without replacing the saved scenario */
   importScenario: (json: string, opts?: { persist?: boolean }) => boolean;
@@ -789,12 +789,13 @@ export const useStore = create<StoreState>((set, get) => {
       persist(s);
       set({ scenario: s, selection: null, draft: [], time: 0, playing: false });
     },
-    loadDemo: () => {
-      const s = demoScenario();
+    loadDemo: (id = 'khasham') => {
+      const demo = DEMOS.find((d) => d.id === id) ?? DEMOS[0];
+      const s = demo.scenario();
       persist(s);
       // merge demo roster entries (by id) into the library
       const lib = [...get().unitLibrary];
-      for (const e of DEMO_ROSTER) {
+      for (const e of demo.roster) {
         const i = lib.findIndex((x) => x.id === e.id);
         if (i >= 0) lib[i] = { ...lib[i], ...e };
         else lib.push({ ...e });
@@ -807,6 +808,7 @@ export const useStore = create<StoreState>((set, get) => {
       set({
         scenario: s,
         unitLibrary: lib,
+        duration: demo.duration,
         selection: null,
         draft: [],
         time: 0,

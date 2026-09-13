@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import ShareDialog from './ShareDialog';
+import { DEMOS, type DemoId } from '../demos';
 import {
   FileText,
   Share2,
@@ -96,9 +97,21 @@ export default function TopBar() {
           <FilePlus size={14} />
           New
         </button>
-        <button onClick={loadDemo} title="Load the Battle of Khasham demo">
-          Demo
-        </button>
+        <select
+          className="demo-select"
+          value=""
+          title="Load a demo scenario"
+          onChange={(e) => {
+            if (e.target.value) loadDemo(e.target.value as DemoId);
+          }}
+        >
+          <option value="">Demos…</option>
+          {DEMOS.map((d) => (
+            <option key={d.id} value={d.id} title="Load the Battle of Khasham demo">
+              {d.name}
+            </option>
+          ))}
+        </select>
         <button className="top-btn" onClick={() => setSharing(true)} title="Create a shareable link">
           <Share2 size={14} />
           Share

@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react';
 import { useStore } from '../store';
 import { UNIT_TYPE_LABELS } from '../natoSymbols';
-import type { StatusKind, UnitType } from '../types';
+import type { SensorView, StatusKind, UnitType } from '../types';
 import { STATUS_META } from '../statusEffects';
 import { FACILITY_META, type FacilityKind } from '../facilities';
 
@@ -398,6 +398,17 @@ export default function PropertiesPanel() {
           0,
           0.5,
         )}
+        <label className="field">
+          <span>Sensor view</span>
+          <select
+            value={k.sensor ?? 'normal'}
+            onChange={(e) => updateKeyframe(k.id, { sensor: e.target.value as SensorView })}
+          >
+            <option value="normal">Normal</option>
+            <option value="nvg">Night vision</option>
+            <option value="thermal">Thermal (white-hot)</option>
+          </select>
+        </label>
         {numField('Zoom', k.zoom, (v) =>
           updateKeyframe(k.id, { zoom: Math.min(20, Math.max(0, v)) }),
           0,

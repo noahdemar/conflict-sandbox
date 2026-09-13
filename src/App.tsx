@@ -118,10 +118,35 @@ function ViewerBar() {
   );
 }
 
+/** Sensor view of the active camera keyframe (night vision / thermal), during playback or preview. */
+function useSensorView(): 'normal' | 'nvg' | 'thermal' {
+  return useStore((s) => {
+    if (!s.playing && !s.cameraLock) return 'normal';
+    const active = [...s.scenario.keyframes].sort((a, b) => a.time - b.time).filter((k) => k.time <= s.time).pop();
+    return active?.sensor ?? 'normal';
+  });
+}
+
+function SensorOverlay({ view }: { view: 'nvg' | 'thermal' }) {
+  const time = useStore((s) => s.time);
+  return (
+    <div className={`sensor-overlay sensor-${view}`} aria-hidden>
+      <div className="sensor-grain" />
+      <div className="sensor-scan" />
+      <div className="sensor-readout">
+        {view === 'nvg' ? 'NVG · I²' : 'IR · WHT'}
+        <span>{time.toFixed(1)}s</span>
+      </div>
+      {view === 'thermal' && <div className="sensor-cross" />}
+    </div>
+  );
+}
+
 export default function App() {
   const playing = useStore((s) => s.playing);
   const look = useStore((s) => s.look);
   const viewer = useStore((s) => s.viewer);
+  const sensor = useSensorView();
   const spokenRef = useRef<string | null>(null);
   const prevTimeRef = useRef(0);
 
@@ -207,7 +232,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className={`app ${playing ? 'presenting' : ''} look-${look} ${viewer ? 'viewer' : ''}`}>
+    <div className={`app ${playing ? 'presenting' : ''} look-${look} ${viewer ? 'viewer' : ''} view-${sensor}`}>
       <div className="letterbox top" />
       <div className="letterbox bottom" />
       <div className="vignette" />
@@ -221,6 +246,7 @@ export default function App() {
         <PropertiesPanel />
       </div>
       <Timeline />
+      {sensor !== 'normal' && <SensorOverlay view={sensor} />}
       <CaptionOverlay />
       {viewer && <ViewerBar />}
       <TacticalHud />

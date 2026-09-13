@@ -64,6 +64,10 @@ export interface Unit {
   sensorKm?: number;
   /** Air-defense engagement range in km: draws an envelope that reacts to enemy aircraft */
   airDefenseKm?: number;
+  /** Aircraft sets down at the end of its route instead of loitering */
+  landAtEnd?: boolean;
+  /** Seconds on the timeline when the unit leaves the scene (e.g. boards an aircraft) */
+  leavesAt?: number;
 }
 
 export interface Strike {
@@ -99,6 +103,10 @@ export interface Arrow {
   duration: number;
   /** Snap ground units on this arrow to real roads (default true) */
   followRoads?: boolean;
+  /** Movement path only: don't draw the arrow on the map */
+  hideLine?: boolean;
+  /** Absolute time (s) for each control point: move between them, holding when two are equal in place */
+  times?: number[];
   /** Cached road route [lng, lat] through the control points */
   route?: [number, number][];
   /** Control-point signature the cached route was computed for */
@@ -173,7 +181,11 @@ export interface Keyframe {
   followMode?: 'track' | 'chase';
   /** Camera orbit speed in deg/s while this keyframe is active */
   orbitSpeed?: number;
+  /** Sensor view applied while this keyframe is active */
+  sensor?: SensorView;
 }
+
+export type SensorView = 'normal' | 'nvg' | 'thermal';
 
 export type StatusKind =
   | 'radio'
