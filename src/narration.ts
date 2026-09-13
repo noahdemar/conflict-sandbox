@@ -1,0 +1,175 @@
+/**
+ * Narration engine for keyframe captions.
+ * Engines:
+ *  - 'webspeech': built-in browser TTS, instant, no download
+ *  - 'kokoro': Kokoro-82M local model via kokoro-js (ONNX, runs fully
+ *    in-browser; ~90MB one-time download, cached afterwards)
+ */
+
+import { routeElement } from './audio';
+
+export type NarrationEngine = 'webspeech' | 'kokoro';
+
+export interface VoiceOption {
+  id: string;
+  label: string;
+}
+
+export const KOKORO_VOICES: VoiceOption[] = [
+  { id: 'af_heart', label: 'Heart (F, US)' },
+  { id: 'af_bella', label: 'Bella (F, US)' },
+  { id: 'am_michael', label: 'Michael (M, US)' },
+  { id: 'am_adam', label: 'Adam (M, US)' },
+  { id: 'bf_emma', label: 'Emma (F, UK)' },
+  { id: 'bm_george', label: 'George (M, UK)' },
+];
+
+export function webSpeechVoices(): VoiceOption[] {
+  if (!('speechSynthesis' in window)) return [];
+  return window.speechSynthesis
+    .getVoices()
+    .map((v) => ({ id: v.voiceURI, label: `${v.name} (${v.lang})` }));
+}
+
+type KokoroTTS = {
+  generate: (
+    text: string,
+    opts: { voice: string },
+  ) => Promise<{ toBlob: () => Blob } | { audio: Float32Array; sampling_rate: number }>;
+};
+
+let kokoroPromise: Promise<KokoroTTS> | null = null;
+let kokoroStatus: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
+let statusListener: ((s: string) => void) | null = null;
+
+export function onKokoroStatus(fn: (s: string) => void) {
+  statusListener = fn;
+}
+
+function setStatus(s: typeof kokoroStatus, msg?: string) {
+  kokoroStatus = s;
+  statusListener?.(msg ?? s);
+}
+
+export function kokoroState() {
+  return kokoroStatus;
+}
+
+async function loadKokoro(): Promise<KokoroTTS> {
+  if (!kokoroPromise) {
+    setStatus('loading', 'Downloading local voice model (~90MB, one-time)…');
+    kokoroPromise = import('kokoro-js')
+      .then(async (mod) => {
+        const tts = await mod.KokoroTTS.from_pretrained(
+          'onnx-community/Kokoro-82M-v1.0-ONNX',
+          { dtype: 'q8' },
+        );
+        setStatus('ready');
+        return tts as unknown as KokoroTTS;
+      })
+      .catch((e) => {
+        kokoroPromise = null;
+        setStatus('error', 'Local model failed — using browser voice');
+        throw e;
+      });
+  }
+  return kokoroPromise;
+}
+
+/** Pre-warm the local model so first narration is instant. */
+export function preloadKokoro() {
+  loadKokoro().catch(() => undefined);
+}
+
+let currentAudio: HTMLAudioElement | null = null;
+let currentUrl: string | null = null;
+
+export function stopNarration() {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  if (currentUrl) {
+    URL.revokeObjectURL(currentUrl);
+    currentUrl = null;
+  }
+}
+
+function speakWeb(text: string, voiceId: string | null, rate: number) {
+  if (!('speechSynthesis' in window)) return;
+  const utt = new SpeechSynthesisUtterance(text);
+  const voice = window.speechSynthesis
+    .getVoices()
+    .find((v) => v.voiceURI === voiceId);
+  if (voice) utt.voice = voice;
+  utt.rate = rate;
+  window.speechSynthesis.speak(utt);
+}
+
+async function speakKokoro(text: string, voiceId: string, rate: number) {
+  const tts = await loadKokoro();
+  const out = await tts.generate(text, { voice: voiceId });
+  let blob: Blob;
+  if ('toBlob' in out && typeof out.toBlob === 'function') {
+    blob = out.toBlob();
+  } else if ('audio' in out) {
+    blob = floatToWav(out.audio, out.sampling_rate);
+  } else {
+    return;
+  }
+  stopNarration();
+  currentUrl = URL.createObjectURL(blob);
+  currentAudio = new Audio(currentUrl);
+  currentAudio.playbackRate = rate;
+  try {
+    routeElement(currentAudio); // route through recordable bus
+  } catch {
+    /* element already routed */
+  }
+  await currentAudio.play();
+}
+
+/** Minimal Float32 → WAV encoder for raw model output. */
+function floatToWav(samples: Float32Array, sampleRate: number): Blob {
+  const buf = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buf);
+  const writeStr = (o: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i));
+  };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+  for (let i = 0; i < samples.length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+export function narrate(
+  text: string,
+  engine: NarrationEngine,
+  voiceId: string | null,
+  rate = 1,
+) {
+  stopNarration();
+  if (!text.trim()) return;
+  if (engine === 'kokoro') {
+    speakKokoro(text, voiceId ?? 'af_heart', rate).catch(() =>
+      speakWeb(text, voiceId, rate),
+    );
+  } else {
+    speakWeb(text, voiceId, rate);
+  }
+}
