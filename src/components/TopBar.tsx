@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import {
+  FileText,
   Box,
   Download,
   FilePlus,
@@ -19,6 +20,8 @@ export default function TopBar() {
   const globeMode = useStore((s) => s.globeMode);
   const setGlobeMode = useStore((s) => s.setGlobeMode);
   const use3d = useStore((s) => s.use3d);
+  const look = useStore((s) => s.look);
+  const setLook = useStore((s) => s.setLook);
   const setUse3d = useStore((s) => s.setUse3d);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -51,6 +54,14 @@ export default function TopBar() {
         title="Scenario name"
       />
       <div className="topbar-actions">
+        <button
+          className={`top-btn ${look === 'briefing' ? 'active' : ''}`}
+          onClick={() => setLook(look === 'briefing' ? 'explainer' : 'briefing')}
+          title="Switch between explainer and military briefing presentation"
+        >
+          <FileText size={14} />
+          {look === 'briefing' ? 'Briefing' : 'Explainer'}
+        </button>
         <button
           className={`top-btn ${use3d ? 'active' : ''}`}
           onClick={() => setUse3d(!use3d)}

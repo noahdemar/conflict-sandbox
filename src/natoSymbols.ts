@@ -50,6 +50,14 @@ const FRAMES: Record<Affiliation, { shape: string; inner: [number, number, numbe
   unknown: { shape: '<circle cx="24" cy="20" r="18"/>', inner: [11, 11, 26, 18] },
 };
 
+/** Standard light fills for affiliation frames. */
+export const APP6_FILL: Record<Affiliation, string> = {
+  friend: '#80e0ff',
+  hostile: '#ff8080',
+  neutral: '#aaffaa',
+  unknown: '#ffff80',
+};
+
 export function factionAffiliation(f: Faction | undefined, factions: Faction[]): Affiliation {
   if (!f) return 'unknown';
   if (f.affiliation) return f.affiliation;
@@ -63,6 +71,6 @@ export function unitSymbolSvg(type: UnitType, aff: Affiliation, color: string): 
   const [x, y, w, h] = inner;
   return `<svg viewBox="0 0 48 40" class="sym sym-${aff}">` +
     `<g fill="${color}" stroke="#0d0b08" stroke-width="2.2" stroke-linejoin="miter">${shape}</g>` +
-    `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="0 0 40 30" fill="none" stroke="#fff" color="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">${GLYPHS[type]}</svg>` +
+    `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="0 0 40 30" fill="none" stroke="#0d0b08" color="#0d0b08" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${GLYPHS[type]}</svg>` +
     `</svg>`;
 }

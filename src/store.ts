@@ -64,6 +64,16 @@ function loadPrefs(): Prefs {
   };
 }
 
+export type Look = 'explainer' | 'briefing';
+const LOOK_KEY = 'conflict-sandbox-look';
+const loadLook = (): Look => {
+  try {
+    return localStorage.getItem(LOOK_KEY) === 'briefing' ? 'briefing' : 'explainer';
+  } catch {
+    return 'explainer';
+  }
+};
+
 const STORAGE_KEY = 'conflict-sandbox-scenario-v1';
 const LIBRARY_KEY = 'conflict-sandbox-units-v1';
 
@@ -183,6 +193,9 @@ interface StoreState {
   /** Playback clock in seconds */
   time: number;
   playing: boolean;
+  /** Visual presentation: friendly explainer stickers or sober military briefing */
+  look: Look;
+  setLook: (look: Look) => void;
   duration: number;
   globeMode: boolean;
   /** When true the camera is driven by keyframes (playback / scrub / keyframe jump) */
@@ -302,6 +315,15 @@ export const useStore = create<StoreState>((set, get) => {
     time: 0,
     playing: false,
     duration: 60,
+    look: loadLook(),
+    setLook: (look) => {
+      set({ look });
+      try {
+        localStorage.setItem(LOOK_KEY, look);
+      } catch {
+        /* ignore */
+      }
+    },
     globeMode: false,
     cameraLock: false,
     mapApi: null,

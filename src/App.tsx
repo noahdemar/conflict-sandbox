@@ -99,6 +99,7 @@ function TacticalHud() {
 
 export default function App() {
   const playing = useStore((s) => s.playing);
+  const look = useStore((s) => s.look);
   const spokenRef = useRef<string | null>(null);
   const prevTimeRef = useRef(0);
 
@@ -166,7 +167,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className={`app ${playing ? 'presenting' : ''}`}>
+    <div className={`app ${playing ? 'presenting' : ''} look-${look}`}>
       <div className="letterbox top" />
       <div className="letterbox bottom" />
       <div className="vignette" />

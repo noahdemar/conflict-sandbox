@@ -10,7 +10,7 @@ import { STATUS_META, activeEffects, statusIconSvg } from '../statusEffects';
 import { onElevationLoaded, viewshed } from '../elevation';
 import { unitAmmo } from '../combat';
 import { hourAt, lighting, windVector } from '../environment';
-import { factionAffiliation } from '../natoSymbols';
+import { APP6_FILL, factionAffiliation, unitSymbolSvg } from '../natoSymbols';
 import { TAN_BLUE_STYLE } from '../mapStyle';
 import {
   circlePolygon,
@@ -830,7 +830,8 @@ export default function MapView() {
         const key = silhouetteFor(u, rosterName);
         const destroyed = u.destroyedAt !== undefined && st.time >= u.destroyedAt;
         const air = u.type === 'air';
-        const sig = `${key}|${color}|${destroyed}|${u.name}|${img ?? ''}`;
+        const briefing = st.look === 'briefing';
+        const sig = `${key}|${color}|${destroyed}|${u.name}|${img ?? ''}|${st.look}`;
         if (el.dataset.sig !== sig) {
           el.dataset.sig = sig;
           const sz = `${Math.round((air ? 70 : 58) * silhouetteScale(key))}px`;
@@ -838,16 +839,30 @@ export default function MapView() {
             e.style.setProperty('--fc', color);
             e.style.setProperty('--sz', sz);
           }
-          el.innerHTML = `<div class="mk-box stk${air ? ' air' : ''}"><div class="fx-rings"></div>${
-            air ? `<div class="stk-shadow">${shadowSvg(key)}</div>` : ''
-          }<div class="stk-rot">${silhouetteSvg(key, color, destroyed)}</div></div>`;
+          if (briefing) {
+            // standard affiliation frame + type symbol, upright on screen
+            const aff = factionAffiliation(
+              st.scenario.factions.find((f) => f.id === u.factionId),
+              st.scenario.factions,
+            );
+            const fill = destroyed ? '#b9b9b4' : APP6_FILL[aff];
+            el.innerHTML = `<div class="mk-box stk sym-box"><div class="fx-rings"></div><div class="stk-rot">${unitSymbolSvg(u.type, aff, fill)}${
+              destroyed ? '<svg class="sym-kill" viewBox="0 0 48 40"><path d="M6 4 L42 36 M42 4 L6 36"/></svg>' : ''
+            }</div></div>`;
+          } else {
+            el.innerHTML = `<div class="mk-box stk${air ? ' air' : ''}"><div class="fx-rings"></div>${
+              air ? `<div class="stk-shadow">${shadowSvg(key)}</div>` : ''
+            }<div class="stk-rot">${silhouetteSvg(key, color, destroyed)}</div></div>`;
+          }
+          mk.setPitchAlignment(briefing ? 'viewport' : 'map');
+          mk.setRotationAlignment(briefing ? 'viewport' : 'map');
           tagEl.innerHTML = `${
             img ? `<img class="mk-img" src="${img}" alt="" />` : ''
           }<div class="mk-status"></div><div class="mk-gap"><span class="mk-count" hidden></span></div><div class="mk-name"><span class="mk-label"></span><span class="mk-bars"><i class="ammo" hidden><b></b></i></span></div>`;
           tagEl.querySelector<HTMLElement>('.mk-label')!.textContent = u.name || '';
         }
         const pose = unitPose(u);
-        mk.setRotation(pose.bearing);
+        mk.setRotation(briefing ? 0 : pose.bearing);
         tagMk.setLngLat(pose.point);
         el.classList.toggle('destroyed', destroyed);
         tagEl.classList.toggle('destroyed', destroyed);
@@ -925,10 +940,18 @@ export default function MapView() {
         if (!visible) continue;
         seenR.add(x.id);
         let mk = reticleMarkers.current.get(x.id);
+        if (mk && mk.getElement().dataset.look !== st.look) {
+          mk.remove();
+          reticleMarkers.current.delete(x.id);
+          mk = undefined;
+        }
         if (!mk) {
           const el = document.createElement('div');
           el.className = 'reticle';
-          el.innerHTML = `<svg viewBox="0 0 100 100"><g fill="none" stroke-linecap="round"><circle cx="50" cy="50" r="30" stroke="#fff" stroke-width="15"/><path d="M50 4 V32 M50 68 V96 M4 50 H32 M68 50 H96" stroke="#fff" stroke-width="15"/><circle cx="50" cy="50" r="30" stroke="#e0302a" stroke-width="7"/><path d="M50 4 V32 M50 68 V96 M4 50 H32 M68 50 H96" stroke="#e0302a" stroke-width="7"/></g></svg>`;
+          el.dataset.look = st.look;
+          el.innerHTML = st.look === 'briefing'
+            ? `<svg viewBox="0 0 100 100" class="reticle-brief"><path d="M20 38 V20 H38 M62 20 H80 V38 M80 62 V80 H62 M38 80 H20 V62" fill="none" stroke="#b3261e" stroke-width="4"/><path d="M50 42 V58 M42 50 H58" stroke="#b3261e" stroke-width="3"/></svg>`
+            : `<svg viewBox="0 0 100 100"><g fill="none" stroke-linecap="round"><circle cx="50" cy="50" r="30" stroke="#fff" stroke-width="15"/><path d="M50 4 V32 M50 68 V96 M4 50 H32 M68 50 H96" stroke="#fff" stroke-width="15"/><circle cx="50" cy="50" r="30" stroke="#e0302a" stroke-width="7"/><path d="M50 4 V32 M50 68 V96 M4 50 H32 M68 50 H96" stroke="#e0302a" stroke-width="7"/></g></svg>`;
           mk = new maplibregl.Marker({ element: el, pitchAlignment: 'map', rotationAlignment: 'map' }).setLngLat([x.lng, x.lat]).addTo(map);
           reticleMarkers.current.set(x.id, mk);
         }
@@ -1077,6 +1100,12 @@ export default function MapView() {
           pitch: pose.pitch + jitter(3) * 0.35,
           bearing: pose.bearing + jitter(4) * 0.25,
         });
+      }
+      if (map.getLayer('territory-watermark')) {
+        const vis = st.look === 'briefing' ? 'none' : 'visible';
+        if (map.getLayoutProperty('territory-watermark', 'visibility') !== vis) {
+          map.setLayoutProperty('territory-watermark', 'visibility', vis);
+        }
       }
       if (st.use3d) map.triggerRepaint();
     };
