@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import {
   FileText,
+  Shapes,
   Box,
   Download,
   FilePlus,
@@ -22,6 +23,8 @@ export default function TopBar() {
   const use3d = useStore((s) => s.use3d);
   const look = useStore((s) => s.look);
   const setLook = useStore((s) => s.setLook);
+  const iconStyle = useStore((s) => s.iconStyle);
+  const setIconStyle = useStore((s) => s.setIconStyle);
   const setUse3d = useStore((s) => s.setUse3d);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -54,6 +57,14 @@ export default function TopBar() {
         title="Scenario name"
       />
       <div className="topbar-actions">
+        <button
+          className="top-btn"
+          onClick={() => setIconStyle(iconStyle === 'symbols' ? 'illustrated' : 'symbols')}
+          title="Switch unit icons between illustrations and military symbols"
+        >
+          <Shapes size={14} />
+          {iconStyle === 'symbols' ? 'Symbols' : 'Icons'}
+        </button>
         <button
           className={`top-btn ${look === 'briefing' ? 'active' : ''}`}
           onClick={() => setLook(look === 'briefing' ? 'explainer' : 'briefing')}

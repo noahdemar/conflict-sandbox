@@ -1424,117 +1424,18 @@ input[type='color'] {
   padding-bottom: 8px;
 }
 
-/* =====================================================================
-   BRIEFING LOOK — sober military presentation
-   ===================================================================== */
-.look-briefing {
-  --panel-bg: rgba(26, 30, 33, 0.9);
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --hairline: rgba(255, 255, 255, 0.1);
-  --text: #e6e4dc;
-  --text-dim: #9a9d98;
-  --accent: #c9a24a;
-  --accent-soft: rgba(201, 162, 74, 0.14);
-  --hover: rgba(255, 255, 255, 0.06);
-  --glass-blur: blur(10px);
-  --glass-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-}
-
-.look-briefing .panel {
-  border-radius: 4px;
-}
-
-.look-briefing input,
-.look-briefing select {
-  background: rgba(0, 0, 0, 0.25);
-  border-color: var(--hairline);
-  border-radius: 3px;
-  color: var(--text);
-}
-
-.look-briefing .top-btn,
-.look-briefing .tool-btn,
-.look-briefing .jump-btn {
-  border-radius: 3px;
-  background: transparent;
-}
-
-.look-briefing .top-btn.active,
-.look-briefing .play-btn {
-  color: #16181a;
-  background: var(--accent);
-  border-color: var(--accent);
-  box-shadow: none;
-}
-
-.look-briefing .brand {
-  letter-spacing: 0.14em;
-}
-
-/* muted, desaturated map; effects stay legible but not cartoonish */
-.look-briefing .maplibregl-canvas {
-  filter: saturate(0.42) contrast(1.06) brightness(0.96);
-}
-
-/* captions: lower-third briefing slate */
-.look-briefing .caption-overlay {
-  top: auto;
-  bottom: 92px;
-  background: rgba(18, 21, 23, 0.88);
-  border: none;
-  border-left: 3px solid var(--accent);
-  border-radius: 2px;
-  text-align: left;
-  padding: 10px 20px 12px;
-  box-shadow: none;
-  animation: none;
-}
-
-.look-briefing.presenting .caption-overlay {
-  bottom: calc(7vh + 84px);
-  top: auto;
-}
-
-.look-briefing .caption-kicker {
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  letter-spacing: 0.2em;
-  color: var(--accent);
-}
-
-.look-briefing .caption-dot {
-  display: none;
-}
-
-.look-briefing .caption-text {
-  font-size: 17px;
-  font-weight: 500;
-  color: #eceae3;
-}
-
-.look-briefing .hud {
-  background: rgba(18, 21, 23, 0.82);
-  border: none;
-  border-radius: 2px;
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  color: #e6e4dc;
-}
-
-.look-briefing .hud-live {
-  border-radius: 1px;
-}
-
-/* unit symbols */
-.look-briefing .mk-box.sym-box {
+/* ---------- military symbol icons (either look) ---------- */
+.mk-box.sym-box {
   width: calc(40px * var(--zs, 1));
   height: calc(34px * var(--zs, 1));
 }
 
-.look-briefing .sym-box .stk-rot {
+.sym-box .stk-rot {
   position: relative;
-  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
 }
 
-.look-briefing .sym-kill {
+.sym-kill {
   position: absolute;
   inset: 0;
   fill: none;
@@ -1542,47 +1443,148 @@ input[type='color'] {
   stroke-width: 3;
 }
 
-.look-briefing .mk.selected .stk-rot {
-  filter: drop-shadow(0 0 0 #fff) drop-shadow(0 0 2px var(--accent)) drop-shadow(0 0 2px var(--accent));
+/* =====================================================================
+   BRIEFING LOOK — minimalist white
+   ===================================================================== */
+.look-briefing {
+  --panel-bg: #ffffff;
+  --panel-border: rgba(0, 0, 0, 0.1);
+  --hairline: rgba(0, 0, 0, 0.1);
+  --text: #111111;
+  --text-dim: #6b6b6b;
+  --accent: #111111;
+  --accent-soft: rgba(0, 0, 0, 0.05);
+  --hover: rgba(0, 0, 0, 0.04);
+  --glass-blur: none;
+  --glass-shadow: none;
 }
 
-.look-briefing .mk-tag .mk-gap {
-  height: calc(34px * 0.85 * var(--zs, 1));
-}
-
-.look-briefing .mk-name {
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #111;
-  background: rgba(240, 238, 230, 0.92);
-  border-left: 2px solid #333;
-  border-radius: 1px;
+.look-briefing .panel,
+.look-briefing .hud,
+.look-briefing .caption-overlay {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
   box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.look-briefing .panel-title,
+.look-briefing .brand {
+  color: #111;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.look-briefing input,
+.look-briefing select {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 2px;
+}
+
+.look-briefing input:focus,
+.look-briefing select:focus {
+  border-color: #111;
+  box-shadow: none;
+}
+
+.look-briefing .top-btn,
+.look-briefing .tool-btn,
+.look-briefing .jump-btn,
+.look-briefing .play-btn {
+  border-radius: 2px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.look-briefing .top-btn.active,
+.look-briefing .play-btn {
+  color: #fff;
+  background: #111;
+  border-color: #111;
+}
+
+.look-briefing .tool-btn.active {
+  color: #111;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.look-briefing .faction-row.active {
+  border-left-color: #111;
+  border-radius: 0;
+}
+
+.look-briefing .fx-card {
+  background: transparent;
+  border-radius: 0;
+}
+
+.look-briefing .tl-key {
+  background: #111;
+  border-color: #fff;
+  box-shadow: none;
+}
+
+/* captions: plain white card, no motion */
+.look-briefing .caption-overlay {
+  padding: 12px 22px 14px;
+  animation: none;
+}
+
+.look-briefing .caption-kicker {
+  color: #6b6b6b;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.look-briefing .caption-dot {
+  display: none;
+}
+
+.look-briefing .caption-text {
+  font-size: 18px;
+  font-weight: 500;
+  color: #111;
+}
+
+.look-briefing .hud-live {
+  border-radius: 2px;
+  background: #111;
+}
+
+.look-briefing .hud-live.on {
+  background: #111;
+}
+
+/* unit tags and status: quiet black-on-white */
+.look-briefing .mk-name {
+  font-weight: 500;
+  color: #111;
+  background: #fff;
+  border-left: 2px solid var(--fc, #111);
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 .look-briefing .mk-count {
-  background: #1b1e20;
-  border: 1px solid #d8d6ce;
+  color: #fff;
+  background: #111;
+  border: 1.5px solid #fff;
   border-radius: 2px;
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
 
-/* status: flat data tags, no motion */
 .look-briefing .fx-badge {
-  padding: 1px 6px;
+  color: #111;
+  background: #fff;
   border: none;
-  border-left: 3px solid var(--fxc);
+  border-left: 2px solid var(--fxc);
   border-radius: 1px;
-  background: rgba(18, 21, 23, 0.88);
-  color: #e6e4dc;
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-weight: 600;
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  box-shadow: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  font-weight: 500;
+  letter-spacing: 0.04em;
   animation: none;
 }
 
@@ -1590,66 +1592,46 @@ input[type='color'] {
   display: none;
 }
 
-.look-briefing .fx-badge span {
-  animation: none !important;
-}
-
+.look-briefing .fx-badge span,
 .look-briefing .mk.fx-panic .stk-rot {
-  animation: none;
+  animation: none !important;
 }
 
 .look-briefing .fx-rings i {
   border-width: 1.5px;
-  animation-duration: 2.6s;
 }
 
 .look-briefing .mk-bars .ammo b {
-  background: #8d8f89;
+  background: #777;
 }
 
-/* target: thin static bracket */
-.look-briefing .reticle {
-  filter: none;
-}
-
-.look-briefing .reticle svg {
-  animation: reticle-in 0.2s ease-out both;
-}
-
-/* map labels, facilities, flags */
-.look-briefing .map-label:not(.facility-label):not(.flag-label) {
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-shadow: 0 0 3px rgba(240, 238, 230, 0.95), 0 0 1px rgba(240, 238, 230, 1);
-}
-
+/* labels, facilities, flags */
 .look-briefing .facility-sticker {
-  color: #1b1e20;
-  background: rgba(240, 238, 230, 0.95);
-  border: 1.5px solid #1b1e20;
+  color: #111;
+  background: #fff;
+  border: 1px solid #111;
   border-radius: 2px;
   box-shadow: none;
-  width: 2.3em;
-  height: 2.3em;
-  min-width: 26px;
-  min-height: 26px;
 }
 
 .look-briefing .facility-caption,
 .look-briefing .flag-caption {
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  background: rgba(240, 238, 230, 0.92);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  background: #fff;
   border-radius: 1px;
-  box-shadow: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 .look-briefing .flag-sticker {
-  height: 1.6em;
+  height: 1.7em;
   min-height: 16px;
-  border: 1px solid rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   box-shadow: none;
   transform: none;
+}
+
+.look-briefing .reticle {
+  filter: none;
 }

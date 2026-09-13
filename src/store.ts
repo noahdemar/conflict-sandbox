@@ -74,6 +74,16 @@ const loadLook = (): Look => {
   }
 };
 
+export type IconStyle = 'illustrated' | 'symbols';
+const ICON_KEY = 'conflict-sandbox-icons';
+const loadIconStyle = (): IconStyle => {
+  try {
+    return localStorage.getItem(ICON_KEY) === 'symbols' ? 'symbols' : 'illustrated';
+  } catch {
+    return 'illustrated';
+  }
+};
+
 const STORAGE_KEY = 'conflict-sandbox-scenario-v1';
 const LIBRARY_KEY = 'conflict-sandbox-units-v1';
 
@@ -196,6 +206,9 @@ interface StoreState {
   /** Visual presentation: friendly explainer stickers or sober military briefing */
   look: Look;
   setLook: (look: Look) => void;
+  /** Unit icons: illustrated silhouettes or standard military symbols */
+  iconStyle: IconStyle;
+  setIconStyle: (iconStyle: IconStyle) => void;
   duration: number;
   globeMode: boolean;
   /** When true the camera is driven by keyframes (playback / scrub / keyframe jump) */
@@ -316,6 +329,15 @@ export const useStore = create<StoreState>((set, get) => {
     playing: false,
     duration: 60,
     look: loadLook(),
+    iconStyle: loadIconStyle(),
+    setIconStyle: (iconStyle) => {
+      set({ iconStyle });
+      try {
+        localStorage.setItem(ICON_KEY, iconStyle);
+      } catch {
+        /* ignore */
+      }
+    },
     setLook: (look) => {
       set({ look });
       try {

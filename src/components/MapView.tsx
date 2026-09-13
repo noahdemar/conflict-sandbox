@@ -830,8 +830,8 @@ export default function MapView() {
         const key = silhouetteFor(u, rosterName);
         const destroyed = u.destroyedAt !== undefined && st.time >= u.destroyedAt;
         const air = u.type === 'air';
-        const briefing = st.look === 'briefing';
-        const sig = `${key}|${color}|${destroyed}|${u.name}|${img ?? ''}|${st.look}`;
+        const symbols = st.iconStyle === 'symbols';
+        const sig = `${key}|${color}|${destroyed}|${u.name}|${img ?? ''}|${st.iconStyle}`;
         if (el.dataset.sig !== sig) {
           el.dataset.sig = sig;
           const sz = `${Math.round((air ? 70 : 58) * silhouetteScale(key))}px`;
@@ -839,7 +839,7 @@ export default function MapView() {
             e.style.setProperty('--fc', color);
             e.style.setProperty('--sz', sz);
           }
-          if (briefing) {
+          if (symbols) {
             // standard affiliation frame + type symbol, upright on screen
             const aff = factionAffiliation(
               st.scenario.factions.find((f) => f.id === u.factionId),
@@ -854,15 +854,15 @@ export default function MapView() {
               air ? `<div class="stk-shadow">${shadowSvg(key)}</div>` : ''
             }<div class="stk-rot">${silhouetteSvg(key, color, destroyed)}</div></div>`;
           }
-          mk.setPitchAlignment(briefing ? 'viewport' : 'map');
-          mk.setRotationAlignment(briefing ? 'viewport' : 'map');
+          mk.setPitchAlignment(symbols ? 'viewport' : 'map');
+          mk.setRotationAlignment(symbols ? 'viewport' : 'map');
           tagEl.innerHTML = `${
             img ? `<img class="mk-img" src="${img}" alt="" />` : ''
           }<div class="mk-status"></div><div class="mk-gap"><span class="mk-count" hidden></span></div><div class="mk-name"><span class="mk-label"></span><span class="mk-bars"><i class="ammo" hidden><b></b></i></span></div>`;
           tagEl.querySelector<HTMLElement>('.mk-label')!.textContent = u.name || '';
         }
         const pose = unitPose(u);
-        mk.setRotation(briefing ? 0 : pose.bearing);
+        mk.setRotation(symbols ? 0 : pose.bearing);
         tagMk.setLngLat(pose.point);
         el.classList.toggle('destroyed', destroyed);
         tagEl.classList.toggle('destroyed', destroyed);
