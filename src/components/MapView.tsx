@@ -165,6 +165,52 @@ export default function MapView() {
       }
     };
 
+    /** Path length in meters (paths are lng/lat degrees). */
+    const pathMeters = (path: LngLat[]) => {
+      let m = 0;
+      for (let i = 1; i < path.length; i++) {
+        const cosLat = Math.cos((path[i][1] * Math.PI) / 180);
+        m += Math.hypot((path[i][0] - path[i - 1][0]) * 111320 * cosLat, (path[i][1] - path[i - 1][1]) * 111320);
+      }
+      return m;
+    };
+
+    /**
+     * Aircraft inertia along a route: enter slower, accelerate to cruise, then
+     * bleed speed down to loiter-orbit speed so the handoff into the orbit is
+     * seamless. Returns route progress 0..1 at time t.
+     */
+    const airProgress = (u: Unit, arrow: Arrow, path: LngLat[], t: number): number => {
+      const D = arrow.duration;
+      const e = t - arrow.appearAt;
+      if (e <= 0) return 0;
+      if (e >= D) return 1;
+      const L = pathMeters(path);
+      if (L <= 0) return clamp01(e / D);
+      const [r, period] = orbitFor(u);
+      const vOrbit = (2 * Math.PI * r) / period;
+      const ta = Math.min(D * 0.3, 4); // accelerate
+      const td = Math.min(D * 0.3, 4); // decelerate into orbit
+      const cruiseT = Math.max(0, D - ta - td);
+      // entry speed is a fraction of cruise; solve cruise speed so distance covers L
+      const k = 0.55;
+      const vc = Math.max(
+        vOrbit * 0.6,
+        (L - (td * vOrbit) / 2) / ((ta * (1 + k)) / 2 + cruiseT + td / 2),
+      );
+      const v0 = vc * k;
+      let dist: number;
+      if (e < ta) {
+        dist = v0 * e + ((vc - v0) / (2 * ta)) * e * e;
+      } else if (e < ta + cruiseT) {
+        dist = (ta * (v0 + vc)) / 2 + vc * (e - ta);
+      } else {
+        const x = e - ta - cruiseT;
+        dist = (ta * (v0 + vc)) / 2 + vc * cruiseT + vc * x + ((vOrbit - vc) / (2 * td)) * x * x;
+      }
+      return clamp01(dist / L);
+    };
+
     /** Gap kept between vehicles queued on or halted at the end of a shared route. */
     const FORMATION_GAP_M = 45;
 
@@ -235,7 +281,10 @@ export default function MapView() {
             const spaced = formationPose(u, arrow, path, t);
             if (spaced) return spaced;
           }
-          return smoothPoseAlongPath(path, clamp01((t - arrow.appearAt) / arrow.duration));
+          return smoothPoseAlongPath(
+            path,
+            air ? airProgress(u, arrow, path, t) : clamp01((t - arrow.appearAt) / arrow.duration),
+          );
         }
       }
       if (air) {
@@ -546,9 +595,12 @@ export default function MapView() {
       const lineFeats: GeoJSON.Feature[] = [];
       const headFeats: GeoJSON.Feature[] = [];
       for (const a of st.scenario.arrows) {
-        const prog = clamp01((st.time - a.appearAt) / a.duration);
-        if (prog <= 0 || a.points.length < 2) continue;
         const path = arrowPath(a);
+        const flyer = st.scenario.units.find((u) => u.arrowId === a.id && u.type === 'air');
+        const prog = flyer
+          ? airProgress(flyer, a, path, st.time)
+          : clamp01((st.time - a.appearAt) / a.duration);
+        if (prog <= 0 || a.points.length < 2) continue;
         const drawn = partialPath(path, Math.max(prog, 0.02));
         const color = factionColor(a.factionId);
         const selected = sel?.kind === 'arrow' && sel.id === a.id;
