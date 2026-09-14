@@ -447,6 +447,10 @@
           "type": "number",
           "description": "Camera orbit speed in deg/s while this keyframe is active"
         },
+        "narrate": {
+          "type": "boolean",
+          "description": "Speak this caption aloud (default true); false shows it as text only"
+        },
         "sensor": {
           "$ref": "#/definitions/SensorView",
           "description": "Sensor view applied while this keyframe is active"

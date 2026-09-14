@@ -189,6 +189,8 @@ export interface Keyframe {
   followMode?: 'track' | 'chase';
   /** Camera orbit speed in deg/s while this keyframe is active */
   orbitSpeed?: number;
+  /** Speak this caption aloud (default true); false shows it as text only */
+  narrate?: boolean;
   /** Sensor view applied while this keyframe is active */
   sensor?: SensorView;
   /** Full-screen image card shown while this keyframe is active */

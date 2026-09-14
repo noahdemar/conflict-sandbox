@@ -35,6 +35,8 @@ export interface MapApi {
 
 export interface NarrationPrefs {
   enabled: boolean;
+  /** Viewer's answer to the narration prompt; null until they choose */
+  consent?: 'voice' | 'text' | null;
   engine: 'webspeech' | 'kokoro';
   voice: string | null;
   rate: number;
@@ -49,7 +51,7 @@ interface Prefs {
   v?: number;
 }
 
-const DEFAULT_NARRATION: NarrationPrefs = { enabled: true, engine: 'kokoro', voice: 'bm_george', rate: 1 };
+const DEFAULT_NARRATION: NarrationPrefs = { enabled: true, engine: 'kokoro', voice: 'bm_george', rate: 1, consent: null };
 
 function loadPrefs(): Prefs {
   try {
@@ -65,6 +67,7 @@ function loadPrefs(): Prefs {
           engine: migrate ? DEFAULT_NARRATION.engine : p.narration?.engine === 'webspeech' ? 'webspeech' : 'kokoro',
           voice: migrate ? DEFAULT_NARRATION.voice : (p.narration?.voice ?? DEFAULT_NARRATION.voice),
           rate: p.narration?.rate ?? 1,
+          consent: p.narration?.consent ?? null,
         },
         v: 2,
       };
@@ -216,6 +219,12 @@ interface StoreState {
   /** Playback clock in seconds */
   time: number;
   playing: boolean;
+  /** Waiting for the viewer to choose voice or text-only narration before playing */
+  consentPending: boolean;
+  resolveConsent: (choice: 'voice' | 'text') => void;
+  /** Right-hand transcript pane */
+  transcriptOpen: boolean;
+  setTranscriptOpen: (open: boolean) => void;
   /** Visual presentation: friendly explainer stickers or sober military briefing */
   look: Look;
   setLook: (look: Look) => void;
@@ -337,7 +346,8 @@ function persist(s: Scenario) {
 export const useStore = create<StoreState>((set, get) => {
   const mutate = (fn: (s: Scenario) => Scenario) => {
     const next = fn(get().scenario);
-    persist(next);
+    // the read-only player never overwrites the viewer's own saved scenario
+    if (!get().viewer) persist(next);
     set({ scenario: next });
   };
 
@@ -384,7 +394,29 @@ export const useStore = create<StoreState>((set, get) => {
     setActiveUnitType: (activeUnitType) => set({ activeUnitType }),
     setSelection: (selection) => set({ selection }),
     setTime: (time) => set({ time }),
-    setPlaying: (playing) => set({ playing }),
+    setPlaying: (playing) => {
+      const st = get();
+      // first playback of a narrated scenario asks how to present narration
+      if (playing && !st.playing && !st.narration.consent && st.scenario.keyframes.some((k) => k.caption?.trim())) {
+        set({ consentPending: true });
+        return;
+      }
+      set({ playing });
+    },
+    consentPending: false,
+    resolveConsent: (choice) => {
+      const narration = { ...get().narration, consent: choice, enabled: choice === 'voice' };
+      set({ narration, consentPending: false });
+      try {
+        localStorage.setItem(PREFS_KEY, JSON.stringify({ use3d: get().use3d, narration, v: 2 }));
+      } catch {
+        /* ignore */
+      }
+      get().setCameraLock(true);
+      set({ playing: true });
+    },
+    transcriptOpen: false,
+    setTranscriptOpen: (transcriptOpen) => set({ transcriptOpen }),
     setDuration: (duration) => {
       set({ duration });
       mutate((s) => ({ ...s, duration }));

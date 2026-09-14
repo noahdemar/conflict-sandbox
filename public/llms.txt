@@ -133,7 +133,8 @@ base | hq | bridge | hospital | town.
 - sensor: "nvg" (night vision) or "thermal" for that shot.
 - media: { src, caption, credit, anchor: [lng, lat], anchorRadiusM } shows an
   image beside a site (src must be a URL the site can load).
-- Captions are narrated automatically during playback.
+- Captions are narrated during playback (viewers choose voice or text only).
+  narrate: false makes a line text-only.
 
 ## Environment (optional)
 

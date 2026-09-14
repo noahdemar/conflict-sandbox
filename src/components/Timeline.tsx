@@ -3,6 +3,7 @@ import {
   Circle,
   Diamond,
   Rows3,
+  ScrollText,
   Pause,
   Play,
   SkipBack,
@@ -48,6 +49,8 @@ export default function Timeline() {
   const sawLoading = useRef(false);
   const [preparing, setPreparing] = useState(false);
   const [tracksOpen, setTracksOpen] = useState(false);
+  const transcriptOpen = useStore((s) => s.transcriptOpen);
+  const setTranscriptOpen = useStore((s) => s.setTranscriptOpen);
 
   // Auto-stop recording when playback ends or is paused
   useEffect(() => {
@@ -181,6 +184,13 @@ export default function Timeline() {
           onClick={toggleRecord}
         >
           <Circle size={13} fill="currentColor" />
+        </button>
+        <button
+          className={`icon-btn tl-transcript-btn ${transcriptOpen ? 'narr-on' : ''}`}
+          title="Transcript"
+          onClick={() => setTranscriptOpen(!transcriptOpen)}
+        >
+          <ScrollText size={15} />
         </button>
         <button
           className={`icon-btn tl-tracks-btn ${tracksOpen ? 'narr-on' : ''}`}

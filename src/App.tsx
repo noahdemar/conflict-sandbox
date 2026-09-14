@@ -17,6 +17,8 @@ import { validateScenarioJson } from './scenarioValidation';
 import { lossesByFaction } from './combat';
 import { hourAt } from './environment';
 import EnvironmentPanel from './components/EnvironmentPanel';
+import TranscriptPane from './components/TranscriptPane';
+import ConsentModal from './components/ConsentModal';
 
 /** Slide-style caption of the most recent keyframe at the current time. */
 function CaptionOverlay() {
@@ -244,6 +246,11 @@ export default function App() {
         spokenRef.current = active.id;
         // a shot that repeats the previous caption doesn't say it again
         if (active.caption === spokenCaptionRef.current) return;
+        // lines marked text-only are shown but not spoken
+        if (active.narrate === false) {
+          spokenCaptionRef.current = active.caption;
+          return;
+        }
         spokenCaptionRef.current = active.caption;
         const caption = active.caption;
         const kfId = active.id;
@@ -390,6 +397,8 @@ export default function App() {
       {sensor !== 'normal' && <SensorOverlay view={sensor} />}
       <MediaOverlay />
       <CaptionOverlay />
+      <TranscriptPane />
+      <ConsentModal />
       {viewer && <ViewerBar />}
       <TacticalHud />
     </div>
