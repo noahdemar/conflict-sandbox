@@ -70,6 +70,10 @@ export interface Unit {
   leavesAt?: number;
   /** Orbital/very-high altitude in km: rendered in 3D space above its ground track */
   altitudeKm?: number;
+  /** Orbital payload role: wide relay coverage or a narrow imaging footprint */
+  orbitRole?: 'relay' | 'imaging';
+  /** Timeline time an imaging satellite captures its target */
+  captureAt?: number;
 }
 
 export interface Strike {
@@ -107,6 +111,8 @@ export interface Arrow {
   followRoads?: boolean;
   /** Movement path only: don't draw the arrow on the map */
   hideLine?: boolean;
+  /** Timeline time after which the arrow is no longer drawn */
+  hideAt?: number;
   /** Absolute time (s) for each control point: move between them, holding when two are equal in place */
   times?: number[];
   /** Cached road route [lng, lat] through the control points */
@@ -185,6 +191,8 @@ export interface Keyframe {
   orbitSpeed?: number;
   /** Sensor view applied while this keyframe is active */
   sensor?: SensorView;
+  /** Full-screen image card shown while this keyframe is active */
+  media?: { src: string; caption?: string; credit?: string };
 }
 
 export type SensorView = 'normal' | 'nvg' | 'thermal';
@@ -224,6 +232,12 @@ export interface Environment {
   date?: string;
   /** Local time zone offset from UTC in hours (e.g. 5 for Pakistan) */
   utcOffset?: number;
+  /**
+   * Optional piecewise clock: [timeline seconds, local hours since start day]
+   * pairs (hours may exceed 24), e.g. to cut from night to the next morning.
+   * Overrides the linear start→end mapping.
+   */
+  hourKeys?: [number, number][];
   /** Direction the wind blows toward, compass degrees */
   windDirDeg: number;
   windKph: number;

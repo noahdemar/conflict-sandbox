@@ -178,14 +178,15 @@ person({
 });
 
 // occupants, per the public account
-person({ id: 'occ_courier', name: 'Abu Ahmed al-Kuwaiti', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, -31, -24]], destroyedAt: 46.6 });
-person({ id: 'occ_ground', name: 'Abrar al-Kuwaiti', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 6, 6]], destroyedAt: 55.8 });
-person({ id: 'occ_ground2', name: 'Bushra', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 9, 4]], destroyedAt: 56 });
-person({ id: 'occ_stairs', name: 'Khalid bin Laden', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 12, 12]], destroyedAt: 60.5 });
-person({ id: 'occ_hvt', name: 'Osama bin Laden (unarmed)', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 12, 18]], destroyedAt: 66.6 });
+person({ id: 'occ_courier', leavesAt: 109, name: 'Abu Ahmed al-Kuwaiti', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, -31, -24]], destroyedAt: 46.6 });
+person({ id: 'occ_ground', leavesAt: 109, name: 'Abrar al-Kuwaiti', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 6, 6]], destroyedAt: 55.8 });
+person({ id: 'occ_ground2', leavesAt: 109, name: 'Bushra', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 9, 4]], destroyedAt: 56 });
+person({ id: 'occ_stairs', leavesAt: 109, name: 'Khalid bin Laden', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 12, 12]], destroyedAt: 60.5 });
+person({ id: 'occ_hvt', leavesAt: 109, name: 'Osama bin Laden (unarmed)', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 12, 18]], destroyedAt: 66.6 });
 person({
   id: 'noncombatants',
   name: 'Women and children',
+  leavesAt: 109,
   roster: 'r_noncombatants',
   faction: NC,
   appear: 0,
@@ -199,7 +200,7 @@ person({
 units.push(
   {
     id: 'helo1', factionId: US, type: 'air', name: 'Ghosthawk 1', rosterId: 'r_stealth_hawk',
-    lat: JALALABAD[1], lng: JALALABAD[0], arrowId: 'a_helo1', appearAt: 8, landAtEnd: true, destroyedAt: 96,
+    lat: JALALABAD[1], lng: JALALABAD[0], arrowId: 'a_helo1', appearAt: 8, landAtEnd: true, destroyedAt: 96, leavesAt: 109,
   },
   {
     id: 'helo2', factionId: US, type: 'air', name: 'Ghosthawk 2', rosterId: 'r_stealth_hawk',
@@ -216,6 +217,12 @@ units.push(
   {
     id: 'chinook_exfil', factionId: US, type: 'air', name: 'Chinook 1 (backup)', rosterId: 'r_mh47',
     lat: CHINOOK_LZ[1], lng: CHINOOK_LZ[0], arrowId: 'a_chinook_exfil', appearAt: 98, landAtEnd: true,
+  },
+  {
+    // illustrative: a daylight imaging pass over the site hours after the raid
+    id: 'imager', factionId: US, type: 'air', name: 'Imaging satellite (illustrative)', rosterId: 'r_satellite',
+    lat: C[1], lng: C[0], arrowId: 'a_imager', appearAt: 111, leavesAt: 128, altitudeKm: 500,
+    orbitRole: 'imaging', captureAt: 118.5,
   },
   {
     // illustrative: not in the Wikipedia account; shown to model relay from orbit
@@ -238,18 +245,19 @@ units.push(
 
 arrows.push(
   {
-    id: 'a_helo1', factionId: US, name: 'Ghosthawk 1 ingress', appearAt: 8, duration: 30.3, followRoads: false,
+    id: 'a_helo1', factionId: US, name: 'Ghosthawk 1 ingress', appearAt: 8, duration: 30.3, followRoads: false, hideAt: 109,
     // arrive over the yard, hover and drift in the downwash, then settle hard
     points: [JALALABAD, BORDER_WP, [72.6, 34.12], L(-70, -90), L(10, -16), L(17, -21), L(11, -23), HELO1_LZ],
     times: [8, 14, 27, 33, 35, 36.4, 37.6, 38.3],
   },
-  { id: 'a_helo2', factionId: US, points: [JALALABAD, [71.36, 34.22], [72.62, 34.15], L(120, 110), HELO2_LZ], name: 'Ghosthawk 2 ingress', appearAt: 8.6, duration: 32, followRoads: false },
-  { id: 'a_helo2_exfil', factionId: US, points: [HELO2_LZ, L(-400, 600), [72.6, 34.2], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false },
-  { id: 'a_chinook_in', factionId: US, points: [HOLDING, [72.8, 34.22], L(300, 400), CHINOOK_LZ], name: 'Backup Chinook called in', appearAt: 76, duration: 10, followRoads: false },
-  { id: 'a_chinook_exfil', factionId: US, points: [CHINOOK_LZ, L(600, 900), [72.9, 34.3], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false },
+  { id: 'a_helo2', factionId: US, points: [JALALABAD, [71.36, 34.22], [72.62, 34.15], L(120, 110), HELO2_LZ], name: 'Ghosthawk 2 ingress', appearAt: 8.6, duration: 32, followRoads: false, hideAt: 109 },
+  { id: 'a_helo2_exfil', factionId: US, points: [HELO2_LZ, L(-400, 600), [72.6, 34.2], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false, hideAt: 109 },
+  { id: 'a_chinook_in', factionId: US, points: [HOLDING, [72.8, 34.22], L(300, 400), CHINOOK_LZ], name: 'Backup Chinook called in', appearAt: 76, duration: 10, followRoads: false, hideAt: 109 },
+  { id: 'a_chinook_exfil', factionId: US, points: [CHINOOK_LZ, L(600, 900), [72.9, 34.3], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false, hideAt: 109 },
+  { id: 'a_imager', factionId: US, points: [[66.5, 26.4], [C[0], C[1]], [79.8, 41.8]], times: [111, 118.5, 126], name: 'Imaging pass ground track (illustrative)', appearAt: 111, duration: 15, followRoads: false, hideLine: true },
   { id: 'a_satellite', factionId: US, points: [[64, 24.5], [73.2, 34.2], [83, 43]], times: [8, 21, 34], name: 'Satellite ground track (illustrative)', appearAt: 8, duration: 26, followRoads: false, hideLine: true },
   { id: 'a_mq9', factionId: US, points: [JALALABAD, [71.9, 34.3], L(0, 2500)], name: 'MQ-9 to station', appearAt: 2, duration: 22, followRoads: false, hideLine: true },
-  { id: 'a_chinook2', factionId: US, points: [JALALABAD, [71.4, 34.3], HOLDING], name: 'Backup Chinooks to staging area', appearAt: 11, duration: 9, followRoads: false },
+  { id: 'a_chinook2', factionId: US, points: [JALALABAD, [71.4, 34.3], HOLDING], name: 'Backup Chinooks to staging area', appearAt: 11, duration: 9, followRoads: false, hideAt: 109 },
   { id: 'a_chinook2_exfil', factionId: US, points: [HOLDING, BORDER_WP, JALALABAD], name: 'Return to Jalalabad', appearAt: 99, duration: 9, followRoads: false, hideLine: true },
 );
 
@@ -367,6 +375,16 @@ const keyframes: Keyframe[] = [
   cam('k14b', 101, HELO1_LZ, 17.6, 50, 18, 'Before leaving, the team destroys the damaged Ghosthawk to protect its technology', { sensor: 'nvg' }),
   cam('k15', 104, [72.2, 34.2], 7.2, 20, 0, 'Roughly 38 minutes on target. The force returns to Jalalabad with no American casualties'),
   cam('k16', 108, [71.9, 34.2], 6.2, 0, 0, 'Operation Neptune Spear'),
+  cam('k17', 111, [72.4, 31.6], 4.5, 60, 20, 'Illustrative: later that morning, an imaging satellite passes over Abbottabad'),
+  cam('k18', 116, C, 12.5, 40, 10, 'Illustrative: the satellite images the compound in daylight'),
+  // top-down, north up, compound offset left so the image pane sits beside it
+  cam('k19', 120, L(55, 0), 17.4, 0, 0, 'The compound after the raid, as later seen in satellite imagery', {
+    media: {
+      src: 'media/abbottabad-aftermath.jpg',
+      caption: 'Aftermath imagery of the site',
+      credit: 'Imagery © Google Earth / its data providers',
+    },
+  }),
 ];
 
 export function raidScenario(): Scenario {
@@ -385,6 +403,6 @@ export function raidScenario(): Scenario {
     strikes,
     keyframes,
     effects,
-    environment: { startHour: 23, endHour: 2.6, date: '2011-05-01', utcOffset: 5, windDirDeg: 120, windKph: 6, haze: 0.1 },
+    environment: { startHour: 23, endHour: 2.6, date: '2011-05-01', utcOffset: 5, hourKeys: [[0, 23], [109, 26.6], [110.5, 33.2], [128, 34.4]], windDirDeg: 120, windKph: 6, haze: 0.1 },
   });
 }

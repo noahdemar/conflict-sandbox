@@ -12,7 +12,7 @@ export const DEMOS: {
   scenario: () => Scenario;
 }[] = [
   { id: 'khasham', name: 'Battle of Khasham (2018)', duration: 60, roster: DEMO_ROSTER, scenario: demoScenario },
-  { id: 'binladen-raid', name: 'Bin Laden raid (2011)', duration: 110, roster: RAID_ROSTER, scenario: raidScenario },
+  { id: 'binladen-raid', name: 'Bin Laden raid (2011)', duration: 128, roster: RAID_ROSTER, scenario: raidScenario },
 ];
 
 /** Demo selected by the page URL, e.g. ?demo=binladen-raid */

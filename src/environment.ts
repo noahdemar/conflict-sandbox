@@ -2,10 +2,7 @@ import type { Environment } from './types';
 
 /** Local hour (0..24) at timeline time t. Handles scenarios that cross midnight. */
 export function hourAt(env: Environment, t: number, duration: number): number {
-  let end = env.endHour;
-  if (end < env.startHour) end += 24;
-  const h = env.startHour + (end - env.startHour) * Math.min(1, Math.max(0, t / Math.max(1, duration)));
-  return h % 24;
+  return ((localHoursAbs(env, t, duration) % 24) + 24) % 24;
 }
 
 const smooth = (e0: number, e1: number, x: number) => {
@@ -29,6 +26,16 @@ const RAD = Math.PI / 180;
 
 /** Hours since the scenario's start-of-day in local time, continuous across midnight. */
 function localHoursAbs(env: Environment, t: number, duration: number): number {
+  const keys = env.hourKeys;
+  if (keys && keys.length >= 2) {
+    if (t <= keys[0][0]) return keys[0][1];
+    for (let i = 1; i < keys.length; i++) {
+      const [t1, h1] = keys[i];
+      const [t0, h0] = keys[i - 1];
+      if (t <= t1) return h0 + (h1 - h0) * ((t - t0) / Math.max(0.001, t1 - t0));
+    }
+    return keys[keys.length - 1][1];
+  }
   let end = env.endHour;
   if (end < env.startHour) end += 24;
   return env.startHour + (end - env.startHour) * Math.min(1, Math.max(0, t / Math.max(1, duration)));

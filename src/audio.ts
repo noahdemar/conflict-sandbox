@@ -78,16 +78,11 @@ export function boom(intensity = 1) {
 }
 
 /**
- * Continuous helicopter rotor sound: band-passed noise chopped at the blade
- * passage rate (the "wop-wop"), a low body thump and a faint tail-rotor
- * whine. Driven every frame with a 0..1 level and -1..1 stereo pan.
+ * Continuous helicopter rotor sound: just the blade beats — band-passed noise
+ * chopped at the blade-passage rate. Driven every frame with a 0..1 level and
+ * -1..1 stereo pan.
  */
-let rotor: {
-  out: GainNode;
-  pan: StereoPannerNode;
-  chop: OscillatorNode;
-  whine: OscillatorNode;
-} | null = null;
+let rotor: { out: GainNode; pan: StereoPannerNode; chop: OscillatorNode } | null = null;
 
 function ensureRotor() {
   if (rotor) return rotor;
@@ -102,12 +97,16 @@ function ensureRotor() {
   noise.buffer = buf;
   noise.loop = true;
 
+  // low, soft thud band — no tonal components
   const band = c.createBiquadFilter();
   band.type = 'bandpass';
-  band.frequency.value = 160;
-  band.Q.value = 0.9;
+  band.frequency.value = 110;
+  band.Q.value = 0.7;
+  const soften = c.createBiquadFilter();
+  soften.type = 'lowpass';
+  soften.frequency.value = 380;
 
-  // blade-passage amplitude modulation: sharp slaps via a shaped LFO
+  // blade-passage amplitude modulation: short beats with silence between
   const chopGain = c.createGain();
   chopGain.gain.value = 0;
   const chop = c.createOscillator();
@@ -117,53 +116,29 @@ function ensureRotor() {
   const curve = new Float32Array(256);
   for (let i = 0; i < 256; i++) {
     const x = i / 255; // 0..1 across the saw ramp
-    curve[i] = Math.pow(Math.max(0, 1 - x * 2.2), 3); // quick attack, fast decay
+    curve[i] = Math.pow(Math.max(0, 1 - x * 2.6), 2.5);
   }
   shaper.curve = curve;
   chop.connect(shaper).connect(chopGain.gain);
-  noise.connect(band).connect(chopGain);
-
-  // low body resonance under the slaps
-  const body = c.createBiquadFilter();
-  body.type = 'lowpass';
-  body.frequency.value = 70;
-  const bodyGain = c.createGain();
-  bodyGain.gain.value = 0.9;
-  noise.connect(body).connect(bodyGain);
-
-  // tail-rotor whine
-  const whine = c.createOscillator();
-  whine.type = 'triangle';
-  whine.frequency.value = 420;
-  const whineGain = c.createGain();
-  whineGain.gain.value = 0.035;
-  whine.connect(whineGain);
-
-  const mix = c.createGain();
-  mix.gain.value = 1;
-  chopGain.connect(mix);
-  bodyGain.connect(mix);
-  whineGain.connect(mix);
+  noise.connect(band).connect(soften).connect(chopGain);
 
   const out = c.createGain();
   out.gain.value = 0;
   const pan = c.createStereoPanner();
-  mix.connect(out).connect(pan).connect(masterBus());
+  chopGain.connect(out).connect(pan).connect(masterBus());
 
   noise.start();
   chop.start();
-  whine.start();
-  rotor = { out, pan, chop, whine };
+  rotor = { out, pan, chop };
   return rotor;
 }
 
-/** Set rotor loudness (0..1), stereo position (-1..1) and a small pitch shift for load. */
+/** Set rotor loudness (0..1), stereo position (-1..1) and a small tempo shift for load. */
 export function setRotor(level: number, pan = 0, load = 0) {
   if (level <= 0.001 && !rotor) return;
   const r = ensureRotor();
   const t = audioContext().currentTime;
-  r.out.gain.setTargetAtTime(Math.min(1, Math.max(0, level)) * 0.55, t, 0.12);
+  r.out.gain.setTargetAtTime(Math.min(1, Math.max(0, level)) * 0.9, t, 0.12);
   r.pan.pan.setTargetAtTime(Math.min(1, Math.max(-1, pan)), t, 0.12);
   r.chop.frequency.setTargetAtTime(15 + load * 1.5, t, 0.3);
-  r.whine.frequency.setTargetAtTime(420 + load * 30, t, 0.3);
 }

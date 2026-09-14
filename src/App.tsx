@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MapView from './components/MapView';
 import Toolbar from './components/Toolbar';
 import RosterPanel from './components/RosterPanel';
@@ -114,6 +114,39 @@ function ViewerBar() {
       <button className="top-btn" onClick={openInEditor} title="Save a copy and open it in the editor">
         Open in editor
       </button>
+    </div>
+  );
+}
+
+/** Full-screen image card from the active keyframe (e.g. later satellite imagery). */
+function MediaOverlay() {
+  const media = useStore((s) => {
+    if (!s.playing && !s.cameraLock) return undefined;
+    const active = [...s.scenario.keyframes].sort((a, b) => a.time - b.time).filter((k) => k.time <= s.time).pop();
+    return active?.media;
+  });
+  const [failed, setFailed] = useState<string | null>(null);
+  if (!media) return null;
+  // relative paths resolve against the app's base (works on GitHub Pages)
+  const src = /^(https?:|data:|blob:)/.test(media.src) ? media.src : `${import.meta.env.BASE_URL}${media.src.replace(/^\//, '')}`;
+  return (
+    <div className="media-overlay" key={media.src}>
+      <figure className="media-card">
+        {failed === src ? (
+          <div className="media-missing">
+            Image not found
+            <span>Add the file at public/{media.src.replace(/^\//, '')}</span>
+          </div>
+        ) : (
+          <img src={src} alt={media.caption ?? ''} onError={() => setFailed(src)} />
+        )}
+        {(media.caption || media.credit) && (
+          <figcaption>
+            {media.caption && <span>{media.caption}</span>}
+            {media.credit && <small>{media.credit}</small>}
+          </figcaption>
+        )}
+      </figure>
     </div>
   );
 }
@@ -275,6 +308,7 @@ export default function App() {
       </div>
       <Timeline />
       {sensor !== 'normal' && <SensorOverlay view={sensor} />}
+      <MediaOverlay />
       <CaptionOverlay />
       {viewer && <ViewerBar />}
       <TacticalHud />

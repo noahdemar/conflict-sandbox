@@ -662,7 +662,7 @@ export default function MapView() {
       const headFeats: GeoJSON.Feature[] = [];
       for (const a of st.scenario.arrows) {
         const path = arrowPath(a);
-        if (a.hideLine) continue;
+        if (a.hideLine || (a.hideAt !== undefined && st.time >= a.hideAt)) continue;
         const flyer = st.scenario.units.find((u) => u.arrowId === a.id && u.type === 'air');
         const prog =
           a.times && a.times.length === a.points.length
@@ -2209,7 +2209,21 @@ export default function MapView() {
               nm.gapSize = 6 * pxToMerc;
               nm.opacity = 0.45;
               // coverage cone to a ground footprint (~horizon-limited, illustrative radius)
-              const footKm = Math.min(420, u.altitudeKm * 0.8);
+              const imaging = u.orbitRole === 'imaging';
+              // relay: wide coverage; imaging: a narrow footprint on the target
+              const footKm = imaging ? 14 : Math.min(420, u.altitudeKm * 0.8);
+              (o.cone.material as THREE.MeshBasicMaterial).color.set(imaging ? 0xffc46a : 0x7fc8ff);
+              (o.cone.material as THREE.MeshBasicMaterial).opacity = imaging ? 0.14 : 0.06;
+              (o.ring.material as THREE.LineBasicMaterial).color.set(imaging ? 0xffd08a : 0x9fd6ff);
+              // capture: a brief white flash filling the footprint
+              if (imaging && u.captureAt !== undefined) {
+                const age = st.time - u.captureAt;
+                if (age >= 0 && age < 0.9) {
+                  const k = 1 - age / 0.9;
+                  const mG = maplibregl.MercatorCoordinate.fromLngLat({ lng: pose.point[0], lat: pose.point[1] }).meterInMercatorCoordinateUnits();
+                  particles.fire.push(ground.x, ground.y, ground.z, footKm * 2000 * mG * (0.6 + 0.4 * (1 - k)), 1, 1, 0.95, 0.8 * k, 7);
+                }
+              }
               const ringPts = circlePolygon(pose.point, footKm).map((p) => {
                 const m3 = merc(p[0], p[1], 0);
                 return new THREE.Vector3(m3.x, m3.y, m3.z);
@@ -2228,7 +2242,7 @@ export default function MapView() {
                 o.label.style.transform = `translate(${sp.x.toFixed(1)}px, ${(sp.y - 34).toFixed(1)}px) translate(-50%, -100%)`;
                 if (o.label.dataset.name !== u.name) {
                   o.label.dataset.name = u.name;
-                  o.label.innerHTML = `<strong></strong><span>${u.altitudeKm.toFixed(0)} km · low Earth orbit</span>`;
+                  o.label.innerHTML = `<strong></strong><span>${u.altitudeKm.toFixed(0)} km · low Earth orbit${u.orbitRole === 'imaging' ? ' · imaging pass' : ''}</span>`;
                   o.label.querySelector('strong')!.textContent = u.name;
                 }
               } else {
