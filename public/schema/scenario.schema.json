@@ -1,0 +1,766 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://noahdemar.github.io/conflict-sandbox/schema/scenario.schema.json",
+  "title": "Conflict Sandbox scenario",
+  "description": "A battle-map scenario for Conflict Sandbox. Either a bare Scenario object, or the exported file wrapper {format, version, duration, roster, scenario}. Times are timeline seconds; coordinates are [longitude, latitude] or {lat, lng}.",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/ScenarioFile"
+    },
+    {
+      "$ref": "#/definitions/Scenario"
+    }
+  ],
+  "definitions": {
+    "Faction": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "affiliation": {
+          "$ref": "#/definitions/Affiliation",
+          "description": "Symbol frame shape; inferred from faction order/name when unset"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "color"
+      ],
+      "additionalProperties": false
+    },
+    "Affiliation": {
+      "type": "string",
+      "enum": [
+        "friend",
+        "hostile",
+        "neutral",
+        "unknown"
+      ]
+    },
+    "Unit": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "factionId": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/UnitType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "arrowId": {
+          "type": "string",
+          "description": "Arrow id this unit advances along during playback"
+        },
+        "rosterId": {
+          "type": "string",
+          "description": "Roster entry this unit was placed from (enables custom 3D assets)"
+        },
+        "heading": {
+          "type": "number",
+          "description": "Facing direction in degrees when not following an arrow"
+        },
+        "rangeKm": {
+          "type": "number",
+          "description": "Weapon/sensor range ring in km; 0/undefined = none"
+        },
+        "appearAt": {
+          "type": "number",
+          "description": "Seconds on the timeline when the unit appears"
+        },
+        "destroyedAt": {
+          "type": "number",
+          "description": "Seconds on the timeline when the unit is destroyed (becomes a burning wreck)"
+        },
+        "sensorKm": {
+          "type": "number",
+          "description": "Observation/sensor range in km: draws a terrain-aware line-of-sight area"
+        },
+        "airDefenseKm": {
+          "type": "number",
+          "description": "Air-defense engagement range in km: draws an envelope that reacts to enemy aircraft"
+        },
+        "landAtEnd": {
+          "type": "boolean",
+          "description": "Aircraft sets down at the end of its route instead of loitering"
+        },
+        "leavesAt": {
+          "type": "number",
+          "description": "Seconds on the timeline when the unit leaves the scene (e.g. boards an aircraft)"
+        },
+        "altitudeKm": {
+          "type": "number",
+          "description": "Orbital/very-high altitude in km: rendered in 3D space above its ground track"
+        },
+        "orbitRole": {
+          "type": "string",
+          "enum": [
+            "relay",
+            "imaging"
+          ],
+          "description": "Orbital payload role: wide relay coverage or a narrow imaging footprint"
+        },
+        "captureAt": {
+          "type": "number",
+          "description": "Timeline time an imaging satellite captures its target"
+        }
+      },
+      "required": [
+        "id",
+        "factionId",
+        "type",
+        "name",
+        "lat",
+        "lng",
+        "appearAt"
+      ],
+      "additionalProperties": false
+    },
+    "UnitType": {
+      "type": "string",
+      "enum": [
+        "infantry",
+        "armor",
+        "artillery",
+        "air",
+        "naval",
+        "missile",
+        "hq"
+      ]
+    },
+    "Arrow": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "factionId": {
+          "type": "string"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "[lng, lat] control points"
+        },
+        "name": {
+          "type": "string"
+        },
+        "appearAt": {
+          "type": "number"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Seconds the arrow takes to fully draw"
+        },
+        "followRoads": {
+          "type": "boolean",
+          "description": "Snap ground units on this arrow to real roads (default true)"
+        },
+        "hideLine": {
+          "type": "boolean",
+          "description": "Movement path only: don't draw the arrow on the map"
+        },
+        "hideAt": {
+          "type": "number",
+          "description": "Timeline time after which the arrow is no longer drawn"
+        },
+        "times": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Absolute time (s) for each control point: move between them, holding when two are equal in place"
+        },
+        "route": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "Cached road route [lng, lat] through the control points"
+        },
+        "routeKey": {
+          "type": "string",
+          "description": "Control-point signature the cached route was computed for"
+        }
+      },
+      "required": [
+        "id",
+        "factionId",
+        "points",
+        "name",
+        "appearAt",
+        "duration"
+      ],
+      "additionalProperties": false
+    },
+    "Territory": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "factionId": {
+          "type": "string"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "[lng, lat] ring"
+        },
+        "name": {
+          "type": "string"
+        },
+        "appearAt": {
+          "type": "number"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Seconds the fill takes to fade in"
+        },
+        "label": {
+          "type": "string",
+          "description": "Large watermark text drawn across the territory (e.g. \"SDF\")"
+        },
+        "labelAt": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Watermark position [lng, lat]; defaults to the polygon centroid"
+        },
+        "labelRotate": {
+          "type": "number",
+          "description": "Watermark rotation in degrees"
+        }
+      },
+      "required": [
+        "id",
+        "factionId",
+        "points",
+        "name",
+        "appearAt",
+        "duration"
+      ],
+      "additionalProperties": false
+    },
+    "MapLabel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "size": {
+          "type": "number"
+        },
+        "color": {
+          "type": "string"
+        },
+        "appearAt": {
+          "type": "number"
+        },
+        "flag": {
+          "type": "string",
+          "description": "ISO 3166 country code: render a flag sticker instead of plain text"
+        },
+        "facility": {
+          "$ref": "#/definitions/FacilityKind",
+          "description": "Render as a facility marker (icon sticker + caption)"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "lat",
+        "lng",
+        "size",
+        "color",
+        "appearAt"
+      ],
+      "additionalProperties": false
+    },
+    "FacilityKind": {
+      "type": "string",
+      "enum": [
+        "oil",
+        "gas",
+        "refinery",
+        "airbase",
+        "port",
+        "power",
+        "base",
+        "hq",
+        "bridge",
+        "hospital",
+        "town"
+      ],
+      "description": "Facility kinds a map label can be shown as. Icons are 24x24 stroke SVG bodies."
+    },
+    "Strike": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "size": {
+          "type": "number",
+          "description": "Explosion visual scale multiplier"
+        },
+        "appearAt": {
+          "type": "number"
+        },
+        "fromUnitId": {
+          "type": "string",
+          "description": "Unit the missile launches from; ballistic arc is rendered in flight"
+        },
+        "launchAt": {
+          "type": "number",
+          "description": "Launch time (s); defaults to appearAt - 3"
+        },
+        "targetStrikeId": {
+          "type": "string",
+          "description": "Target strike id for interceptor strikes"
+        },
+        "targetUnitId": {
+          "type": "string",
+          "description": "Unit being hit: impact follows that unit's position at detonation time"
+        },
+        "salvo": {
+          "type": "number",
+          "description": "Number of rounds in a salvo (gunship/artillery); impacts scatter around the aim point"
+        },
+        "spreadM": {
+          "type": "number",
+          "description": "Salvo scatter radius in meters (default 120)"
+        }
+      },
+      "required": [
+        "id",
+        "lat",
+        "lng",
+        "name",
+        "size",
+        "appearAt"
+      ],
+      "additionalProperties": false
+    },
+    "Keyframe": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "time": {
+          "type": "number",
+          "description": "Seconds on the timeline"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "zoom": {
+          "type": "number"
+        },
+        "pitch": {
+          "type": "number",
+          "description": "Camera tilt in degrees (0 = top-down)"
+        },
+        "bearing": {
+          "type": "number",
+          "description": "Camera rotation in degrees"
+        },
+        "caption": {
+          "type": "string",
+          "description": "Slide-style caption shown while this keyframe is active"
+        },
+        "followUnitId": {
+          "type": "string",
+          "description": "Camera tracks this unit while the keyframe is active"
+        },
+        "followMode": {
+          "type": "string",
+          "enum": [
+            "track",
+            "chase"
+          ],
+          "description": "'track' keeps unit centered; 'chase' also turns camera to unit heading"
+        },
+        "orbitSpeed": {
+          "type": "number",
+          "description": "Camera orbit speed in deg/s while this keyframe is active"
+        },
+        "sensor": {
+          "$ref": "#/definitions/SensorView",
+          "description": "Sensor view applied while this keyframe is active"
+        },
+        "media": {
+          "type": "object",
+          "properties": {
+            "src": {
+              "type": "string"
+            },
+            "caption": {
+              "type": "string"
+            },
+            "credit": {
+              "type": "string"
+            },
+            "anchor": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Place the image beside this map point instead of at the screen edge"
+            },
+            "anchorRadiusM": {
+              "type": "number",
+              "description": "Half-width of the site at the anchor in meters, so the image clears it"
+            }
+          },
+          "required": [
+            "src"
+          ],
+          "additionalProperties": false,
+          "description": "Full-screen image card shown while this keyframe is active"
+        }
+      },
+      "required": [
+        "id",
+        "time",
+        "lng",
+        "lat",
+        "zoom",
+        "pitch",
+        "bearing",
+        "caption"
+      ],
+      "additionalProperties": false
+    },
+    "SensorView": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "nvg",
+        "thermal"
+      ]
+    },
+    "StatusEffect": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/StatusKind"
+        },
+        "unitId": {
+          "type": "string"
+        },
+        "targetUnitId": {
+          "type": "string",
+          "description": "Other end of a datalink"
+        },
+        "start": {
+          "type": "number",
+          "description": "Seconds on the timeline when the effect starts"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Seconds it lasts"
+        },
+        "radiusM": {
+          "type": "number",
+          "description": "Jamming radius in meters"
+        },
+        "label": {
+          "type": "string",
+          "description": "Custom badge text (defaults per kind)"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "unitId",
+        "start",
+        "duration"
+      ],
+      "additionalProperties": false,
+      "description": "A timed status/activity shown on a unit (radio call, jamming, panic…)."
+    },
+    "StatusKind": {
+      "type": "string",
+      "enum": [
+        "radio",
+        "datalink",
+        "jamming",
+        "panic",
+        "wounded",
+        "noammo"
+      ]
+    },
+    "Environment": {
+      "type": "object",
+      "properties": {
+        "startHour": {
+          "type": "number",
+          "description": "Local hour (0-24) at timeline start"
+        },
+        "endHour": {
+          "type": "number",
+          "description": "Local hour at timeline end; may be less than start to cross midnight"
+        },
+        "date": {
+          "type": "string",
+          "description": "Calendar date at timeline start (YYYY-MM-DD) for sun position"
+        },
+        "utcOffset": {
+          "type": "number",
+          "description": "Local time zone offset from UTC in hours (e.g. 5 for Pakistan)"
+        },
+        "hourKeys": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "Optional piecewise clock: [timeline seconds, local hours since start day] pairs (hours may exceed 24), e.g. to cut from night to the next morning. Overrides the linear start→end mapping."
+        },
+        "windDirDeg": {
+          "type": "number",
+          "description": "Direction the wind blows toward, compass degrees"
+        },
+        "windKph": {
+          "type": "number"
+        },
+        "haze": {
+          "type": "number",
+          "description": "Dust/haze density 0..1"
+        }
+      },
+      "required": [
+        "startHour",
+        "endHour",
+        "windDirDeg",
+        "windKph",
+        "haze"
+      ],
+      "additionalProperties": false,
+      "description": "Lighting and weather over the scenario timeline."
+    },
+    "Scenario": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "factions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Faction"
+          }
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Unit"
+          }
+        },
+        "arrows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Arrow"
+          }
+        },
+        "territories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Territory"
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MapLabel"
+          }
+        },
+        "strikes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Strike"
+          }
+        },
+        "keyframes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Keyframe"
+          }
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StatusEffect"
+          },
+          "description": "Unit status effects; optional for older scenarios"
+        },
+        "environment": {
+          "$ref": "#/definitions/Environment",
+          "description": "Lighting & weather; optional (defaults to midday, calm, clear)"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Timeline length in seconds (defaults to 60)"
+        },
+        "narrationPack": {
+          "type": "string",
+          "description": "Folder of pre-recorded caption narration (with manifest.json), relative to the site base"
+        }
+      },
+      "required": [
+        "name",
+        "factions",
+        "units",
+        "arrows",
+        "territories",
+        "labels",
+        "strikes",
+        "keyframes"
+      ],
+      "additionalProperties": false
+    },
+    "RosterEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "Also drives the unit silhouette, e.g. \"T-72 Tank\", \"AH-64 Apache\", \"MQ-9 Reaper\"."
+        },
+        "type": {
+          "$ref": "#/definitions/UnitType"
+        },
+        "faction": {
+          "type": "string"
+        },
+        "modelUrl": {
+          "type": "string"
+        },
+        "modelYaw": {
+          "type": "number"
+        },
+        "rangeKm": {
+          "type": "number"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "wikiTitle": {
+          "type": "string"
+        }
+      }
+    },
+    "ScenarioFile": {
+      "type": "object",
+      "required": [
+        "format",
+        "scenario"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "conflict-sandbox-scenario"
+        },
+        "version": {
+          "type": "number"
+        },
+        "exportedAt": {
+          "type": "string"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Timeline length in seconds."
+        },
+        "roster": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RosterEntry"
+          }
+        },
+        "scenario": {
+          "$ref": "#/definitions/Scenario"
+        }
+      }
+    }
+  }
+}

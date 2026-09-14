@@ -1,0 +1,158 @@
+# Conflict Sandbox — scenario authoring guide for LLMs
+
+Conflict Sandbox (https://noahdemar.github.io/conflict-sandbox/) is a browser tool
+that plays animated, narrated battle-map scenarios: units moving on real roads,
+strikes with ballistic arcs and explosions, status effects, sensor views, lighting
+by real sun position, and a scripted camera with captions.
+
+A scenario is a single JSON document. To make one, produce JSON that validates
+against the schema, then load it in the app (see "Loading" below).
+
+- JSON Schema: https://noahdemar.github.io/conflict-sandbox/schema/scenario.schema.json
+- Complete example: https://noahdemar.github.io/conflict-sandbox/examples/river-crossing.json
+
+Output ONLY the JSON document when asked for a scenario — no prose, no comments,
+no trailing commas.
+
+## Top-level shape
+
+Use the exported file wrapper (recommended):
+
+{
+  "format": "conflict-sandbox-scenario",
+  "version": 1,
+  "duration": 60,                // timeline length in seconds
+  "roster": [ ...RosterEntry ],  // optional; gives units better silhouettes
+  "scenario": { ...Scenario }
+}
+
+A bare Scenario object is also accepted.
+
+Scenario keys: name, factions, units, arrows, territories, labels, strikes,
+keyframes (all required arrays except name), plus optional effects,
+environment, duration.
+
+## Conventions that matter
+
+- TIME is timeline seconds from 0 to `duration`. Every event has a time
+  (appearAt, destroyedAt, launchAt, start, keyframe time...). Keep all times
+  within the duration.
+- COORDINATE ORDER: `points` arrays are [longitude, latitude]. Units and
+  labels use separate `lat` and `lng` fields. Do not swap them.
+- IDS must be unique within their list; references (factionId, arrowId,
+  fromUnitId, targetUnitId, unitId, targetUnitId, followUnitId, rosterId)
+  must point at existing ids.
+- Keep each camera shot (gap between keyframes) at least as long as its caption
+  takes to read aloud: roughly 1 second per 2.5 words, plus half a second.
+- Be factual for real events and mark anything invented or approximate in the
+  caption or name, e.g. "(approx.)", "Illustrative:", "Hypothetical:".
+
+## Factions
+
+{ "id": "f_blue", "name": "Blue", "color": "#3a6fc0", "affiliation": "friend" }
+
+affiliation: friend | hostile | neutral | unknown. It sets military symbol frame
+shape, air-defense targeting and thermal colouring (hostiles glow red).
+
+## Units
+
+Required: id, factionId, type, name, lat, lng, appearAt.
+type: infantry | armor | artillery | air | naval | missile | hq.
+
+The icon silhouette is picked from the unit name (and roster name), so name
+things concretely: "T-72", "BMP-1", "Technical", "D-30 howitzer", "BM-21 Grad",
+"HIMARS", "F-15E", "AH-64", "MQ-9 Reaper", "B-52", "AC-130J", "Chinook",
+"Operator 1-1" (a single person), "K9 team", "Imaging satellite".
+
+Optional:
+- heading (degrees), arrowId (follow a route), destroyedAt, leavesAt (removed
+  from the scene, e.g. boarding), rangeKm (range ring)
+- sensorKm: terrain-aware line-of-sight area for ground units
+- airDefenseKm: engagement envelope that turns red when enemy aircraft enter
+- landAtEnd (aircraft set down at route end instead of loitering)
+- altitudeKm (+ orbitRole "relay" | "imaging", captureAt): renders a satellite
+  in 3D at that altitude above its ground track
+
+Aircraft without landAtEnd circle over the end of their route. Ground vehicles
+sharing one route queue and halt in line automatically.
+
+## Arrows (routes)
+
+Required: id, factionId, points ([lng, lat] list), name, appearAt, duration
+(seconds to traverse). A unit follows a route by `arrowId`.
+
+- Ground units snap to real roads by default (followRoads: false to disable).
+- hideLine: true = move along the path without drawing an arrow (good for
+  individual people).
+- times: one absolute time per point for precise pacing with holds
+  (repeat a point with a later time to wait there). Overrides duration pacing.
+- hideAt: stop drawing the arrow after this time.
+
+## Strikes
+
+Required: id, lat, lng, name, size (0.1 small arms … 1.5 large bomb), appearAt
+(impact time).
+
+The visual is chosen from `name`:
+- guns: "30mm", "chain gun", "cannon", "rifle", "small arms" → tracers, sparks
+- bombs: "JDAM", "GBU", "Mk 82", "bomb" → dropped, big fireball, smoke column
+- shells: "howitzer", "105mm", "mortar", "fire mission" → arcing round, dirt
+- anything else → missile/rocket with motor glow and smoke trail
+
+Optional: fromUnitId + launchAt (fly from that unit), targetUnitId (impact
+follows that unit's position at impact time — use this for moving targets),
+salvo + spreadM (multiple rounds), targetStrikeId (interceptor).
+
+Pair a destroyed unit's destroyedAt with the impact time of the strike that
+hits it.
+
+## Status effects (`effects`)
+
+{ "id": "fx1", "kind": "radio", "unitId": "u_def", "start": 8, "duration": 4, "label": "CALLING FIRES" }
+
+kind: radio | datalink (needs targetUnitId) | jamming (radiusM) | panic |
+wounded (crippled, smoking) | noammo.
+
+## Territories and labels
+
+Territory: id, factionId, points ([lng, lat] ring), name, appearAt, duration
+(fade-in). Optional `label` draws large faint text across it.
+
+Label: id, text, lat, lng, size, color, appearAt. Optional `flag` (ISO country
+code, e.g. "us") or `facility`: oil | gas | refinery | airbase | port | power |
+base | hq | bridge | hospital | town.
+
+## Camera, captions and sensor views (`keyframes`)
+
+{ "id": "k1", "time": 0, "lng": 35.05, "lat": 48.45, "zoom": 12, "pitch": 0,
+  "bearing": 0, "caption": "Opening line" }
+
+- zoom: ~4 region, ~9 city, ~13 neighbourhood, ~17–19 individual buildings.
+- pitch 0 = top-down; 45–65 for cinematic angles.
+- followUnitId + followMode "track" keeps a unit centred; orbitSpeed rotates.
+- sensor: "nvg" (night vision) or "thermal" for that shot.
+- media: { src, caption, credit, anchor: [lng, lat], anchorRadiusM } shows an
+  image beside a site (src must be a URL the site can load).
+- Captions are narrated automatically during playback.
+
+## Environment (optional)
+
+{ "startHour": 21.5, "endHour": 5.9, "date": "2018-02-07", "utcOffset": 3,
+  "windDirDeg": 65, "windKph": 14, "haze": 0.15 }
+
+Lighting follows the real sun for that date, time and place (night, dawn,
+twilight bands at world scale). endHour may be less than startHour to cross
+midnight. hourKeys: [[seconds, localHours], …] makes the clock jump (hours may
+exceed 24, e.g. a cut to the next morning). Wind steers smoke.
+
+## Loading
+
+1. In the editor: Import → paste JSON (validated with exact error messages)
+   or choose a .json file.
+2. By URL: https://noahdemar.github.io/conflict-sandbox/?scenario=<URL of a
+   publicly readable JSON file that allows cross-origin requests>
+   (e.g. a GitHub Gist "raw" link).
+3. Share → copy a view or edit link to send the loaded scenario to others.
+
+If validation fails, fix exactly the paths reported (e.g.
+"/scenario/units/3/lat must be number") and resend the whole document.

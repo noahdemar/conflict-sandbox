@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import ShareDialog from './ShareDialog';
+import ImportDialog from './ImportDialog';
 import { DEMOS, type DemoId } from '../demos';
 import {
   FileText,
@@ -18,7 +19,6 @@ export default function TopBar() {
   const name = useStore((s) => s.scenario.name);
   const setScenarioName = useStore((s) => s.setScenarioName);
   const exportScenario = useStore((s) => s.exportScenario);
-  const importScenario = useStore((s) => s.importScenario);
   const newScenario = useStore((s) => s.newScenario);
   const loadDemo = useStore((s) => s.loadDemo);
   const globeMode = useStore((s) => s.globeMode);
@@ -29,8 +29,8 @@ export default function TopBar() {
   const iconStyle = useStore((s) => s.iconStyle);
   const setIconStyle = useStore((s) => s.setIconStyle);
   const setUse3d = useStore((s) => s.setUse3d);
-  const fileRef = useRef<HTMLInputElement>(null);
   const [sharing, setSharing] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const doExport = () => {
     const blob = new Blob([exportScenario()], { type: 'application/json' });
@@ -42,11 +42,6 @@ export default function TopBar() {
     URL.revokeObjectURL(url);
   };
 
-  const doImport = (file: File) => {
-    file.text().then((txt) => {
-      if (!importScenario(txt)) alert('Could not import: invalid scenario file.');
-    });
-  };
 
   return (
     <div className="panel topbar">
@@ -120,27 +115,13 @@ export default function TopBar() {
           <Download size={14} />
           Export
         </button>
-        <button
-          className="top-btn"
-          onClick={() => fileRef.current?.click()}
-          title="Import scenario JSON"
-        >
+        <button className="top-btn" onClick={() => setImporting(true)} title="Import scenario JSON (paste or file)">
           <Upload size={14} />
           Import
         </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) doImport(f);
-            e.target.value = '';
-          }}
-        />
       </div>
       {sharing && <ShareDialog onClose={() => setSharing(false)} />}
+      {importing && <ImportDialog onClose={() => setImporting(false)} />}
     </div>
   );
 }

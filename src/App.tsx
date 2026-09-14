@@ -13,6 +13,7 @@ import { expandStrikes } from './particles';
 import { startRouting } from './routing';
 import { clearShareHash, readShareLink } from './share';
 import { demoFromUrl } from './demos';
+import { validateScenarioJson } from './scenarioValidation';
 import { lossesByFaction } from './combat';
 import { hourAt } from './environment';
 import EnvironmentPanel from './components/EnvironmentPanel';
@@ -307,6 +308,23 @@ export default function App() {
   useEffect(() => {
     readShareLink().then((shared) => {
       if (!shared) {
+        // ?scenario=<url>: load a hosted scenario JSON (validated) into the read-only player
+        const remote = new URLSearchParams(window.location.search).get('scenario');
+        if (remote) {
+          fetch(remote)
+            .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
+            .then(async (json) => {
+              const { ok, errors } = await validateScenarioJson(json);
+              if (!ok) throw new Error(`invalid scenario:\n${errors.slice(0, 8).join('\n')}`);
+              const st = useStore.getState();
+              if (st.importScenario(json, { persist: false })) {
+                st.setViewer(true);
+                st.setCameraLock(true);
+              }
+            })
+            .catch((e) => alert(`Could not load scenario from URL.\n${(e as Error).message}`));
+          return;
+        }
         const demo = demoFromUrl();
         if (demo) {
           const st = useStore.getState();
