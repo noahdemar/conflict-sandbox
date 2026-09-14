@@ -118,7 +118,7 @@ function ViewerBar() {
   );
 }
 
-/** Full-screen image card from the active keyframe (e.g. later satellite imagery). */
+/** Image pulled up beside a map site from the active keyframe (e.g. later satellite imagery). */
 function MediaOverlay() {
   const media = useStore((s) => {
     if (!s.playing && !s.cameraLock) return undefined;
@@ -126,11 +126,44 @@ function MediaOverlay() {
     return active?.media;
   });
   const [failed, setFailed] = useState<string | null>(null);
+  const [place, setPlace] = useState<{ left: number; top: number; side: 'right' | 'left' } | null>(null);
+
+  // keep the image docked beside its site as the camera settles or moves
+  useEffect(() => {
+    if (!media?.anchor) {
+      setPlace(null);
+      return;
+    }
+    let raf = 0;
+    const tick = () => {
+      const api = useStore.getState().mapApi;
+      if (api) {
+        const r = media.anchorRadiusM ?? 60;
+        const p = api.project(media.anchor!, r);
+        const gap = r * p.pxPerMeter + 24;
+        const roomRight = p.width - (p.x + gap);
+        const side = roomRight >= Math.min(460, p.width * 0.4) + 16 ? 'right' : 'left';
+        setPlace((prev) => {
+          const next = { left: side === 'right' ? p.x + gap : p.x - gap, top: p.y, side } as const;
+          return prev && Math.abs(prev.left - next.left) < 0.5 && Math.abs(prev.top - next.top) < 0.5 && prev.side === side
+            ? prev
+            : next;
+        });
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [media]);
+
   if (!media) return null;
   // relative paths resolve against the app's base (works on GitHub Pages)
   const src = /^(https?:|data:|blob:)/.test(media.src) ? media.src : `${import.meta.env.BASE_URL}${media.src.replace(/^\//, '')}`;
+  const style: React.CSSProperties | undefined = place
+    ? { left: place.left, top: place.top, translate: place.side === 'right' ? '0 -50%' : '-100% -50%' }
+    : undefined;
   return (
-    <div className="media-overlay" key={media.src}>
+    <div className={`media-overlay ${place ? 'anchored' : ''}`} style={style} key={media.src}>
       <figure className="media-card">
         {failed === src ? (
           <div className="media-missing">

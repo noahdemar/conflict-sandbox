@@ -2330,3 +2330,40 @@ input[type='color'] {
     height: 38vh;
   }
 }
+
+
+/* anchored beside a map site; card hugs the image (no letterboxing) */
+.media-overlay.anchored {
+  right: auto;
+  bottom: auto;
+  width: auto;
+  display: block;
+}
+
+.media-overlay.anchored .media-card {
+  width: auto;
+}
+
+.media-card {
+  width: fit-content;
+  max-width: min(42vw, 460px);
+}
+
+.media-card img {
+  width: auto;
+  height: auto;
+  max-width: min(42vw, 460px);
+  max-height: min(58vh, 520px);
+  object-fit: contain;
+  background: none;
+}
+
+@media (max-width: 760px) {
+  .media-card,
+  .media-card img {
+    max-width: 44vw;
+  }
+  .media-card img {
+    max-height: 40vh;
+  }
+}

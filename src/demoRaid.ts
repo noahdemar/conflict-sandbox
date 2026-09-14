@@ -369,8 +369,11 @@ const keyframes: Keyframe[] = [
   cam('k17b', 116, [72.9, 32.6], 4.9, 58, 20, 'The morning after, a satellite captures the aftermath on Google Earth'),
   cam('k18', 118, C, 9.5, 0, 0, 'The satellite images the compound in daylight'),
   // top-down, north up, compound offset left so the image pane sits beside it
-  cam('k19', 120, L(55, 0), 17.4, 0, 0, 'The compound the morning after the raid, from satellite imagery', {
+  // Google Earth capture is north-up within ~3° (measured from road/field lines); match it
+  cam('k19', 120, L(-70, 0), 17.4, 0, -3, 'The compound the morning after the raid, from satellite imagery', {
     media: {
+      anchor: C,
+      anchorRadiusM: 55,
       src: 'media/abbottabad-aftermath.webp',
       caption: 'Aftermath imagery of the site',
       credit: 'Imagery © Google Earth / its data providers',

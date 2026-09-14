@@ -24,6 +24,11 @@ export interface MapApi {
   flyTo: (pose: CameraPose) => void;
   /** Sweep the keyframe camera path to preload all tiles before recording */
   warmup: () => Promise<void>;
+  /** Screen position of a map point; pxPerMeter measured over `meters` eastward */
+  project: (
+    lngLat: [number, number],
+    meters?: number,
+  ) => { x: number; y: number; pxPerMeter: number; width: number; height: number };
   /** Loudest nearby helicopter right now: level 0..1, stereo pan -1..1, load 0..1 */
   rotorMix: () => { level: number; pan: number; load: number };
 }

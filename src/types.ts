@@ -192,7 +192,15 @@ export interface Keyframe {
   /** Sensor view applied while this keyframe is active */
   sensor?: SensorView;
   /** Full-screen image card shown while this keyframe is active */
-  media?: { src: string; caption?: string; credit?: string };
+  media?: {
+    src: string;
+    caption?: string;
+    credit?: string;
+    /** Place the image beside this map point instead of at the screen edge */
+    anchor?: [number, number];
+    /** Half-width of the site at the anchor in meters, so the image clears it */
+    anchorRadiusM?: number;
+  };
 }
 
 export type SensorView = 'normal' | 'nvg' | 'thermal';

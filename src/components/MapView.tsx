@@ -575,7 +575,11 @@ export default function MapView() {
             !x.targetStrikeId &&
             !interceptorFor(st, x) &&
             // small-arms rounds leave no crater
-            !(weaponKind(x.name) === 'gun' && x.size < 0.2)
+            !(weaponKind(x.name) === 'gun' && x.size < 0.2) &&
+            // a crater on a target that has since been cleared from the scene is gone too
+            !st.scenario.units.some(
+              (u) => u.id === x.targetUnitId && u.leavesAt !== undefined && st.time >= u.leavesAt,
+            )
           ) {
             feats.push({
               type: 'Feature',
@@ -2316,6 +2320,13 @@ export default function MapView() {
     });
 
     useStore.getState().setMapApi({
+      project: (lngLat, altitudeM = 0) => {
+        const p = map.project({ lng: lngLat[0], lat: lngLat[1] });
+        const w = map.getCanvas().clientWidth;
+        // meters → screen pixels at this point (for sizing things placed beside a site)
+        const q = map.project({ lng: lngLat[0] + altitudeM / (111320 * Math.cos((lngLat[1] * Math.PI) / 180)), lat: lngLat[1] });
+        return { x: p.x, y: p.y, pxPerMeter: altitudeM ? Math.abs(q.x - p.x) / altitudeM : 0, width: w, height: map.getCanvas().clientHeight };
+      },
       rotorMix: () => {
         const st = useStore.getState();
         const center = map.getCenter();
