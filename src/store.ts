@@ -45,30 +45,34 @@ const PREFS_KEY = 'conflict-sandbox-prefs-v1';
 interface Prefs {
   use3d: boolean;
   narration: NarrationPrefs;
+  /** Prefs schema version; 2 switched the default narrator to Kokoro "George" */
+  v?: number;
 }
+
+const DEFAULT_NARRATION: NarrationPrefs = { enabled: true, engine: 'kokoro', voice: 'bm_george', rate: 1 };
 
 function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(PREFS_KEY);
     if (raw) {
       const p = JSON.parse(raw) as Partial<Prefs>;
+      // older prefs move to the new default narrator, keeping on/off and speed
+      const migrate = (p.v ?? 1) < 2;
       return {
         use3d: p.use3d ?? true,
         narration: {
           enabled: p.narration?.enabled ?? true,
-          engine: p.narration?.engine === 'kokoro' ? 'kokoro' : 'webspeech',
-          voice: p.narration?.voice ?? null,
+          engine: migrate ? DEFAULT_NARRATION.engine : p.narration?.engine === 'webspeech' ? 'webspeech' : 'kokoro',
+          voice: migrate ? DEFAULT_NARRATION.voice : (p.narration?.voice ?? DEFAULT_NARRATION.voice),
           rate: p.narration?.rate ?? 1,
         },
+        v: 2,
       };
     }
   } catch {
     /* ignore */
   }
-  return {
-    use3d: true,
-    narration: { enabled: true, engine: 'webspeech', voice: null, rate: 1 },
-  };
+  return { use3d: true, narration: { ...DEFAULT_NARRATION }, v: 2 };
 }
 
 export type Look = 'explainer' | 'briefing';
@@ -456,7 +460,7 @@ export const useStore = create<StoreState>((set, get) => {
       try {
         localStorage.setItem(
           PREFS_KEY,
-          JSON.stringify({ use3d, narration: get().narration }),
+          JSON.stringify({ use3d, narration: get().narration, v: 2 }),
         );
       } catch {
         /* ignore */
@@ -468,7 +472,7 @@ export const useStore = create<StoreState>((set, get) => {
       try {
         localStorage.setItem(
           PREFS_KEY,
-          JSON.stringify({ use3d: get().use3d, narration }),
+          JSON.stringify({ use3d: get().use3d, narration, v: 2 }),
         );
       } catch {
         /* ignore */

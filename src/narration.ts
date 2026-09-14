@@ -157,7 +157,7 @@ function playPending() {
 
 function speak(text: string, engine: NarrationEngine, voiceId: string | null, rate: number) {
   if (engine === 'kokoro') {
-    speakKokoro(text, voiceId ?? 'am_michael', rate).catch(() => speakWeb(text, voiceId, rate));
+    speakKokoro(text, voiceId ?? 'bm_george', rate).catch(() => speakWeb(text, null, rate));
   } else {
     speakWeb(text, voiceId, rate);
   }

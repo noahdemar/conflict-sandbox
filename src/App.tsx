@@ -7,7 +7,7 @@ import PropertiesPanel from './components/PropertiesPanel';
 import Timeline from './components/Timeline';
 import TopBar from './components/TopBar';
 import { useStore } from './store';
-import { narrate, stopNarration } from './narration';
+import { narrate, preloadKokoro, stopNarration } from './narration';
 import { boom, setRotor } from './audio';
 import { expandStrikes } from './particles';
 import { startRouting } from './routing';
@@ -254,6 +254,12 @@ export default function App() {
 
   // snap ground movement to real roads
   useEffect(() => startRouting(), []);
+
+  // fetch the narrator's voice model ahead of the first line (player on open, editor on play)
+  useEffect(() => {
+    const n = useStore.getState().narration;
+    if ((viewer || playing) && n.enabled && n.engine === 'kokoro') preloadKokoro();
+  }, [viewer, playing]);
 
   // rotor sound follows the nearest helicopter while the scenario plays
   useEffect(() => {
