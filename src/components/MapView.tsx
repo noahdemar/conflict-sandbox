@@ -667,17 +667,32 @@ export default function MapView() {
       for (const a of st.scenario.arrows) {
         const path = arrowPath(a);
         if (a.hideLine || (a.hideAt !== undefined && st.time >= a.hideAt)) continue;
-        const flyer = st.scenario.units.find((u) => u.arrowId === a.id && u.type === 'air');
-        const prog =
-          a.times && a.times.length === a.points.length
-            ? clamp01((st.time - a.times[0]) / Math.max(0.01, a.times[a.times.length - 1] - a.times[0]))
-            : flyer
-              ? airProgress(flyer, a, path, st.time)
-              : clamp01((st.time - a.appearAt) / a.duration);
-        if (prog <= 0 || a.points.length < 2) continue;
-        const drawn = partialPath(path, Math.max(prog, 0.02));
+        if (a.points.length < 2) continue;
         const color = factionColor(a.factionId);
         const selected = sel?.kind === 'arrow' && sel.id === a.id;
+        // timed routes draw exactly through their waypoints so the head stays on the unit
+        if (a.times && a.times.length === a.points.length) {
+          if (st.time <= a.times[0]) continue;
+          const pose = timedPose(a.points, a.times, st.time);
+          let i = 0;
+          while (i < a.points.length - 1 && st.time >= a.times[i + 1]) i++;
+          const drawnTimed: LngLat[] = [...a.points.slice(0, i + 1), pose.point];
+          lineFeats.push({
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: drawnTimed },
+            properties: { oid: a.id, kind: 'arrow', color, selected },
+          });
+          headFeats.push({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: pose.point },
+            properties: { oid: a.id, kind: 'arrow', color, bearing: pose.bearing, selected },
+          });
+          continue;
+        }
+        const flyer = st.scenario.units.find((u) => u.arrowId === a.id && u.type === 'air');
+        const prog = flyer ? airProgress(flyer, a, path, st.time) : clamp01((st.time - a.appearAt) / a.duration);
+        if (prog <= 0) continue;
+        const drawn = partialPath(path, Math.max(prog, 0.02));
         lineFeats.push({
           type: 'Feature',
           geometry: { type: 'LineString', coordinates: drawn },
