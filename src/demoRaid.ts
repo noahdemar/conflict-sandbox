@@ -380,7 +380,7 @@ const keyframes: Keyframe[] = [
   // top-down, north up, compound offset left so the image pane sits beside it
   cam('k19', 120, L(55, 0), 17.4, 0, 0, 'The compound after the raid, as later seen in satellite imagery', {
     media: {
-      src: 'media/abbottabad-aftermath.jpg',
+      src: 'media/abbottabad-aftermath.webp',
       caption: 'Aftermath imagery of the site',
       credit: 'Imagery © Google Earth / its data providers',
     },
