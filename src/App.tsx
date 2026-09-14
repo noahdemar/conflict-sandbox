@@ -8,10 +8,11 @@ import Timeline from './components/Timeline';
 import TopBar from './components/TopBar';
 import { useStore } from './store';
 import { narrate, stopNarration } from './narration';
-import { boom } from './audio';
+import { boom, setRotor } from './audio';
 import { expandStrikes } from './particles';
 import { startRouting } from './routing';
 import { clearShareHash, readShareLink } from './share';
+import { demoFromUrl } from './demos';
 import { lossesByFaction } from './combat';
 import { hourAt } from './environment';
 import EnvironmentPanel from './components/EnvironmentPanel';
@@ -188,10 +189,38 @@ export default function App() {
   // snap ground movement to real roads
   useEffect(() => startRouting(), []);
 
-  // open scenarios carried in a share link
+  // rotor sound follows the nearest helicopter while the scenario plays
+  useEffect(() => {
+    if (!playing) {
+      setRotor(0);
+      return;
+    }
+    let raf = 0;
+    const tick = () => {
+      const mix = useStore.getState().mapApi?.rotorMix();
+      if (mix) setRotor(mix.level, mix.pan, mix.load);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      setRotor(0);
+    };
+  }, [playing]);
+
+  // open scenarios carried in a share link, or a demo named in the URL (?demo=binladen-raid)
   useEffect(() => {
     readShareLink().then((shared) => {
-      if (!shared) return;
+      if (!shared) {
+        const demo = demoFromUrl();
+        if (demo) {
+          const st = useStore.getState();
+          st.loadDemo(demo, { persist: false });
+          st.setViewer(true);
+          st.setCameraLock(true);
+        }
+        return;
+      }
       const st = useStore.getState();
       if (shared.mode === 'view') {
         if (st.importScenario(shared.json, { persist: false })) {

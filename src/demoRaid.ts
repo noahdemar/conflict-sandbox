@@ -36,6 +36,7 @@ export const RAID_ROSTER: RosterEntry[] = [
   { id: 'r_stealth_hawk', name: 'Ghosthawk (modified stealth helicopter, 160th SOAR)', type: 'air', faction: 'United States', wikiTitle: 'Stealth helicopter' },
   { id: 'r_mh47', name: 'Chinook (backup)', type: 'air', faction: 'United States', wikiTitle: 'Boeing CH-47 Chinook' },
   { id: 'r_mq9', name: 'MQ-9 Reaper', type: 'air', faction: 'United States', wikiTitle: 'General Atomics MQ-9 Reaper' },
+  { id: 'r_satellite', name: 'Communications satellite (illustrative)', type: 'air', faction: 'United States' },
   { id: 'r_occupant', name: 'Compound occupant', type: 'infantry', faction: 'Compound occupants' },
   { id: 'r_noncombatants', name: 'Non-combatants (women and children)', type: 'infantry', faction: 'Non-combatants' },
 ];
@@ -217,6 +218,11 @@ units.push(
     lat: CHINOOK_LZ[1], lng: CHINOOK_LZ[0], arrowId: 'a_chinook_exfil', appearAt: 98, landAtEnd: true,
   },
   {
+    // illustrative: not in the Wikipedia account; shown to model relay from orbit
+    id: 'satellite', factionId: US, type: 'air', name: 'Relay satellite (illustrative)', rosterId: 'r_satellite',
+    lat: 26, lng: 66, arrowId: 'a_satellite', appearAt: 8, leavesAt: 34, altitudeKm: 520,
+  },
+  {
     id: 'mq9', factionId: US, type: 'air', name: 'MQ-9 Reaper', rosterId: 'r_mq9',
     lat: JALALABAD[1], lng: JALALABAD[0], arrowId: 'a_mq9', appearAt: 2,
   },
@@ -241,6 +247,7 @@ arrows.push(
   { id: 'a_helo2_exfil', factionId: US, points: [HELO2_LZ, L(-400, 600), [72.6, 34.2], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false },
   { id: 'a_chinook_in', factionId: US, points: [HOLDING, [72.8, 34.22], L(300, 400), CHINOOK_LZ], name: 'Backup Chinook called in', appearAt: 76, duration: 10, followRoads: false },
   { id: 'a_chinook_exfil', factionId: US, points: [CHINOOK_LZ, L(600, 900), [72.9, 34.3], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false },
+  { id: 'a_satellite', factionId: US, points: [[64, 24.5], [73.2, 34.2], [83, 43]], times: [8, 21, 34], name: 'Satellite ground track (illustrative)', appearAt: 8, duration: 26, followRoads: false, hideLine: true },
   { id: 'a_mq9', factionId: US, points: [JALALABAD, [71.9, 34.3], L(0, 2500)], name: 'MQ-9 to station', appearAt: 2, duration: 22, followRoads: false, hideLine: true },
   { id: 'a_chinook2', factionId: US, points: [JALALABAD, [71.4, 34.3], HOLDING], name: 'Backup Chinooks to staging area', appearAt: 11, duration: 9, followRoads: false },
   { id: 'a_chinook2_exfil', factionId: US, points: [HOLDING, BORDER_WP, JALALABAD], name: 'Return to Jalalabad', appearAt: 99, duration: 9, followRoads: false, hideLine: true },
@@ -282,6 +289,8 @@ const strikes: Strike[] = [
 ];
 
 const effects: StatusEffect[] = [
+  { id: 'fx_sat_helo1', kind: 'datalink', unitId: 'satellite', targetUnitId: 'helo1', start: 12, duration: 20, label: 'SATCOM' },
+  { id: 'fx_sat_helo2', kind: 'datalink', unitId: 'satellite', targetUnitId: 'helo2', start: 12.6, duration: 19.4, label: 'SATCOM' },
   { id: 'fx_isr_feed', kind: 'datalink', unitId: 'mq9', targetUnitId: 'helo1', start: 26, duration: 12, label: 'LIVE VIDEO' },
   { id: 'fx_hard_landing', kind: 'wounded', unitId: 'helo1', start: 38.3, duration: 57.5, label: 'HARD LANDING' },
   { id: 'fx_breach_radio', kind: 'radio', unitId: 'op_1-5', start: 50, duration: 3, label: 'BREACHING' },
@@ -341,8 +350,10 @@ const keyframes: Keyframe[] = [
   cam('k2', 7, [70.62, 34.38], 9.5, 45, 70, 'Two Ghosthawks — modified stealth helicopters — lift off from Jalalabad with about two dozen SEALs, an interpreter and a dog, Cairo', {
     followUnitId: 'helo1', followMode: 'track',
   }),
-  cam('k3', 15, [71.9, 34.25], 7.4, 0, 0, 'Backup Chinooks carrying a quick-reaction force wait about two-thirds of the way to Abbottabad'),
-  cam('k4', 23, [73.1, 34.2], 9.2, 40, -20, 'An MQ-9 Reaper circles above Abbottabad, streaming live video'),
+  cam('k2b', 13, [70.2, 29.4], 4.35, 62, 14, 'Illustrative: in low Earth orbit, a communications satellite relays radio traffic to the helicopters'),
+  cam('k2c', 19, [71.4, 30.8], 4.6, 60, 22, 'Illustrative: in low Earth orbit, a communications satellite relays radio traffic to the helicopters'),
+  cam('k3', 22, [71.9, 34.25], 7.4, 0, 0, 'Backup Chinooks carrying a quick-reaction force wait about two-thirds of the way to Abbottabad'),
+  cam('k4', 26.5, [73.1, 34.2], 9.2, 40, -20, 'An MQ-9 Reaper circles above Abbottabad, streaming live video'),
   cam('k5', 31, C, 16.4, 55, 35, 'The flight from Jalalabad takes about 90 minutes', { sensor: 'nvg' }),
   cam('k6', 34, L(10, -12), 18.4, 55, 20, 'Ghosthawk 1 hovers over the high-walled yard, loses lift and hard-lands', { sensor: 'nvg' }),
   cam('k7', 43, L(-24, -22), 19.1, 50, -10, 'At the guest house, the courier Abu Ahmed al-Kuwaiti opens fire and is killed', { sensor: 'nvg' }),
@@ -361,7 +372,7 @@ const keyframes: Keyframe[] = [
 export function raidScenario(): Scenario {
   // rebuild on every call so state never leaks between loads
   return structuredClone({
-    name: 'Operation Neptune Spear — Abbottabad, 2 May 2011',
+    name: 'Bin Laden raid — Abbottabad, 2 May 2011',
     factions: [
       { id: US, name: 'United States', color: '#3a6fc0', affiliation: 'friend' as const },
       { id: OCC, name: 'Compound occupants', color: '#b0413e', affiliation: 'hostile' as const },

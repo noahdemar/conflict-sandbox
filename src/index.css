@@ -2205,3 +2205,37 @@ input[type='color'] {
   filter: grayscale(1) brightness(calc(1.9 - 1.6 * var(--cool, 1))) sepia(1) saturate(calc(9 - 8 * var(--cool, 1)))
     hue-rotate(-38deg) blur(0.8px) drop-shadow(0 0 calc(6px * (1 - var(--cool, 1))) rgba(255, 50, 30, 0.8));
 }
+
+/* ---------- orbital assets ---------- */
+.mk.orbital .mk-box,
+.mk-tag.orbital {
+  display: none !important;
+}
+
+.orbital-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 3px 8px 4px;
+  background: rgba(250, 250, 248, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  color: #16181a;
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.orbital-label strong {
+  font-weight: 650;
+}
+
+.orbital-label span {
+  font-size: 9.5px;
+  color: #5b5e61;
+  letter-spacing: 0.03em;
+}

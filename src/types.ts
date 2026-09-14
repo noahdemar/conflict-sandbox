@@ -68,6 +68,8 @@ export interface Unit {
   landAtEnd?: boolean;
   /** Seconds on the timeline when the unit leaves the scene (e.g. boards an aircraft) */
   leavesAt?: number;
+  /** Orbital/very-high altitude in km: rendered in 3D space above its ground track */
+  altitudeKm?: number;
 }
 
 export interface Strike {

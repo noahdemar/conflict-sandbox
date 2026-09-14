@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
 import { useStore } from '../store';
-import { getMissileModel, loadGlbModel } from '../models3d';
+import { getMissileModel, getSatelliteModel, loadGlbModel } from '../models3d';
 import { ParticleSystem, expandStrikes, weaponKind } from '../particles';
 import { arrowPath, routeKey } from '../routing';
 import { FACILITY_META, facilityIconSvg } from '../facilities';
@@ -17,6 +17,7 @@ import {
   interpolateCamera,
   orbitPose,
   pathLength,
+  smoothPath,
   smoothPoseAlongPath,
   partialPath,
   pointAlongPath,
@@ -497,7 +498,7 @@ export default function MapView() {
           const a = unitPose(u).point;
           if (fx.kind === 'datalink' && fx.targetUnitId) {
             const v = st.scenario.units.find((w) => w.id === fx.targetUnitId);
-            if (!v) continue;
+            if (!v || u.altitudeKm || v.altitudeKm) continue;
             const b = unitPose(v).point;
             // link grows out from the source over the first 0.6s
             const grow = Math.min(1, age / 0.6);
@@ -987,6 +988,8 @@ export default function MapView() {
         tagMk.setLngLat(pose.point);
         el.classList.toggle('destroyed', destroyed);
         tagEl.classList.toggle('destroyed', destroyed);
+        el.classList.toggle('orbital', !!u.altitudeKm);
+        tagEl.classList.toggle('orbital', !!u.altitudeKm);
         el.style.setProperty(
           '--cool',
           destroyed && u.destroyedAt !== undefined ? clamp01((st.time - u.destroyedAt) / 14).toFixed(3) : '0',
@@ -1692,6 +1695,18 @@ export default function MapView() {
       const strikeFx = new Map<string, THREE.Mesh>();
       const particles = new ParticleSystem();
       particles.addTo(scene);
+      const orbitals = new Map<
+        string,
+        {
+          model: THREE.Group;
+          track: THREE.Line;
+          nadir: THREE.Line;
+          cone: THREE.Mesh;
+          ring: THREE.LineLoop;
+          label: HTMLDivElement;
+        }
+      >();
+      const beamLines = new Map<string, THREE.Line>();
       // full-screen color grade drawn after the map but before 3D effects, so
       // night darkens terrain while fire and tracers stay bright
       const gradeMat = new THREE.ShaderMaterial({
@@ -2113,6 +2128,168 @@ export default function MapView() {
           }
           particles.commit(map.getCanvas().height / 2);
 
+          // ---- orbital assets in 3D space: model at altitude, orbit arc, nadir line,
+          //      coverage cone, comms beams and a screen-tracked label ----
+          {
+            const mat = new THREE.Matrix4().fromArray(matrix as number[]);
+            const canvas = map.getCanvas();
+            const toScreen = (v: { x: number; y: number; z: number }) => {
+              const p4 = new THREE.Vector4(v.x, v.y, v.z, 1).applyMatrix4(mat);
+              if (p4.w <= 0) return null;
+              return {
+                x: ((p4.x / p4.w + 1) / 2) * canvas.clientWidth,
+                y: ((1 - p4.y / p4.w) / 2) * canvas.clientHeight,
+              };
+            };
+            const pxToMerc = 1 / (512 * Math.pow(2, map.getZoom()));
+            const seen = new Set<string>();
+            for (const u of st.scenario.units) {
+              if (!u.altitudeKm || st.time < u.appearAt) continue;
+              if (u.leavesAt !== undefined && st.time >= u.leavesAt) continue;
+              seen.add(u.id);
+              let o = orbitals.get(u.id);
+              if (!o) {
+                const model = getSatelliteModel().clone();
+                const lineMat = new THREE.LineDashedMaterial({
+                  color: 0xbfe3ff, dashSize: 1, gapSize: 1, transparent: true, opacity: 0.75, depthTest: false,
+                });
+                const track = new THREE.Line(new THREE.BufferGeometry(), lineMat);
+                const nadir = new THREE.Line(new THREE.BufferGeometry(), lineMat.clone());
+                const cone = new THREE.Mesh(
+                  new THREE.BufferGeometry(),
+                  new THREE.MeshBasicMaterial({
+                    color: 0x7fc8ff, transparent: true, opacity: 0.06, side: THREE.DoubleSide, depthWrite: false, depthTest: false,
+                  }),
+                );
+                const ring = new THREE.LineLoop(
+                  new THREE.BufferGeometry(),
+                  new THREE.LineBasicMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.6, depthTest: false }),
+                );
+                for (const obj of [track, nadir, cone, ring]) {
+                  obj.frustumCulled = false;
+                  obj.renderOrder = 8;
+                }
+                scene.add(model, track, nadir, cone, ring);
+                const label = document.createElement('div');
+                label.className = 'orbital-label';
+                map.getContainer().appendChild(label);
+                o = { model, track, nadir, cone, ring, label };
+                orbitals.set(u.id, o);
+              }
+              const altM = u.altitudeKm * 1000;
+              const pose = unitPose(u);
+              const sat = merc(pose.point[0], pose.point[1], altM);
+              const ground = merc(pose.point[0], pose.point[1], 0);
+              // model: constant on-screen size, solar wings across the track
+              const sc = 90 * pxToMerc;
+              o.model.matrixAutoUpdate = false;
+              o.model.matrix
+                .makeTranslation(sat.x, sat.y, sat.z)
+                .scale(new THREE.Vector3(sc, -sc, sc))
+                .multiply(new THREE.Matrix4().makeRotationZ(THREE.MathUtils.degToRad(90 - pose.bearing)))
+                .multiply(new THREE.Matrix4().makeRotationZ(Math.sin(st.time * 0.4) * 0.05));
+              // orbit arc along the whole ground track at altitude
+              const ar = u.arrowId ? st.scenario.arrows.find((a) => a.id === u.arrowId) : undefined;
+              if (ar) {
+                const pts = smoothPath(ar.points, 24).map((p) => {
+                  const m3 = merc(p[0], p[1], altM);
+                  return new THREE.Vector3(m3.x, m3.y, m3.z);
+                });
+                o.track.geometry.setFromPoints(pts);
+                o.track.computeLineDistances();
+                const dm = o.track.material as THREE.LineDashedMaterial;
+                dm.dashSize = 14 * pxToMerc;
+                dm.gapSize = 10 * pxToMerc;
+              }
+              // straight down to the sub-satellite point
+              o.nadir.geometry.setFromPoints([new THREE.Vector3(sat.x, sat.y, sat.z), new THREE.Vector3(ground.x, ground.y, ground.z)]);
+              o.nadir.computeLineDistances();
+              const nm = o.nadir.material as THREE.LineDashedMaterial;
+              nm.dashSize = 6 * pxToMerc;
+              nm.gapSize = 6 * pxToMerc;
+              nm.opacity = 0.45;
+              // coverage cone to a ground footprint (~horizon-limited, illustrative radius)
+              const footKm = Math.min(420, u.altitudeKm * 0.8);
+              const ringPts = circlePolygon(pose.point, footKm).map((p) => {
+                const m3 = merc(p[0], p[1], 0);
+                return new THREE.Vector3(m3.x, m3.y, m3.z);
+              });
+              o.ring.geometry.setFromPoints(ringPts);
+              const tris: number[] = [];
+              for (let i = 0; i < ringPts.length - 1; i++) {
+                tris.push(sat.x, sat.y, sat.z, ringPts[i].x, ringPts[i].y, ringPts[i].z, ringPts[i + 1].x, ringPts[i + 1].y, ringPts[i + 1].z);
+              }
+              o.cone.geometry.setAttribute('position', new THREE.Float32BufferAttribute(tris, 3));
+              o.cone.geometry.computeBoundingSphere();
+              // label pinned above the model on screen
+              const sp = toScreen(sat);
+              if (sp) {
+                o.label.hidden = false;
+                o.label.style.transform = `translate(${sp.x.toFixed(1)}px, ${(sp.y - 34).toFixed(1)}px) translate(-50%, -100%)`;
+                if (o.label.dataset.name !== u.name) {
+                  o.label.dataset.name = u.name;
+                  o.label.innerHTML = `<strong></strong><span>${u.altitudeKm.toFixed(0)} km · low Earth orbit</span>`;
+                  o.label.querySelector('strong')!.textContent = u.name;
+                }
+              } else {
+                o.label.hidden = true;
+              }
+            }
+            for (const [id, o] of orbitals) {
+              if (!seen.has(id)) {
+                scene.remove(o.model, o.track, o.nadir, o.cone, o.ring);
+                o.label.remove();
+                orbitals.delete(id);
+              }
+            }
+
+            // comms beams from orbital units to their datalink partners, with moving pulses
+            const beamSeen = new Set<string>();
+            for (const { fx, env } of activeEffects(st.scenario, st.time)) {
+              if (fx.kind !== 'datalink' || !fx.targetUnitId) continue;
+              const a = st.scenario.units.find((v) => v.id === fx.unitId);
+              const b = st.scenario.units.find((v) => v.id === fx.targetUnitId);
+              if (!a || !b || !(a.altitudeKm || b.altitudeKm)) continue;
+              if (st.time < a.appearAt || st.time < b.appearAt) continue;
+              const pa = unitPose(a).point;
+              const pb = unitPose(b).point;
+              const A = merc(pa[0], pa[1], (a.altitudeKm ?? 0) * 1000 + (a.type === 'air' && !a.altitudeKm ? 60 : 0));
+              const B = merc(pb[0], pb[1], (b.altitudeKm ?? 0) * 1000 + (b.type === 'air' && !b.altitudeKm ? 60 : 0));
+              beamSeen.add(fx.id);
+              let line = beamLines.get(fx.id);
+              if (!line) {
+                line = new THREE.Line(
+                  new THREE.BufferGeometry(),
+                  new THREE.LineBasicMaterial({ color: 0x8fe0ff, transparent: true, opacity: 0.6, depthTest: false }),
+                );
+                line.frustumCulled = false;
+                line.renderOrder = 8;
+                scene.add(line);
+                beamLines.set(fx.id, line);
+              }
+              line.geometry.setFromPoints([new THREE.Vector3(A.x, A.y, A.z), new THREE.Vector3(B.x, B.y, B.z)]);
+              (line.material as THREE.LineBasicMaterial).opacity = 0.6 * env;
+              const pulseM = 7 * pxToMerc;
+              for (let i = 0; i < 5; i++) {
+                const f = (st.time * 0.35 + i / 5) % 1;
+                const k = i % 2 === 0 ? f : 1 - f; // uplink and downlink
+                particles.fire.push(
+                  A.x + (B.x - A.x) * k, A.y + (B.y - A.y) * k, A.z + (B.z - A.z) * k,
+                  pulseM, 0.7, 0.95, 1, env * Math.sin(Math.PI * f), i,
+                );
+              }
+            }
+            for (const [id, line] of beamLines) {
+              if (!beamSeen.has(id)) {
+                scene.remove(line);
+                line.geometry.dispose();
+                beamLines.delete(id);
+              }
+            }
+            // beam pulses were added after the main particle commit
+            particles.commit(map.getCanvas().height / 2);
+          }
+
           camera3d.projectionMatrix = new THREE.Matrix4().fromArray(
             matrix as number[],
           );
@@ -2125,6 +2302,37 @@ export default function MapView() {
     });
 
     useStore.getState().setMapApi({
+      rotorMix: () => {
+        const st = useStore.getState();
+        const center = map.getCenter();
+        const w = map.getContainer().clientWidth || 1;
+        // how far away a helicopter can still be heard shrinks as the camera pulls back
+        const hearKm = 2.5;
+        const zoomFade = clamp01((map.getZoom() - 11) / 3);
+        let best = { level: 0, pan: 0, load: 0 };
+        for (const u of st.scenario.units) {
+          if (u.type !== 'air' || st.time < u.appearAt) continue;
+          if (u.leavesAt !== undefined && st.time >= u.leavesAt) continue;
+          if (u.destroyedAt !== undefined && st.time >= u.destroyedAt) continue;
+          const rn = st.unitLibrary.find((e) => e.id === u.rosterId)?.name;
+          if (silhouetteFor(u, rn) !== 'heli') continue;
+          const p = unitPose(u).point;
+          const km = Math.hypot(
+            (p[0] - center.lng) * 111.32 * Math.cos((center.lat * Math.PI) / 180),
+            (p[1] - center.lat) * 111.32,
+          );
+          // landed aircraft idle a little quieter than ones in flight
+          const ar = u.arrowId ? st.scenario.arrows.find((a) => a.id === u.arrowId) : undefined;
+          const end = ar?.times?.[ar.times.length - 1] ?? (ar ? ar.appearAt + ar.duration : 0);
+          const onGround = !!(u.landAtEnd && ar && st.time > end + 1);
+          const level = Math.pow(clamp01(1 - km / hearKm), 1.6) * zoomFade * (onGround ? 0.55 : 1);
+          if (level > best.level) {
+            const sx = map.project({ lng: p[0], lat: p[1] }).x;
+            best = { level, pan: Math.max(-1, Math.min(1, (sx / w) * 2 - 1)) * 0.8, load: onGround ? 0 : 1 };
+          }
+        }
+        return best;
+      },
       getCamera: () => {
         const c = map.getCenter();
         return {

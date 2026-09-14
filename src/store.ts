@@ -24,6 +24,8 @@ export interface MapApi {
   flyTo: (pose: CameraPose) => void;
   /** Sweep the keyframe camera path to preload all tiles before recording */
   warmup: () => Promise<void>;
+  /** Loudest nearby helicopter right now: level 0..1, stereo pan -1..1, load 0..1 */
+  rotorMix: () => { level: number; pan: number; load: number };
 }
 
 export interface NarrationPrefs {
@@ -283,7 +285,8 @@ interface StoreState {
   eraseAt: (lat: number, lng: number) => void;
 
   newScenario: () => void;
-  loadDemo: (id?: DemoId) => void;
+  /** Load a bundled demo; `persist: false` shows it without replacing the saved scenario */
+  loadDemo: (id?: DemoId, opts?: { persist?: boolean }) => void;
   exportScenario: () => string;
   /** Load a scenario file; `persist: false` loads it for viewing without replacing the saved scenario */
   importScenario: (json: string, opts?: { persist?: boolean }) => boolean;
@@ -793,10 +796,10 @@ export const useStore = create<StoreState>((set, get) => {
       persist(s);
       set({ scenario: s, duration: s.duration ?? 60, selection: null, draft: [], time: 0, playing: false });
     },
-    loadDemo: (id = 'khasham') => {
+    loadDemo: (id = 'khasham', opts) => {
       const demo = DEMOS.find((d) => d.id === id) ?? DEMOS[0];
       const s = { ...demo.scenario(), duration: demo.duration };
-      persist(s);
+      if (opts?.persist !== false) persist(s);
       // merge demo roster entries (by id) into the library
       const lib = [...get().unitLibrary];
       for (const e of demo.roster) {
@@ -804,10 +807,12 @@ export const useStore = create<StoreState>((set, get) => {
         if (i >= 0) lib[i] = { ...lib[i], ...e };
         else lib.push({ ...e });
       }
-      try {
-        localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
-      } catch {
-        /* ignore */
+      if (opts?.persist !== false) {
+        try {
+          localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+        } catch {
+          /* ignore */
+        }
       }
       set({
         scenario: s,

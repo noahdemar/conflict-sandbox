@@ -101,3 +101,45 @@ export function loadGlbModel(
   );
   return null;
 }
+
+/**
+ * Generic communications satellite, ~1 unit across the solar arrays:
+ * foil-wrapped bus, two panel wings, and a nadir-pointing dish (−Z is down).
+ */
+export function getSatelliteModel(): THREE.Group {
+  const key = '__satellite';
+  let m = cache.get(key);
+  if (!m) {
+    const foil = new THREE.MeshStandardMaterial({ color: 0xc9a24a, roughness: 0.35, metalness: 0.8 });
+    const panel = new THREE.MeshStandardMaterial({ color: 0x1d2f5a, roughness: 0.3, metalness: 0.6, emissive: 0x0a1428 });
+    const frame = new THREE.MeshStandardMaterial({ color: 0xb8bcc2, roughness: 0.5, metalness: 0.7 });
+    const white = new THREE.MeshStandardMaterial({ color: 0xeeeeea, roughness: 0.6, metalness: 0.2 });
+    m = new THREE.Group();
+    // bus
+    m.add(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.22), foil));
+    // solar wings with frames and cell rows
+    for (const side of [-1, 1]) {
+      const boom = cyl(0.006, 0.006, 0.1, frame, side * 0.13, 0, 0, 'x');
+      m.add(boom);
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.005, 0.14), panel);
+      wing.position.set(side * 0.35, 0, 0);
+      m.add(wing);
+      for (let i = 0; i < 5; i++) {
+        const rib = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.007, 0.14), frame);
+        rib.position.set(side * (0.19 + i * 0.08), 0, 0);
+        m.add(rib);
+      }
+    }
+    // nadir dish and feed
+    const dish = new THREE.Mesh(new THREE.SphereGeometry(0.085, 18, 8, 0, Math.PI * 2, 0, Math.PI / 3.2), white);
+    dish.rotation.x = Math.PI; // open side faces down
+    dish.position.set(0, 0, -0.11);
+    const dishHolder = new THREE.Group();
+    dishHolder.add(dish);
+    dishHolder.rotation.x = -Math.PI / 2;
+    m.add(dishHolder);
+    m.add(cyl(0.004, 0.004, 0.08, frame, 0, 0, -0.16, 'z'));
+    cache.set(key, m);
+  }
+  return m;
+}
