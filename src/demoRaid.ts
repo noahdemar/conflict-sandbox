@@ -36,7 +36,7 @@ export const RAID_ROSTER: RosterEntry[] = [
   { id: 'r_stealth_hawk', name: 'Ghosthawk (modified stealth helicopter, 160th SOAR)', type: 'air', faction: 'United States', wikiTitle: 'Stealth helicopter' },
   { id: 'r_mh47', name: 'Chinook (backup)', type: 'air', faction: 'United States', wikiTitle: 'Boeing CH-47 Chinook' },
   { id: 'r_mq9', name: 'MQ-9 Reaper', type: 'air', faction: 'United States', wikiTitle: 'General Atomics MQ-9 Reaper' },
-  { id: 'r_satellite', name: 'Communications satellite (illustrative)', type: 'air', faction: 'United States' },
+  { id: 'r_satellite', name: 'Imaging satellite', type: 'air', faction: 'United States' },
   { id: 'r_occupant', name: 'Compound occupant', type: 'infantry', faction: 'Compound occupants' },
   { id: 'r_noncombatants', name: 'Non-combatants (women and children)', type: 'infantry', faction: 'Non-combatants' },
 ];
@@ -219,15 +219,10 @@ units.push(
     lat: CHINOOK_LZ[1], lng: CHINOOK_LZ[0], arrowId: 'a_chinook_exfil', appearAt: 98, landAtEnd: true,
   },
   {
-    // illustrative: a daylight imaging pass over the site hours after the raid
-    id: 'imager', factionId: US, type: 'air', name: 'Imaging satellite (illustrative)', rosterId: 'r_satellite',
+    // daylight imaging pass over the site the morning after
+    id: 'imager', factionId: US, type: 'air', name: 'Imaging satellite', rosterId: 'r_satellite',
     lat: C[1], lng: C[0], arrowId: 'a_imager', appearAt: 111, leavesAt: 128, altitudeKm: 500,
     orbitRole: 'imaging', captureAt: 118.5,
-  },
-  {
-    // illustrative: not in the Wikipedia account; shown to model relay from orbit
-    id: 'satellite', factionId: US, type: 'air', name: 'Relay satellite (illustrative)', rosterId: 'r_satellite',
-    lat: 26, lng: 66, arrowId: 'a_satellite', appearAt: 8, leavesAt: 34, altitudeKm: 520,
   },
   {
     id: 'mq9', factionId: US, type: 'air', name: 'MQ-9 Reaper', rosterId: 'r_mq9',
@@ -254,8 +249,7 @@ arrows.push(
   { id: 'a_helo2_exfil', factionId: US, points: [HELO2_LZ, L(-400, 600), [72.6, 34.2], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false, hideAt: 109 },
   { id: 'a_chinook_in', factionId: US, points: [HOLDING, [72.8, 34.22], L(300, 400), CHINOOK_LZ], name: 'Backup Chinook called in', appearAt: 76, duration: 10, followRoads: false, hideAt: 109 },
   { id: 'a_chinook_exfil', factionId: US, points: [CHINOOK_LZ, L(600, 900), [72.9, 34.3], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false, hideAt: 109 },
-  { id: 'a_imager', factionId: US, points: [[66.5, 26.4], [C[0], C[1]], [79.8, 41.8]], times: [111, 118.5, 126], name: 'Imaging pass ground track (illustrative)', appearAt: 111, duration: 15, followRoads: false, hideLine: true },
-  { id: 'a_satellite', factionId: US, points: [[64, 24.5], [73.2, 34.2], [83, 43]], times: [8, 21, 34], name: 'Satellite ground track (illustrative)', appearAt: 8, duration: 26, followRoads: false, hideLine: true },
+  { id: 'a_imager', factionId: US, points: [[66.5, 26.4], [C[0], C[1]], [79.8, 41.8]], times: [111, 118.5, 126], name: 'Imaging pass ground track', appearAt: 111, duration: 15, followRoads: false, hideLine: true },
   { id: 'a_mq9', factionId: US, points: [JALALABAD, [71.9, 34.3], L(0, 2500)], name: 'MQ-9 to station', appearAt: 2, duration: 22, followRoads: false, hideLine: true },
   { id: 'a_chinook2', factionId: US, points: [JALALABAD, [71.4, 34.3], HOLDING], name: 'Backup Chinooks to staging area', appearAt: 11, duration: 9, followRoads: false, hideAt: 109 },
   { id: 'a_chinook2_exfil', factionId: US, points: [HOLDING, BORDER_WP, JALALABAD], name: 'Return to Jalalabad', appearAt: 99, duration: 9, followRoads: false, hideLine: true },
@@ -297,8 +291,6 @@ const strikes: Strike[] = [
 ];
 
 const effects: StatusEffect[] = [
-  { id: 'fx_sat_helo1', kind: 'datalink', unitId: 'satellite', targetUnitId: 'helo1', start: 12, duration: 20, label: 'SATCOM' },
-  { id: 'fx_sat_helo2', kind: 'datalink', unitId: 'satellite', targetUnitId: 'helo2', start: 12.6, duration: 19.4, label: 'SATCOM' },
   { id: 'fx_isr_feed', kind: 'datalink', unitId: 'mq9', targetUnitId: 'helo1', start: 26, duration: 12, label: 'LIVE VIDEO' },
   { id: 'fx_hard_landing', kind: 'wounded', unitId: 'helo1', start: 38.3, duration: 57.5, label: 'HARD LANDING' },
   { id: 'fx_breach_radio', kind: 'radio', unitId: 'op_1-5', start: 50, duration: 3, label: 'BREACHING' },
@@ -358,8 +350,6 @@ const keyframes: Keyframe[] = [
   cam('k2', 7, [70.62, 34.38], 9.5, 45, 70, 'Two Ghosthawks — modified stealth helicopters — lift off from Jalalabad with about two dozen SEALs, an interpreter and a dog, Cairo', {
     followUnitId: 'helo1', followMode: 'track',
   }),
-  cam('k2b', 13, [70.2, 29.4], 4.35, 62, 14, 'Illustrative: in low Earth orbit, a communications satellite relays radio traffic to the helicopters'),
-  cam('k2c', 19, [71.4, 30.8], 4.6, 60, 22, 'Illustrative: in low Earth orbit, a communications satellite relays radio traffic to the helicopters'),
   cam('k3', 22, [71.9, 34.25], 7.4, 0, 0, 'Backup Chinooks carrying a quick-reaction force wait about two-thirds of the way to Abbottabad'),
   cam('k4', 26.5, [73.1, 34.2], 9.2, 40, -20, 'An MQ-9 Reaper circles above Abbottabad, streaming live video'),
   cam('k5', 31, C, 16.4, 55, 35, 'The flight from Jalalabad takes about 90 minutes', { sensor: 'nvg' }),
@@ -375,10 +365,11 @@ const keyframes: Keyframe[] = [
   cam('k14b', 101, HELO1_LZ, 17.6, 50, 18, 'Before leaving, the team destroys the damaged Ghosthawk to protect its technology', { sensor: 'nvg' }),
   cam('k15', 104, [72.2, 34.2], 7.2, 20, 0, 'Roughly 38 minutes on target. The force returns to Jalalabad with no American casualties'),
   cam('k16', 108, [71.9, 34.2], 6.2, 0, 0, 'Operation Neptune Spear'),
-  cam('k17', 111, [72.4, 31.6], 4.5, 60, 20, 'Illustrative: later that morning, an imaging satellite passes over Abbottabad'),
-  cam('k18', 116, C, 12.5, 40, 10, 'Illustrative: the satellite images the compound in daylight'),
+  cam('k17', 111, [72.2, 31.2], 4.4, 62, 16, 'The morning after, an imaging satellite passes over Abbottabad'),
+  cam('k17b', 116, [72.9, 32.6], 4.9, 58, 20, 'The morning after, an imaging satellite passes over Abbottabad'),
+  cam('k18', 118, C, 9.5, 0, 0, 'The satellite images the compound in daylight'),
   // top-down, north up, compound offset left so the image pane sits beside it
-  cam('k19', 120, L(55, 0), 17.4, 0, 0, 'The compound after the raid, as later seen in satellite imagery', {
+  cam('k19', 120, L(55, 0), 17.4, 0, 0, 'The compound the morning after the raid, from satellite imagery', {
     media: {
       src: 'media/abbottabad-aftermath.webp',
       caption: 'Aftermath imagery of the site',
