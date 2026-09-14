@@ -1692,7 +1692,6 @@ input[type='color'] {
 .viewer .roster-panel,
 .viewer .right-stack,
 .viewer .tl-duration,
-.viewer .tl-narration,
 .viewer .rec-btn,
 .viewer .tl-controls .icon-btn[title^='Add camera'],
 .viewer .tl-tracks-btn {
@@ -2366,4 +2365,11 @@ input[type='color'] {
   .media-card img {
     max-height: 40vh;
   }
+}
+
+/* read-only player keeps just the narration on/off button */
+.viewer .tl-narration select,
+.viewer .tl-narration .icon-btn[title='Preview voice'],
+.viewer .tl-kokoro-status {
+  display: none !important;
 }

@@ -285,6 +285,7 @@ export default function Timeline() {
                   narration.engine,
                   narration.voice,
                   narration.rate,
+                  true,
                 )
               }
             >

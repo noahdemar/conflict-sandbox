@@ -55,7 +55,7 @@ function loadPrefs(): Prefs {
       return {
         use3d: p.use3d ?? true,
         narration: {
-          enabled: p.narration?.enabled ?? false,
+          enabled: p.narration?.enabled ?? true,
           engine: p.narration?.engine === 'kokoro' ? 'kokoro' : 'webspeech',
           voice: p.narration?.voice ?? null,
           rate: p.narration?.rate ?? 1,
@@ -67,7 +67,7 @@ function loadPrefs(): Prefs {
   }
   return {
     use3d: true,
-    narration: { enabled: false, engine: 'webspeech', voice: null, rate: 1 },
+    narration: { enabled: true, engine: 'webspeech', voice: null, rate: 1 },
   };
 }
 

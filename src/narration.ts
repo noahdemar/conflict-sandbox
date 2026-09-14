@@ -84,7 +84,13 @@ export function preloadKokoro() {
 let currentAudio: HTMLAudioElement | null = null;
 let currentUrl: string | null = null;
 
+/** Latest caption waiting for the current line to finish (older ones are dropped). */
+let pending: { text: string; engine: NarrationEngine; voiceId: string | null; rate: number } | null = null;
+let speaking = false;
+
 export function stopNarration() {
+  pending = null;
+  speaking = false;
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   if (currentAudio) {
     currentAudio.pause();
@@ -104,7 +110,26 @@ function speakWeb(text: string, voiceId: string | null, rate: number) {
     .find((v) => v.voiceURI === voiceId);
   if (voice) utt.voice = voice;
   utt.rate = rate;
+  utt.onend = utt.onerror = () => {
+    speaking = false;
+    playPending();
+  };
+  speaking = true;
   window.speechSynthesis.speak(utt);
+}
+
+function playPending() {
+  const next = pending;
+  pending = null;
+  if (next) speak(next.text, next.engine, next.voiceId, next.rate);
+}
+
+function speak(text: string, engine: NarrationEngine, voiceId: string | null, rate: number) {
+  if (engine === 'kokoro') {
+    speakKokoro(text, voiceId ?? 'af_heart', rate).catch(() => speakWeb(text, voiceId, rate));
+  } else {
+    speakWeb(text, voiceId, rate);
+  }
 }
 
 async function speakKokoro(text: string, voiceId: string, rate: number) {
@@ -118,10 +143,16 @@ async function speakKokoro(text: string, voiceId: string, rate: number) {
   } else {
     return;
   }
-  stopNarration();
+  if (currentAudio) currentAudio.pause();
+  if (currentUrl) URL.revokeObjectURL(currentUrl);
   currentUrl = URL.createObjectURL(blob);
   currentAudio = new Audio(currentUrl);
   currentAudio.playbackRate = rate;
+  speaking = true;
+  currentAudio.onended = currentAudio.onerror = () => {
+    speaking = false;
+    playPending();
+  };
   try {
     routeElement(currentAudio); // route through recordable bus
   } catch {
@@ -157,19 +188,23 @@ function floatToWav(samples: Float32Array, sampleRate: number): Blob {
   return new Blob([buf], { type: 'audio/wav' });
 }
 
+/**
+ * Speak a caption. By default a line already being spoken is allowed to
+ * finish and only the newest caption waits behind it; `interrupt` cuts in
+ * immediately (used for voice previews).
+ */
 export function narrate(
   text: string,
   engine: NarrationEngine,
   voiceId: string | null,
   rate = 1,
+  interrupt = false,
 ) {
-  stopNarration();
   if (!text.trim()) return;
-  if (engine === 'kokoro') {
-    speakKokoro(text, voiceId ?? 'af_heart', rate).catch(() =>
-      speakWeb(text, voiceId, rate),
-    );
-  } else {
-    speakWeb(text, voiceId, rate);
+  if (interrupt) stopNarration();
+  if (speaking) {
+    pending = { text, engine, voiceId, rate };
+    return;
   }
+  speak(text, engine, voiceId, rate);
 }
