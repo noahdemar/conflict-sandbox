@@ -6,7 +6,7 @@
  *    in-browser; ~90MB one-time download, cached afterwards)
  */
 
-import { routeElement } from './audio';
+import { routeElement, setVoiceActive } from './audio';
 
 export type NarrationEngine = 'webspeech' | 'kokoro';
 
@@ -124,7 +124,6 @@ export function preloadKokoro() {
 let currentAudio: HTMLAudioElement | null = null;
 let currentUrl: string | null = null;
 
-/** Latest caption waiting for the current line to finish (older ones are dropped). */
 type Queued = { text: string; engine: NarrationEngine; voiceId: string | null; rate: number; file?: string; at: number };
 /** Lines waiting for the current one to finish, oldest first. */
 let queue: Queued[] = [];
@@ -135,6 +134,7 @@ let speaking = false;
 export function stopNarration() {
   queue = [];
   speaking = false;
+  setVoiceActive(false);
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   if (currentAudio) {
     currentAudio.pause();
@@ -187,9 +187,11 @@ function speakWeb(text: string, voiceId: string | null, rate: number) {
   utt.rate = rate;
   utt.onend = utt.onerror = () => {
     speaking = false;
+    setVoiceActive(false);
     playPending();
   };
   speaking = true;
+  setVoiceActive(true);
   window.speechSynthesis.speak(utt);
 }
 
@@ -220,8 +222,10 @@ async function playFile(url: string, rate: number) {
   currentAudio.crossOrigin = 'anonymous';
   currentAudio.playbackRate = rate;
   speaking = true;
+  setVoiceActive(true);
   currentAudio.onended = () => {
     speaking = false;
+    setVoiceActive(false);
     playPending();
   };
   try {
@@ -233,6 +237,7 @@ async function playFile(url: string, rate: number) {
     await currentAudio.play();
   } catch (e) {
     speaking = false;
+    setVoiceActive(false);
     throw e;
   }
 }
@@ -315,8 +320,10 @@ async function speakKokoro(text: string, voiceId: string, rate: number) {
   currentAudio = new Audio(currentUrl);
   currentAudio.playbackRate = rate;
   speaking = true;
+  setVoiceActive(true);
   currentAudio.onended = currentAudio.onerror = () => {
     speaking = false;
+    setVoiceActive(false);
     playPending();
   };
   try {

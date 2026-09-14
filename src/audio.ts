@@ -6,16 +6,36 @@
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
+let sfx: GainNode | null = null;
+let voice: GainNode | null = null;
 let recDest: MediaStreamAudioDestinationNode | null = null;
+
+/** Effects level while narration is speaking (ducking), and at rest. */
+const SFX_DUCKED = 0.4;
+const SFX_NORMAL = 1;
 
 export function audioContext(): AudioContext {
   if (!ctx) {
     ctx = new AudioContext();
+    // sfx bus + voice bus → master → gentle limiter → speakers and recorder
     master = ctx.createGain();
     master.gain.value = 1;
-    master.connect(ctx.destination);
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -6;
+    limiter.knee.value = 6;
+    limiter.ratio.value = 8;
+    limiter.attack.value = 0.003;
+    limiter.release.value = 0.25;
+    master.connect(limiter);
+    limiter.connect(ctx.destination);
     recDest = ctx.createMediaStreamDestination();
-    master.connect(recDest);
+    limiter.connect(recDest);
+    sfx = ctx.createGain();
+    sfx.gain.value = SFX_NORMAL;
+    sfx.connect(master);
+    voice = ctx.createGain();
+    voice.gain.value = 1.15;
+    voice.connect(master);
   }
   if (ctx.state === 'suspended') void ctx.resume();
   return ctx;
@@ -27,17 +47,42 @@ export function masterBus(): GainNode {
   return master!;
 }
 
+/** Sound effects (explosions, rotors) — ducked under narration. */
+export function sfxBus(): GainNode {
+  audioContext();
+  return sfx!;
+}
+
+/** Narration voice. */
+export function voiceBus(): GainNode {
+  audioContext();
+  return voice!;
+}
+
+/**
+ * Duck effects while a narration line is speaking so the voice stays
+ * intelligible; both keep playing together.
+ */
+export function setVoiceActive(active: boolean) {
+  // releasing before anything has played needs no audio graph (and must not create one early)
+  if (!ctx && !active) return;
+  const c = audioContext();
+  const g = sfxBus().gain;
+  g.cancelScheduledValues(c.currentTime);
+  g.setTargetAtTime(active ? SFX_DUCKED : SFX_NORMAL, c.currentTime, active ? 0.08 : 0.35);
+}
+
 /** Audio track for MediaRecorder; empty until something plays. */
 export function recordStream(): MediaStream {
   audioContext();
   return recDest!.stream;
 }
 
-/** Route an HTMLAudioElement through the shared bus. */
+/** Route a narration HTMLAudioElement through the voice bus. */
 export function routeElement(el: HTMLAudioElement) {
   const c = audioContext();
   const src = c.createMediaElementSource(el);
-  src.connect(masterBus());
+  src.connect(voiceBus());
 }
 
 /** Short synthesized explosion: filtered noise burst + low thump. */
@@ -61,7 +106,7 @@ export function boom(intensity = 1) {
   lp.frequency.exponentialRampToValueAtTime(120, t + dur);
   const ng = c.createGain();
   ng.gain.setValueAtTime(0.5 * Math.min(1.5, intensity), t);
-  noise.connect(lp).connect(ng).connect(masterBus());
+  noise.connect(lp).connect(ng).connect(sfxBus());
   noise.start(t);
 
   // low thump
@@ -72,7 +117,7 @@ export function boom(intensity = 1) {
   const og = c.createGain();
   og.gain.setValueAtTime(0.6 * Math.min(1.5, intensity), t);
   og.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  osc.connect(og).connect(masterBus());
+  osc.connect(og).connect(sfxBus());
   osc.start(t);
   osc.stop(t + dur);
 }
@@ -125,7 +170,7 @@ function ensureRotor() {
   const out = c.createGain();
   out.gain.value = 0;
   const pan = c.createStereoPanner();
-  chopGain.connect(out).connect(pan).connect(masterBus());
+  chopGain.connect(out).connect(pan).connect(sfxBus());
 
   noise.start();
   chop.start();
