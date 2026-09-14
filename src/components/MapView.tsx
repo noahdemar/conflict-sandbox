@@ -1026,7 +1026,8 @@ export default function MapView() {
           const ammo = unitAmmo(st.scenario, u, st.time);
           const ammoWrap = tagEl.querySelector<HTMLElement>('.mk-bars .ammo');
           if (ammoWrap) {
-            ammoWrap.hidden = ammo === null;
+            // individual people don't get an ammo gauge; it reads as a glitch under their name
+            ammoWrap.hidden = ammo === null || u.type === 'infantry';
             const b = ammoWrap.querySelector<HTMLElement>('b');
             if (b && ammo !== null) b.style.width = `${ammo.toFixed(0)}%`;
           }
