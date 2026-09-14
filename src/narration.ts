@@ -213,7 +213,10 @@ async function playFile(url: string, rate: number) {
     URL.revokeObjectURL(currentUrl);
     currentUrl = null;
   }
-  currentAudio = new Audio(url);
+  // use the preloaded in-memory clip when available (not revoked: it's shared and reused)
+  const cached = clipCache.get(url);
+  const src = cached ? await cached : url;
+  currentAudio = new Audio(src);
   currentAudio.crossOrigin = 'anonymous';
   currentAudio.playbackRate = rate;
   speaking = true;
@@ -253,6 +256,26 @@ export function narrateRecorded(
 }
 
 type Manifest = { voice: string; items: Record<string, { text: string; file: string }> };
+/** In-memory copies of recorded lines, keyed by their URL. */
+const clipCache = new Map<string, Promise<string>>();
+
+/** Fetch every clip of a narration pack up front so lines start without network delay. */
+export function preloadNarrationPack(pack: string) {
+  void loadNarrationPack(pack).then((m) => {
+    if (!m) return;
+    for (const item of new Set(Object.values(m.items).map((i) => i.file))) {
+      const url = `${import.meta.env.BASE_URL}${pack}/${item}`;
+      if (clipCache.has(url)) continue;
+      clipCache.set(
+        url,
+        fetch(url)
+          .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+          .then((b) => URL.createObjectURL(b))
+          .catch(() => url),
+      );
+    }
+  });
+}
 const manifests = new Map<string, Promise<Manifest | null>>();
 
 /** Fetch (once) the manifest of a narration pack folder, e.g. "narration/binladen-raid". */

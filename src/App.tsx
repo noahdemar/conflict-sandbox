@@ -7,7 +7,7 @@ import PropertiesPanel from './components/PropertiesPanel';
 import Timeline from './components/Timeline';
 import TopBar from './components/TopBar';
 import { useStore } from './store';
-import { loadNarrationPack, narrate, narrateRecorded, preloadKokoro, stopNarration } from './narration';
+import { loadNarrationPack, narrate, narrateRecorded, preloadKokoro, preloadNarrationPack, stopNarration } from './narration';
 import { boom, setRotor } from './audio';
 import { expandStrikes } from './particles';
 import { startRouting } from './routing';
@@ -277,6 +277,12 @@ export default function App() {
     const n = useStore.getState().narration;
     if ((viewer || playing) && n.enabled && n.engine === 'kokoro' && !useStore.getState().scenario.narrationPack) preloadKokoro();
   }, [viewer, playing]);
+
+  // recorded narration: fetch the whole pack as soon as the scenario opens
+  const narrationPack = useStore((s) => s.scenario.narrationPack);
+  useEffect(() => {
+    if (narrationPack) preloadNarrationPack(narrationPack);
+  }, [narrationPack]);
 
   // rotor sound follows the nearest helicopter while the scenario plays
   useEffect(() => {
