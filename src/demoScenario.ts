@@ -206,7 +206,7 @@ export function demoScenario(): Scenario {
       { id: 's_himars2', lat: GRAD[1], lng: GRAD[0], name: 'GMLRS counter-battery', size: 1.3, salvo: 2, spreadM: 60, appearAt: 50.5, fromUnitId: 'u_himars', launchAt: 46.5 },
     ],
     // overnight battle: evening assault, air campaign through the night, dawn at the end
-    environment: { startHour: 21.5, endHour: 5.9, windDirDeg: 65, windKph: 14, haze: 0.15 },
+    environment: { startHour: 21.5, endHour: 5.9, date: '2018-02-07', utcOffset: 3, windDirDeg: 65, windKph: 14, haze: 0.15 },
     effects: [
       // JTAC calls in air support and hands targets to the strike aircraft
       { id: 'fx_radio', kind: 'radio', unitId: 'u_sf', start: 18, duration: 6, label: 'CALLING AIR SUPPORT' },

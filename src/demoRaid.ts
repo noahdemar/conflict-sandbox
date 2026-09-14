@@ -368,6 +368,6 @@ export function raidScenario(): Scenario {
     strikes,
     keyframes,
     effects,
-    environment: { startHour: 23, endHour: 2.6, windDirDeg: 120, windKph: 6, haze: 0.1 },
+    environment: { startHour: 23, endHour: 2.6, date: '2011-05-01', utcOffset: 5, windDirDeg: 120, windKph: 6, haze: 0.1 },
   });
 }

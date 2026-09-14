@@ -218,6 +218,10 @@ export interface Environment {
   startHour: number;
   /** Local hour at timeline end; may be less than start to cross midnight */
   endHour: number;
+  /** Calendar date at timeline start (YYYY-MM-DD) for sun position */
+  date?: string;
+  /** Local time zone offset from UTC in hours (e.g. 5 for Pakistan) */
+  utcOffset?: number;
   /** Direction the wind blows toward, compass degrees */
   windDirDeg: number;
   windKph: number;

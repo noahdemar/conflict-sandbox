@@ -2057,3 +2057,71 @@ input[type='color'] {
 .view-thermal .map-container .mk.aff-hostile.destroyed .stk-rot {
   filter: grayscale(1) brightness(1.1) sepia(1) saturate(5) hue-rotate(-38deg) blur(0.9px);
 }
+
+
+/* ---------- compact mission HUD that stays clear of the caption ---------- */
+.hud-tl {
+  max-width: 210px;
+  padding: 6px 10px;
+}
+
+.hud-row {
+  font-size: 9.5px;
+}
+
+.hud-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud-clock {
+  margin-top: 1px;
+  font-size: 15px;
+}
+
+.hud-ms {
+  font-size: 10px;
+}
+
+.hud-env {
+  font-size: 9.5px;
+}
+
+.hud-losses {
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin-top: 3px;
+  font-size: 9.5px;
+}
+
+.hud-loss i {
+  width: 6px;
+  height: 6px;
+}
+
+.hud-br {
+  font-size: 10px;
+  padding: 5px 9px;
+}
+
+/* leave room for the HUD on either side of the caption */
+.caption-overlay {
+  max-width: min(720px, calc(100% - 2 * 250px));
+}
+
+/* on narrow screens, the HUD drops to the lower left instead */
+@media (max-width: 980px) {
+  .caption-overlay {
+    max-width: calc(100% - 32px);
+  }
+  .hud-tl,
+  .presenting .hud-tl {
+    top: auto;
+    bottom: 84px;
+    left: 16px;
+  }
+  .presenting .hud-tl {
+    bottom: calc(7vh + 76px);
+  }
+}

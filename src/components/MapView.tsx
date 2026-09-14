@@ -9,7 +9,7 @@ import { FACILITY_META, facilityIconSvg } from '../facilities';
 import { STATUS_META, activeEffects, statusIconSvg } from '../statusEffects';
 import { onElevationLoaded, viewshed } from '../elevation';
 import { unitAmmo } from '../combat';
-import { hourAt, lighting, windVector } from '../environment';
+import { lightingFromSun, nightPolygon, sunElevation, utcInstant, windVector } from '../environment';
 import { APP6_FILL, factionAffiliation, unitSymbolSvg } from '../natoSymbols';
 import { TAN_BLUE_STYLE } from '../mapStyle';
 import {
@@ -121,6 +121,7 @@ export default function MapView() {
   const labelMarkers = useRef(new Map<string, maplibregl.Marker>());
   const reticleMarkers = useRef(new Map<string, maplibregl.Marker>());
   const tagMarkers = useRef(new Map<string, maplibregl.Marker>());
+  const nightKey = useRef<number | null>(null);
   const hoverPt = useRef<LngLat | null>(null);
   const lastProjection = useRef<string>('mercator');
   const interactionLocked = useRef(false);
@@ -386,6 +387,32 @@ export default function MapView() {
       const strikeSrc = map.getSource('strikes') as maplibregl.GeoJSONSource;
       if (!terrSrc || !arrSrc || !headSrc || !rangeSrc || !strikeSrc) return;
       const sel = st.selection;
+
+      // day/night terminator with twilight bands (visible at world scale)
+      {
+        const nightSrc = map.getSource('night') as maplibregl.GeoJSONSource | undefined;
+        const env = st.scenario.environment;
+        if (nightSrc) {
+          if (!env) {
+            nightSrc.setData(EMPTY_FC);
+          } else {
+            const ms = utcInstant(env, st.time, st.duration);
+            // recompute only when the sun has moved noticeably (~1 minute)
+            const key = Math.round(ms / 60000);
+            if (key !== nightKey.current) {
+              nightKey.current = key;
+              nightSrc.setData({
+                type: 'FeatureCollection',
+                features: [0, -6, -12, -18].map((elev) => ({
+                  type: 'Feature' as const,
+                  geometry: { type: 'Polygon' as const, coordinates: [nightPolygon(ms, elev)] },
+                  properties: { elev },
+                })),
+              });
+            }
+          }
+        }
+      }
 
       // line of sight (terrain-aware) and air-defense envelopes
       {
@@ -1266,6 +1293,7 @@ export default function MapView() {
       map.addSource('arrowheads', { type: 'geojson', data: EMPTY_FC });
       map.addSource('ranges', { type: 'geojson', data: EMPTY_FC });
       map.addSource('fx-links', { type: 'geojson', data: EMPTY_FC });
+      map.addSource('night', { type: 'geojson', data: EMPTY_FC });
       map.addSource('fx-los', { type: 'geojson', data: EMPTY_FC });
       map.addSource('fx-ad', { type: 'geojson', data: EMPTY_FC });
       map.addSource('fx-jam', { type: 'geojson', data: EMPTY_FC });
@@ -1290,6 +1318,18 @@ export default function MapView() {
           'line-width': 1.4,
           'line-opacity': 0.65,
           'line-dasharray': [3, 2.5],
+        },
+      });
+      // four stacked bands (sunset, civil, nautical, astronomical twilight) give
+      // a soft terminator; fades out as you zoom in and local lighting takes over
+      map.addLayer({
+        id: 'night-bands',
+        type: 'fill',
+        source: 'night',
+        paint: {
+          'fill-color': '#0a1630',
+          'fill-antialias': false,
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.14, 5, 0.1, 7, 0],
         },
       });
       map.addLayer({
@@ -1775,8 +1815,14 @@ export default function MapView() {
 
           {
             const env = st.scenario.environment;
-            const light = env ? lighting(hourAt(env, st.time, st.duration)) : { dark: 0, warm: 0 };
-            const dark = light.dark * 0.52;
+            const center = map.getCenter();
+            const light = env
+              ? lightingFromSun(sunElevation(utcInstant(env, st.time, st.duration), [center.lng, center.lat]))
+              : { dark: 0, warm: 0 };
+            // zoomed out, the geographic terminator layer shows day/night instead
+            const localWeight = clamp01((map.getZoom() - 4) / 3);
+            light.warm *= localWeight;
+            const dark = light.dark * 0.52 * localWeight;
             // multiply tint: neutral by day, warm at golden hour, deep blue at night
             const tint = new THREE.Color(1, 1, 1)
               .lerp(new THREE.Color(1, 0.86, 0.68), light.warm * (1 - light.dark))
