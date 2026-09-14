@@ -636,6 +636,48 @@ export class ParticleSystem {
     }
   }
 
+  /** IR aiming laser: a thin bright beam, brightest at the muzzle, with a small dot on target. */
+  laser(a: P3, b: P3, m: number, engaged: boolean, time: number) {
+    const len = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) / m; // meters
+    // overlap points so the beam reads as a continuous line
+    const n = Math.max(24, Math.min(420, Math.round(len * 9)));
+    const flicker = 0.9 + 0.1 * Math.sin(time * 37);
+    for (let i = 0; i <= n; i++) {
+      const k = i / n;
+      this.fire.push(
+        a.x + (b.x - a.x) * k,
+        a.y + (b.y - a.y) * k,
+        a.z + (b.z - a.z) * k,
+        (engaged ? 0.9 : 0.7) * m,
+        0.9, 1, 0.9,
+        (engaged ? 0.9 : 0.6) * (1 - 0.6 * k) * flicker,
+        i,
+      );
+    }
+    if (engaged) this.fire.push(b.x, b.y, b.z, 2.4 * m, 1, 1, 1, 0.9 * flicker, 99);
+  }
+
+  /** Helicopter rotor downwash: a ring of dust rolling outward under the aircraft. */
+  downwash(id: string, p: P3, m: number, time: number, strength: number) {
+    if (strength <= 0.01) return;
+    const n = 22;
+    const period = 1.6;
+    for (let i = 0; i < n; i++) {
+      const ph = ((time + rnd(id, i + 1100) * period) % period) / period;
+      const a = (i / n) * Math.PI * 2 + rnd(id, i + 1120) * 0.4;
+      const r = (5 + 26 * ph) * m;
+      this.smoke.push(
+        p.x + Math.cos(a) * r,
+        p.y + Math.sin(a) * r,
+        p.z + (1 + 3 * ph) * m,
+        (8 + 16 * ph) * m,
+        0.86, 0.82, 0.72,
+        0.75 * strength * (1 - ph),
+        rnd(id, i + 1140),
+      );
+    }
+  }
+
   /** Dust kicked up behind a moving vehicle: pass recent trail points (newest first). */
   dust(id: string, trail: P3[], m: number, heavy: boolean) {
     trail.forEach((p, k) => {

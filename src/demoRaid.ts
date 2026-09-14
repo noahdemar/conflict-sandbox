@@ -33,7 +33,7 @@ export const RAID_ROSTER: RosterEntry[] = [
   { id: 'r_operator', name: 'SEAL operator (DEVGRU Red Squadron)', type: 'infantry', faction: 'United States', wikiTitle: 'United States Naval Special Warfare Development Group' },
   { id: 'r_interpreter', name: 'Interpreter', type: 'infantry', faction: 'United States' },
   { id: 'r_k9', name: 'Cairo, military working dog (K9)', type: 'infantry', faction: 'United States', wikiTitle: 'Cairo (dog)' },
-  { id: 'r_stealth_hawk', name: 'Modified stealth Black Hawk (160th SOAR)', type: 'air', faction: 'United States', wikiTitle: 'Stealth helicopter' },
+  { id: 'r_stealth_hawk', name: 'Ghosthawk (modified stealth helicopter, 160th SOAR)', type: 'air', faction: 'United States', wikiTitle: 'Stealth helicopter' },
   { id: 'r_mh47', name: 'Chinook (backup)', type: 'air', faction: 'United States', wikiTitle: 'Boeing CH-47 Chinook' },
   { id: 'r_mq9', name: 'MQ-9 Reaper', type: 'air', faction: 'United States', wikiTitle: 'General Atomics MQ-9 Reaper' },
   { id: 'r_occupant', name: 'Compound occupant', type: 'infantry', faction: 'Compound occupants' },
@@ -197,15 +197,15 @@ person({
 
 units.push(
   {
-    id: 'helo1', factionId: US, type: 'air', name: 'Black Hawk 1 (stealth)', rosterId: 'r_stealth_hawk',
+    id: 'helo1', factionId: US, type: 'air', name: 'Ghosthawk 1', rosterId: 'r_stealth_hawk',
     lat: JALALABAD[1], lng: JALALABAD[0], arrowId: 'a_helo1', appearAt: 8, landAtEnd: true, destroyedAt: 96,
   },
   {
-    id: 'helo2', factionId: US, type: 'air', name: 'Black Hawk 2 (stealth)', rosterId: 'r_stealth_hawk',
+    id: 'helo2', factionId: US, type: 'air', name: 'Ghosthawk 2', rosterId: 'r_stealth_hawk',
     lat: JALALABAD[1], lng: JALALABAD[0], arrowId: 'a_helo2', appearAt: 8.6, landAtEnd: true, leavesAt: 98,
   },
   {
-    id: 'helo2_exfil', factionId: US, type: 'air', name: 'Black Hawk 2 (stealth)', rosterId: 'r_stealth_hawk',
+    id: 'helo2_exfil', factionId: US, type: 'air', name: 'Ghosthawk 2', rosterId: 'r_stealth_hawk',
     lat: HELO2_LZ[1], lng: HELO2_LZ[0], arrowId: 'a_helo2_exfil', appearAt: 98, landAtEnd: true,
   },
   {
@@ -231,8 +231,13 @@ units.push(
 );
 
 arrows.push(
-  { id: 'a_helo1', factionId: US, points: [JALALABAD, BORDER_WP, [72.6, 34.12], L(-60, -80), HELO1_LZ], name: 'Helo 1 ingress', appearAt: 8, duration: 30.5, followRoads: false },
-  { id: 'a_helo2', factionId: US, points: [JALALABAD, [71.36, 34.22], [72.62, 34.15], L(120, 110), HELO2_LZ], name: 'Helo 2 ingress', appearAt: 8.6, duration: 32, followRoads: false },
+  {
+    id: 'a_helo1', factionId: US, name: 'Ghosthawk 1 ingress', appearAt: 8, duration: 30.3, followRoads: false,
+    // arrive over the yard, hover and drift in the downwash, then settle hard
+    points: [JALALABAD, BORDER_WP, [72.6, 34.12], L(-70, -90), L(10, -16), L(17, -21), L(11, -23), HELO1_LZ],
+    times: [8, 14, 27, 33, 35, 36.4, 37.6, 38.3],
+  },
+  { id: 'a_helo2', factionId: US, points: [JALALABAD, [71.36, 34.22], [72.62, 34.15], L(120, 110), HELO2_LZ], name: 'Ghosthawk 2 ingress', appearAt: 8.6, duration: 32, followRoads: false },
   { id: 'a_helo2_exfil', factionId: US, points: [HELO2_LZ, L(-400, 600), [72.6, 34.2], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false },
   { id: 'a_chinook_in', factionId: US, points: [HOLDING, [72.8, 34.22], L(300, 400), CHINOOK_LZ], name: 'Backup Chinook called in', appearAt: 76, duration: 10, followRoads: false },
   { id: 'a_chinook_exfil', factionId: US, points: [CHINOOK_LZ, L(600, 900), [72.9, 34.3], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false },
@@ -333,23 +338,24 @@ const cam = (
 
 const keyframes: Keyframe[] = [
   cam('k1', 0, [71.8, 34.1], 6.4, 0, 0, 'Night of 1–2 May 2011 — Jalalabad, Afghanistan to Abbottabad, Pakistan'),
-  cam('k2', 7, [70.62, 34.38], 9.5, 45, 70, 'Two modified stealth Black Hawks lift off from Jalalabad with about two dozen SEALs, an interpreter and a dog, Cairo', {
+  cam('k2', 7, [70.62, 34.38], 9.5, 45, 70, 'Two Ghosthawks — modified stealth helicopters — lift off from Jalalabad with about two dozen SEALs, an interpreter and a dog, Cairo', {
     followUnitId: 'helo1', followMode: 'track',
   }),
   cam('k3', 15, [71.9, 34.25], 7.4, 0, 0, 'Backup Chinooks carrying a quick-reaction force wait about two-thirds of the way to Abbottabad'),
   cam('k4', 23, [73.1, 34.2], 9.2, 40, -20, 'An MQ-9 Reaper circles above Abbottabad, streaming live video'),
   cam('k5', 31, C, 16.4, 55, 35, 'The flight from Jalalabad takes about 90 minutes', { sensor: 'nvg' }),
-  cam('k6', 37, L(10, -10), 18.4, 55, 20, 'Black Hawk 1 loses lift over the high-walled yard and hard-lands', { sensor: 'nvg' }),
+  cam('k6', 34, L(10, -12), 18.4, 55, 20, 'Ghosthawk 1 hovers over the high-walled yard, loses lift and hard-lands', { sensor: 'nvg' }),
   cam('k7', 43, L(-24, -22), 19.1, 50, -10, 'At the guest house, the courier Abu Ahmed al-Kuwaiti opens fire and is killed', { sensor: 'nvg' }),
   cam('k8', 49, L(10, 0), 18.9, 55, 25, 'Teams breach the inner gate while Chalk 2 sets a cordon on the street outside', { sensor: 'nvg' }),
   cam('k9', 54, L(8, 6), 19.4, 45, 0, 'Ground floor of the main house: Abrar al-Kuwaiti and his wife Bushra are killed', { sensor: 'thermal' }),
   cam('k10', 59, L(12, 12), 19.5, 45, 40, 'On the stairs, bin Laden\'s son Khalid is killed', { sensor: 'thermal' }),
   cam('k11', 65, L(12, 17), 19.5, 50, 60, 'Third floor: Osama bin Laden, unarmed, is killed — "Geronimo, EKIA" is relayed back', { sensor: 'thermal' }),
   cam('k12', 72, L(4, 8), 18.2, 40, 10, 'Operators collect computers, drives and documents; women and children are moved to safety in the yard'),
-  cam('k13', 80, L(40, 30), 17.4, 50, -30, 'A backup Chinook is called in to replace the damaged Black Hawk', { sensor: 'nvg' }),
-  cam('k14', 94, HELO1_LZ, 17.8, 50, 15, 'Before leaving, the team destroys the damaged helicopter to protect its technology', { sensor: 'nvg' }),
-  cam('k15', 100, [72.2, 34.2], 7.2, 20, 0, 'Roughly 38 minutes on target. The force returns to Jalalabad with no American casualties'),
-  cam('k16', 106, [71.9, 34.2], 6.2, 0, 0, 'Operation Neptune Spear'),
+  cam('k13', 80, L(40, 30), 17.4, 50, -30, 'A backup Chinook is called in to replace the damaged Ghosthawk', { sensor: 'nvg' }),
+  cam('k14', 92, HELO1_LZ, 17.8, 50, 15, 'Before leaving, the team destroys the damaged Ghosthawk to protect its technology', { sensor: 'nvg' }),
+  cam('k14b', 101, HELO1_LZ, 17.6, 50, 18, 'Before leaving, the team destroys the damaged Ghosthawk to protect its technology', { sensor: 'nvg' }),
+  cam('k15', 104, [72.2, 34.2], 7.2, 20, 0, 'Roughly 38 minutes on target. The force returns to Jalalabad with no American casualties'),
+  cam('k16', 108, [71.9, 34.2], 6.2, 0, 0, 'Operation Neptune Spear'),
 ];
 
 export function raidScenario(): Scenario {

@@ -2193,3 +2193,15 @@ input[type='color'] {
 .hud-dim {
   color: #5b5e61;
 }
+
+
+/* thermal: bodies start hot and cool to dark over time (--cool 0 → 1) */
+.view-thermal .map-container .mk.destroyed .stk-rot {
+  filter: grayscale(1) brightness(calc(4 - 3.7 * var(--cool, 1))) blur(0.8px)
+    drop-shadow(0 0 calc(6px * (1 - var(--cool, 1))) rgba(255, 255, 255, 0.8));
+}
+
+.view-thermal .map-container .mk.aff-hostile.destroyed .stk-rot {
+  filter: grayscale(1) brightness(calc(1.9 - 1.6 * var(--cool, 1))) sepia(1) saturate(calc(9 - 8 * var(--cool, 1)))
+    hue-rotate(-38deg) blur(0.8px) drop-shadow(0 0 calc(6px * (1 - var(--cool, 1))) rgba(255, 50, 30, 0.8));
+}

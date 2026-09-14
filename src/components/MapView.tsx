@@ -661,9 +661,12 @@ export default function MapView() {
         const path = arrowPath(a);
         if (a.hideLine) continue;
         const flyer = st.scenario.units.find((u) => u.arrowId === a.id && u.type === 'air');
-        const prog = flyer
-          ? airProgress(flyer, a, path, st.time)
-          : clamp01((st.time - a.appearAt) / a.duration);
+        const prog =
+          a.times && a.times.length === a.points.length
+            ? clamp01((st.time - a.times[0]) / Math.max(0.01, a.times[a.times.length - 1] - a.times[0]))
+            : flyer
+              ? airProgress(flyer, a, path, st.time)
+              : clamp01((st.time - a.appearAt) / a.duration);
         if (prog <= 0 || a.points.length < 2) continue;
         const drawn = partialPath(path, Math.max(prog, 0.02));
         const color = factionColor(a.factionId);
@@ -982,6 +985,10 @@ export default function MapView() {
         tagMk.setLngLat(pose.point);
         el.classList.toggle('destroyed', destroyed);
         tagEl.classList.toggle('destroyed', destroyed);
+        el.style.setProperty(
+          '--cool',
+          destroyed && u.destroyedAt !== undefined ? clamp01((st.time - u.destroyedAt) / 14).toFixed(3) : '0',
+        );
         // side is exposed for styling (e.g. hostiles glow red in thermal)
         {
           const aff = factionAffiliation(st.scenario.factions.find((f) => f.id === u.factionId), st.scenario.factions);
@@ -1151,6 +1158,43 @@ export default function MapView() {
         }
       }
       scheduleLayout();
+    };
+
+    /**
+     * Infrared aiming lasers on operators' weapons, only while the active shot
+     * uses night vision. Beams snap onto the target while engaging.
+     */
+    const laserBeams = (): { from: LngLat; to: LngLat; engaged: boolean }[] => {
+      const st = useStore.getState();
+      const activeKf = [...st.scenario.keyframes].sort((a, b) => a.time - b.time).filter((k) => k.time <= st.time).pop();
+      if (!(st.playing || st.cameraLock) || activeKf?.sensor !== 'nvg') return [];
+      const strikesNow = resolvedStrikes();
+      const beams: { from: LngLat; to: LngLat; engaged: boolean }[] = [];
+      for (const u of st.scenario.units) {
+        if (u.type !== 'infantry' || st.time < u.appearAt) continue;
+        if (u.leavesAt !== undefined && st.time >= u.leavesAt) continue;
+        if (u.destroyedAt !== undefined && st.time >= u.destroyedAt) continue;
+        const aff = factionAffiliation(st.scenario.factions.find((f) => f.id === u.factionId), st.scenario.factions);
+        const rn = st.unitLibrary.find((e) => e.id === u.rosterId)?.name;
+        if (aff !== 'friend' || silhouetteFor(u, rn) !== 'soldier' || /interpreter/i.test(`${u.name} ${rn ?? ''}`)) continue;
+        const pose = unitPose(u);
+        const [lng, lat] = pose.point;
+        const shot = strikesNow.find(
+          (x) => x.fromUnitId === u.id && st.time >= (x.launchAt ?? x.appearAt) - 1.2 && st.time <= x.appearAt + 0.6,
+        );
+        let to: LngLat;
+        if (shot) {
+          to = [shot.lng, shot.lat];
+        } else {
+          const sweep = Math.sin(st.time * 1.3 + u.id.length * 1.7) * 9 + Math.sin(st.time * 5.1 + u.id.length) * 1.5;
+          const b = ((pose.bearing + sweep) * Math.PI) / 180;
+          const len = 26;
+          const cosLat = Math.cos((lat * Math.PI) / 180);
+          to = [lng + (Math.sin(b) * len) / (111320 * cosLat), lat + (Math.cos(b) * len) / 111320];
+        }
+        beams.push({ from: [lng, lat], to, engaged: !!shot });
+      }
+      return beams;
     };
 
     const losCache = new Map<string, [number, number][]>();
@@ -2075,6 +2119,19 @@ export default function MapView() {
               (fx) => fx.unitId === u.id && fx.kind === 'wounded' && st.time >= fx.start && st.time <= fx.start + fx.duration,
             );
             if (hurt) particles.smolder(u.id, merc(pose.point[0], pose.point[1]), m, st.time - hurt.start, st.time);
+            if (u.type === 'air' && u.landAtEnd && u.arrowId) {
+              const ar = st.scenario.arrows.find((x) => x.id === u.arrowId);
+              const end = ar?.times?.[ar.times.length - 1] ?? (ar ? ar.appearAt + ar.duration : 0);
+              // downwash in the last seconds of the approach and briefly after touchdown
+              const k = st.time - (end - 4);
+              if (ar && k > 0 && st.time < end + 2.5) {
+                const rotorName = st.unitLibrary.find((e) => e.id === u.rosterId)?.name;
+                if (silhouetteFor(u, rotorName) === 'heli') {
+                  const strength = Math.min(1, k / 1.5) * (st.time > end ? Math.max(0, 1 - (st.time - end) / 2.5) : 1);
+                  particles.downwash(u.id, merc(pose.point[0], pose.point[1]), (m / fxScale), st.time, strength);
+                }
+              }
+            }
             if (u.type === 'air' || u.type === 'naval' || !u.arrowId) continue;
             const arrow = st.scenario.arrows.find((a) => a.id === u.arrowId);
             if (!arrow) continue;
@@ -2088,6 +2145,10 @@ export default function MapView() {
             }
             // dust stays subtle: only mildly exaggerated
             particles.dust(u.id, trail, (m / fxScale) * Math.min(fxScale, 1.8), u.type === 'armor');
+          }
+          for (const beam of laserBeams()) {
+            const mB = maplibregl.MercatorCoordinate.fromLngLat({ lng: beam.from[0], lat: beam.from[1] }).meterInMercatorCoordinateUnits();
+            particles.laser(merc(beam.from[0], beam.from[1], 1.3), merc(beam.to[0], beam.to[1], beam.engaged ? 1 : 1.3), mB, beam.engaged, st.time);
           }
           particles.commit(map.getCanvas().height / 2);
 
