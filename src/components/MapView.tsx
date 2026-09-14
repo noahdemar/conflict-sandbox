@@ -572,7 +572,9 @@ export default function MapView() {
           if (
             st.time >= x.appearAt &&
             !x.targetStrikeId &&
-            !interceptorFor(st, x)
+            !interceptorFor(st, x) &&
+            // small-arms rounds leave no crater
+            !(weaponKind(x.name) === 'gun' && x.size < 0.2)
           ) {
             feats.push({
               type: 'Feature',

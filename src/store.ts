@@ -186,6 +186,7 @@ function loadScenario(): Scenario {
       keyframes: parsed.keyframes ?? [],
       effects: parsed.effects ?? [],
       environment: parsed.environment,
+      duration: parsed.duration,
     };
   } catch {
     return defaultScenario();
@@ -336,7 +337,7 @@ export const useStore = create<StoreState>((set, get) => {
     selection: null,
     time: 0,
     playing: false,
-    duration: 60,
+    duration: loadScenario().duration ?? 60,
     look: loadLook(),
     iconStyle: loadIconStyle(),
     setIconStyle: (iconStyle) => {
@@ -371,7 +372,10 @@ export const useStore = create<StoreState>((set, get) => {
     setSelection: (selection) => set({ selection }),
     setTime: (time) => set({ time }),
     setPlaying: (playing) => set({ playing }),
-    setDuration: (duration) => set({ duration }),
+    setDuration: (duration) => {
+      set({ duration });
+      mutate((s) => ({ ...s, duration }));
+    },
     setGlobeMode: (globeMode) => set({ globeMode }),
     setCameraLock: (cameraLock) => set({ cameraLock }),
     setMapApi: (mapApi) => set({ mapApi }),
@@ -787,11 +791,11 @@ export const useStore = create<StoreState>((set, get) => {
     newScenario: () => {
       const s = defaultScenario();
       persist(s);
-      set({ scenario: s, selection: null, draft: [], time: 0, playing: false });
+      set({ scenario: s, duration: s.duration ?? 60, selection: null, draft: [], time: 0, playing: false });
     },
     loadDemo: (id = 'khasham') => {
       const demo = DEMOS.find((d) => d.id === id) ?? DEMOS[0];
-      const s = demo.scenario();
+      const s = { ...demo.scenario(), duration: demo.duration };
       persist(s);
       // merge demo roster entries (by id) into the library
       const lib = [...get().unitLibrary];
@@ -855,6 +859,10 @@ export const useStore = create<StoreState>((set, get) => {
           keyframes: parsed.keyframes ?? [],
           effects: parsed.effects ?? [],
           environment: parsed.environment,
+          duration:
+            raw.format === SCENARIO_FORMAT && typeof raw.duration === 'number' && raw.duration > 0
+              ? raw.duration
+              : parsed.duration,
         };
         // merge bundled roster entries (by id) into the local library
         const lib = [...get().unitLibrary];
@@ -874,10 +882,7 @@ export const useStore = create<StoreState>((set, get) => {
         set({
           scenario: s,
           unitLibrary: lib,
-          duration:
-            raw.format === SCENARIO_FORMAT && typeof raw.duration === 'number' && raw.duration > 0
-              ? raw.duration
-              : get().duration,
+          duration: s.duration ?? get().duration,
           selection: null,
           draft: [],
           time: 0,

@@ -248,7 +248,7 @@ export class ParticleSystem {
     const life = kind === 'bomb' ? 18 : kind === 'gun' ? 3 : 14;
     if (age < 0 || age > life) return;
     const S = size * m;
-    if (kind === 'gun') return this.gunImpact(id, p, S, age);
+    if (kind === 'gun') return this.gunImpact(id, p, S, age, size);
 
     const big = kind === 'bomb';
     // white-hot flash + ground glow lighting the terrain
@@ -382,7 +382,7 @@ export class ParticleSystem {
   }
 
   /** Cannon round strike: kicked-up dust, a spray of ricochet sparks. */
-  private gunImpact(id: string, p: P3, S: number, age: number) {
+  private gunImpact(id: string, p: P3, S: number, age: number, size: number) {
     if (age < 0.08) this.fire.push(p.x, p.y, p.z + 6 * S, 60 * S, 1, 0.85, 0.5, 1 - age / 0.08, 1);
     for (let i = 0; i < 6; i++) {
       const dur = 0.25 + rnd(id, i + 50) * 0.35;
@@ -396,6 +396,8 @@ export class ParticleSystem {
         9 * S, 1, 0.8, 0.4, 1 - age / dur, i,
       );
     }
+    // cannon rounds kick up dust; rifle rounds are just a spark
+    if (size < 0.2) return;
     for (let i = 0; i < 4; i++) {
       const dur = 1.8 + rnd(id, i + 80) * 1.2;
       if (age >= dur) continue;

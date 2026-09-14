@@ -242,4 +242,6 @@ export interface Scenario {
   effects?: StatusEffect[];
   /** Lighting & weather; optional (defaults to midday, calm, clear) */
   environment?: Environment;
+  /** Timeline length in seconds (defaults to 60) */
+  duration?: number;
 }
