@@ -365,8 +365,8 @@ const keyframes: Keyframe[] = [
   cam('k14b', 101, HELO1_LZ, 17.6, 50, 18, 'Before leaving, the team destroys the damaged Ghosthawk to protect its technology', { sensor: 'nvg' }),
   cam('k15', 104, [72.2, 34.2], 7.2, 20, 0, 'Roughly 38 minutes on target. The force returns to Jalalabad with no American casualties'),
   cam('k16', 108, [71.9, 34.2], 6.2, 0, 0, 'Operation Neptune Spear'),
-  cam('k17', 111, [72.2, 31.2], 4.4, 62, 16, 'The morning after, an imaging satellite passes over Abbottabad'),
-  cam('k17b', 116, [72.9, 32.6], 4.9, 58, 20, 'The morning after, an imaging satellite passes over Abbottabad'),
+  cam('k17', 111, [72.2, 31.2], 4.4, 62, 16, 'The morning after, a satellite captures the aftermath on Google Earth'),
+  cam('k17b', 116, [72.9, 32.6], 4.9, 58, 20, 'The morning after, a satellite captures the aftermath on Google Earth'),
   cam('k18', 118, C, 9.5, 0, 0, 'The satellite images the compound in daylight'),
   // top-down, north up, compound offset left so the image pane sits beside it
   cam('k19', 120, L(55, 0), 17.4, 0, 0, 'The compound the morning after the raid, from satellite imagery', {
