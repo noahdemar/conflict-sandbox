@@ -65,7 +65,6 @@ function TacticalHud() {
     <>
       <div className="hud hud-tl">
         <div className="hud-row">
-          <span className={`hud-live ${playing ? 'on' : ''}`}>{playing ? 'LIVE' : 'HOLD'}</span>
           <span className="hud-name">{name}</span>
         </div>
         <div className="hud-clock">
