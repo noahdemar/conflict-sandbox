@@ -267,7 +267,7 @@ export default function Timeline() {
               title="Voice"
               onChange={(e) => setNarration({ voice: e.target.value || null })}
             >
-              <option value="">Default</option>
+              <option value="">Most natural available</option>
               {(narration.engine === 'kokoro' ? KOKORO_VOICES : voices).map(
                 (v) => (
                   <option key={v.id} value={v.id}>

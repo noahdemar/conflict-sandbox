@@ -102,12 +102,43 @@ export function stopNarration() {
   }
 }
 
+/**
+ * Most natural-sounding male English system voice available, used when no
+ * voice is chosen. Browsers don't expose voice gender, so voices are ranked
+ * by name: neural/"Natural" voices (Edge), Google UK Male (Chrome), Apple's
+ * Premium/Enhanced and standard male voices; robotic and novelty voices and
+ * female voices rank last.
+ */
+export function bestWebVoice(): SpeechSynthesisVoice | undefined {
+  if (!('speechSynthesis' in window)) return undefined;
+  const voices = window.speechSynthesis.getVoices().filter((v) => /^en(-|_|$)/i.test(v.lang));
+  const MALE =
+    /\b(guy|davis|andrew|brian|christopher|eric|roger|steffan|ryan|thomas|william|liam|connor|tony|jason|evan|nathan|aaron|arthur|oliver|tom|alex|daniel|gordon|lee|male)\b/i;
+  const FEMALE =
+    /\b(samantha|ava|zoe|allison|susan|karen|moira|tessa|fiona|victoria|aria|jenny|emma|michelle|sonia|libby|natasha|serena|kate|kathy|nicky|joanna|female|flo|sandy|shelley|grandma)\b/i;
+  const ROBOTIC =
+    /compact|eloquence|espeak|novelty|bad news|good news|bahh|bells|boing|bubbles|cellos|whisper|zarvox|trinoids|albert|jester|organ|superstar|wobble|fred|ralph|junior|grandpa|rocko|eddy|reed/i;
+  const score = (v: SpeechSynthesisVoice) => {
+    const n = v.name;
+    let sc = 0;
+    if (/natural|neural/i.test(n)) sc += 100;
+    if (/premium/i.test(n)) sc += 80;
+    if (/enhanced/i.test(n)) sc += 70;
+    if (/^google/i.test(n)) sc += 40;
+    if (MALE.test(n)) sc += 60;
+    if (FEMALE.test(n)) sc -= 60;
+    if (ROBOTIC.test(n)) sc -= 200;
+    if (/en-(us|gb)/i.test(v.lang)) sc += 5;
+    return sc;
+  };
+  return [...voices].sort((a, b) => score(b) - score(a))[0];
+}
+
 function speakWeb(text: string, voiceId: string | null, rate: number) {
   if (!('speechSynthesis' in window)) return;
   const utt = new SpeechSynthesisUtterance(text);
-  const voice = window.speechSynthesis
-    .getVoices()
-    .find((v) => v.voiceURI === voiceId);
+  const voice =
+    window.speechSynthesis.getVoices().find((v) => v.voiceURI === voiceId) ?? bestWebVoice();
   if (voice) utt.voice = voice;
   utt.rate = rate;
   utt.onend = utt.onerror = () => {
@@ -126,7 +157,7 @@ function playPending() {
 
 function speak(text: string, engine: NarrationEngine, voiceId: string | null, rate: number) {
   if (engine === 'kokoro') {
-    speakKokoro(text, voiceId ?? 'af_heart', rate).catch(() => speakWeb(text, voiceId, rate));
+    speakKokoro(text, voiceId ?? 'am_michael', rate).catch(() => speakWeb(text, voiceId, rate));
   } else {
     speakWeb(text, voiceId, rate);
   }
