@@ -7,7 +7,7 @@ import PropertiesPanel from './components/PropertiesPanel';
 import Timeline from './components/Timeline';
 import TopBar from './components/TopBar';
 import { useStore } from './store';
-import { narrate, preloadKokoro, stopNarration } from './narration';
+import { loadNarrationPack, narrate, narrateRecorded, preloadKokoro, stopNarration } from './narration';
 import { boom, setRotor } from './audio';
 import { expandStrikes } from './particles';
 import { startRouting } from './routing';
@@ -214,12 +214,14 @@ export default function App() {
   const viewer = useStore((s) => s.viewer);
   const sensor = useSensorView();
   const spokenRef = useRef<string | null>(null);
+  const spokenCaptionRef = useRef<string | null>(null);
   const prevTimeRef = useRef(0);
 
   // Narration: speak the caption of the keyframe that becomes active
   useEffect(() => {
     if (!playing) {
       spokenRef.current = null;
+      spokenCaptionRef.current = null;
       stopNarration();
       return;
     }
@@ -239,12 +241,27 @@ export default function App() {
         .pop();
       if (active && active.caption && active.id !== spokenRef.current) {
         spokenRef.current = active.id;
-        narrate(
-          active.caption,
-          st.narration.engine,
-          st.narration.voice,
-          st.narration.rate,
-        );
+        // a shot that repeats the previous caption doesn't say it again
+        if (active.caption === spokenCaptionRef.current) return;
+        spokenCaptionRef.current = active.caption;
+        const caption = active.caption;
+        const kfId = active.id;
+        const { engine, voice, rate } = st.narration;
+        const pack = st.scenario.narrationPack;
+        if (!pack) {
+          narrate(caption, engine, voice, rate);
+        } else {
+          // prefer the pre-recorded line when its text still matches the caption
+          loadNarrationPack(pack).then((m) => {
+            const item = m?.items[kfId];
+            if (useStore.getState().time < active.time - 0.5) return; // scrubbed away meanwhile
+            if (item && item.text === caption) {
+              narrateRecorded(`${import.meta.env.BASE_URL}${pack}/${item.file}`, caption, engine, voice, rate);
+            } else {
+              narrate(caption, engine, voice, rate);
+            }
+          });
+        }
       }
     };
     check();
@@ -258,7 +275,7 @@ export default function App() {
   // fetch the narrator's voice model ahead of the first line (player on open, editor on play)
   useEffect(() => {
     const n = useStore.getState().narration;
-    if ((viewer || playing) && n.enabled && n.engine === 'kokoro') preloadKokoro();
+    if ((viewer || playing) && n.enabled && n.engine === 'kokoro' && !useStore.getState().scenario.narrationPack) preloadKokoro();
   }, [viewer, playing]);
 
   // rotor sound follows the nearest helicopter while the scenario plays

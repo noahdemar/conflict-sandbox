@@ -14,6 +14,7 @@ import {
   KOKORO_VOICES,
   narrate,
   onKokoroStatus,
+  type KokoroProgress,
   preloadKokoro,
   webSpeechVoices,
 } from '../narration';
@@ -41,7 +42,10 @@ export default function Timeline() {
   const raf = useRef<number>(0);
   const lastTs = useRef<number>(0);
   const [voices, setVoices] = useState(webSpeechVoices());
-  const [kokoroMsg, setKokoroMsg] = useState<string | null>(null);
+  const [kokoro, setKokoro] = useState<KokoroProgress | null>(null);
+  // keep a short "ready" confirmation after a download completes
+  const [readyFlash, setReadyFlash] = useState(false);
+  const sawLoading = useRef(false);
   const [preparing, setPreparing] = useState(false);
   const [tracksOpen, setTracksOpen] = useState(false);
 
@@ -78,12 +82,24 @@ export default function Timeline() {
   };
 
   useEffect(() => {
-    onKokoroStatus(setKokoroMsg);
-    if (!('speechSynthesis' in window)) return;
+    let flashTimer = 0;
+    const offKokoro = onKokoroStatus((p) => {
+      setKokoro(p);
+      if (p.state === 'loading') sawLoading.current = true;
+      if (p.state === 'ready' && sawLoading.current) {
+        sawLoading.current = false;
+        setReadyFlash(true);
+        window.clearTimeout(flashTimer);
+        flashTimer = window.setTimeout(() => setReadyFlash(false), 2500);
+      }
+    });
+    if (!('speechSynthesis' in window)) return offKokoro;
     const refresh = () => setVoices(webSpeechVoices());
     window.speechSynthesis.addEventListener('voiceschanged', refresh);
-    return () =>
+    return () => {
+      offKokoro();
       window.speechSynthesis.removeEventListener('voiceschanged', refresh);
+    };
   }, []);
 
   useEffect(() => {
@@ -294,8 +310,22 @@ export default function Timeline() {
           </>
         )}
       </div>
-      {kokoroMsg && narration.engine === 'kokoro' && (
-        <div className="tl-kokoro-status">{kokoroMsg}</div>
+      {kokoro && narration.engine === 'kokoro' && (kokoro.state === 'loading' || kokoro.state === 'error' || readyFlash) && (
+        <div className={`tl-kokoro-status ${kokoro.state}`} role="status">
+          <div className="kokoro-line">
+            <span>{kokoro.state === 'error' ? 'Voice model failed to load — using browser voice' : kokoro.state === 'ready' ? 'Voice model ready' : kokoro.message}</span>
+            {kokoro.pct !== null && (
+              <span className="kokoro-num">
+                {kokoro.pct.toFixed(0)}% · {kokoro.loadedMB.toFixed(0)} / {kokoro.totalMB.toFixed(0)} MB
+              </span>
+            )}
+          </div>
+          {kokoro.state === 'loading' && (
+            <div className="kokoro-bar">
+              <i style={{ width: `${kokoro.pct ?? 0}%` }} className={kokoro.pct === null ? 'indeterminate' : ''} />
+            </div>
+          )}
+        </div>
       )}
     </div>
     </>

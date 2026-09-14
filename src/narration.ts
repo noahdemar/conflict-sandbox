@@ -40,15 +40,36 @@ type KokoroTTS = {
 
 let kokoroPromise: Promise<KokoroTTS> | null = null;
 let kokoroStatus: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
-let statusListener: ((s: string) => void) | null = null;
 
-export function onKokoroStatus(fn: (s: string) => void) {
-  statusListener = fn;
+/** Voice model download/load state for the UI. `pct` is 0..100 while downloading. */
+export interface KokoroProgress {
+  state: 'idle' | 'loading' | 'ready' | 'error';
+  message: string;
+  pct: number | null;
+  loadedMB: number;
+  totalMB: number;
 }
 
-function setStatus(s: typeof kokoroStatus, msg?: string) {
+const listeners = new Set<(p: KokoroProgress) => void>();
+let lastProgress: KokoroProgress = { state: 'idle', message: '', pct: null, loadedMB: 0, totalMB: 0 };
+
+/** Subscribe to model download progress; called immediately with the current state. */
+export function onKokoroStatus(fn: (p: KokoroProgress) => void): () => void {
+  listeners.add(fn);
+  fn(lastProgress);
+  return () => listeners.delete(fn);
+}
+
+function setStatus(s: typeof kokoroStatus, msg?: string, bytes?: { loaded: number; total: number }) {
   kokoroStatus = s;
-  statusListener?.(msg ?? s);
+  lastProgress = {
+    state: s,
+    message: msg ?? s,
+    pct: bytes && bytes.total > 0 ? Math.min(100, (bytes.loaded / bytes.total) * 100) : s === 'ready' ? 100 : null,
+    loadedMB: bytes ? bytes.loaded / 1e6 : lastProgress.loadedMB,
+    totalMB: bytes ? bytes.total / 1e6 : lastProgress.totalMB,
+  };
+  listeners.forEach((fn) => fn(lastProgress));
 }
 
 export function kokoroState() {
@@ -57,14 +78,33 @@ export function kokoroState() {
 
 async function loadKokoro(): Promise<KokoroTTS> {
   if (!kokoroPromise) {
-    setStatus('loading', 'Downloading local voice model (~90MB, one-time)…');
+    setStatus('loading', 'Preparing voice model…');
+    // aggregate byte progress across every file the model needs
+    const files = new Map<string, { loaded: number; total: number }>();
     kokoroPromise = import('kokoro-js')
       .then(async (mod) => {
-        const tts = await mod.KokoroTTS.from_pretrained(
-          'onnx-community/Kokoro-82M-v1.0-ONNX',
-          { dtype: 'q8' },
-        );
-        setStatus('ready');
+        const tts = await mod.KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
+          dtype: 'q8',
+          progress_callback: (e: { status: string; file?: string; loaded?: number; total?: number }) => {
+            if (!e.file) return;
+            if (e.status === 'progress' && e.total) {
+              files.set(e.file, { loaded: e.loaded ?? 0, total: e.total });
+            } else if (e.status === 'done') {
+              const f = files.get(e.file);
+              if (f) f.loaded = f.total;
+            } else {
+              return;
+            }
+            let loaded = 0;
+            let total = 0;
+            files.forEach((f) => {
+              loaded += f.loaded;
+              total += f.total;
+            });
+            setStatus('loading', 'Downloading voice model (one-time)', { loaded, total });
+          },
+        });
+        setStatus('ready', 'Voice model ready');
         return tts as unknown as KokoroTTS;
       })
       .catch((e) => {
@@ -85,11 +125,15 @@ let currentAudio: HTMLAudioElement | null = null;
 let currentUrl: string | null = null;
 
 /** Latest caption waiting for the current line to finish (older ones are dropped). */
-let pending: { text: string; engine: NarrationEngine; voiceId: string | null; rate: number } | null = null;
+type Queued = { text: string; engine: NarrationEngine; voiceId: string | null; rate: number; file?: string; at: number };
+/** Lines waiting for the current one to finish, oldest first. */
+let queue: Queued[] = [];
+/** A waiting line older than this is dropped if something newer is also waiting. */
+const STALE_MS = 3500;
 let speaking = false;
 
 export function stopNarration() {
-  pending = null;
+  queue = [];
   speaking = false;
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   if (currentAudio) {
@@ -150,9 +194,77 @@ function speakWeb(text: string, voiceId: string | null, rate: number) {
 }
 
 function playPending() {
-  const next = pending;
-  pending = null;
-  if (next) speak(next.text, next.engine, next.voiceId, next.rate);
+  const now = performance.now();
+  // skip lines that have fallen too far behind, as long as a newer one is waiting
+  while (queue.length > 1 && now - queue[0].at > STALE_MS) queue.shift();
+  const next = queue.shift();
+  if (!next) return;
+  if (next.file) {
+    playFile(next.file, next.rate).catch(() => speak(next.text, next.engine, next.voiceId, next.rate));
+  } else {
+    speak(next.text, next.engine, next.voiceId, next.rate);
+  }
+}
+
+/** Play a pre-recorded narration line through the recordable audio bus. */
+async function playFile(url: string, rate: number) {
+  if (currentAudio) currentAudio.pause();
+  if (currentUrl) {
+    URL.revokeObjectURL(currentUrl);
+    currentUrl = null;
+  }
+  currentAudio = new Audio(url);
+  currentAudio.crossOrigin = 'anonymous';
+  currentAudio.playbackRate = rate;
+  speaking = true;
+  currentAudio.onended = () => {
+    speaking = false;
+    playPending();
+  };
+  try {
+    routeElement(currentAudio);
+  } catch {
+    /* element already routed */
+  }
+  try {
+    await currentAudio.play();
+  } catch (e) {
+    speaking = false;
+    throw e;
+  }
+}
+
+/**
+ * Speak a caption from a pre-recorded file when one is available, queued the
+ * same way as live speech; falls back to live synthesis if the file fails.
+ */
+export function narrateRecorded(
+  file: string,
+  text: string,
+  engine: NarrationEngine,
+  voiceId: string | null,
+  rate = 1,
+) {
+  if (speaking) {
+    queue.push({ text, engine, voiceId, rate, file, at: performance.now() });
+    return;
+  }
+  playFile(file, rate).catch(() => speak(text, engine, voiceId, rate));
+}
+
+type Manifest = { voice: string; items: Record<string, { text: string; file: string }> };
+const manifests = new Map<string, Promise<Manifest | null>>();
+
+/** Fetch (once) the manifest of a narration pack folder, e.g. "narration/binladen-raid". */
+export function loadNarrationPack(pack: string): Promise<Manifest | null> {
+  let p = manifests.get(pack);
+  if (!p) {
+    p = fetch(`${import.meta.env.BASE_URL}${pack}/manifest.json`)
+      .then((r) => (r.ok ? (r.json() as Promise<Manifest>) : null))
+      .catch(() => null);
+    manifests.set(pack, p);
+  }
+  return p;
 }
 
 function speak(text: string, engine: NarrationEngine, voiceId: string | null, rate: number) {
@@ -221,7 +333,7 @@ function floatToWav(samples: Float32Array, sampleRate: number): Blob {
 
 /**
  * Speak a caption. By default a line already being spoken is allowed to
- * finish and only the newest caption waits behind it; `interrupt` cuts in
+ * finish and later captions queue behind it (stale ones are dropped); `interrupt` cuts in
  * immediately (used for voice previews).
  */
 export function narrate(
@@ -234,7 +346,7 @@ export function narrate(
   if (!text.trim()) return;
   if (interrupt) stopNarration();
   if (speaking) {
-    pending = { text, engine, voiceId, rate };
+    queue.push({ text, engine, voiceId, rate, at: performance.now() });
     return;
   }
   speak(text, engine, voiceId, rate);

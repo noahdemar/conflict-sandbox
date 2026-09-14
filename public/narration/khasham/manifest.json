@@ -1,0 +1,41 @@
+{
+  "voice": "bm_george",
+  "items": {
+    "k1": {
+      "text": "Deir ez-Zor, Syria — the Euphrates deconfliction line, February 7, 2018",
+      "file": "k1.mp3"
+    },
+    "k2": {
+      "text": "Conoco gas plant — US special operators and SDF fighters hold the facility",
+      "file": "k2.mp3"
+    },
+    "k3": {
+      "text": "A Wagner column — T-72s, T-55s, BMPs, ~500 men — rolls out of Khasham toward the plant",
+      "file": "k3.mp3"
+    },
+    "k4": {
+      "text": "Wagner howitzers and Grad rockets open fire on the defenders",
+      "file": "k4.mp3"
+    },
+    "k5": {
+      "text": "US aircraft respond — F-15Es, an MQ-9, an AC-130 gunship, Apaches",
+      "file": "k5.mp3"
+    },
+    "k6": {
+      "text": "Precision strikes walk down the column, vehicle by vehicle",
+      "file": "k6.mp3"
+    },
+    "k7": {
+      "text": "A B-52 arrives to finish the survivors on the road",
+      "file": "k7.mp3"
+    },
+    "k8": {
+      "text": "HIMARS counter-battery fire silences the Wagner artillery",
+      "file": "k8.mp3"
+    },
+    "k9": {
+      "text": "By dawn the column is destroyed — no US casualties",
+      "file": "k9.mp3"
+    }
+  }
+}

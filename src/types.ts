@@ -268,4 +268,6 @@ export interface Scenario {
   environment?: Environment;
   /** Timeline length in seconds (defaults to 60) */
   duration?: number;
+  /** Folder of pre-recorded caption narration (with manifest.json), relative to the site base */
+  narrationPack?: string;
 }

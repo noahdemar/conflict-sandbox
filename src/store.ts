@@ -198,6 +198,7 @@ function loadScenario(): Scenario {
       effects: parsed.effects ?? [],
       environment: parsed.environment,
       duration: parsed.duration,
+      narrationPack: parsed.narrationPack,
     };
   } catch {
     return defaultScenario();
@@ -807,7 +808,7 @@ export const useStore = create<StoreState>((set, get) => {
     },
     loadDemo: (id = 'khasham', opts) => {
       const demo = DEMOS.find((d) => d.id === id) ?? DEMOS[0];
-      const s = { ...demo.scenario(), duration: demo.duration };
+      const s = { ...demo.scenario(), duration: demo.duration, narrationPack: `narration/${demo.id}` };
       if (opts?.persist !== false) persist(s);
       // merge demo roster entries (by id) into the library
       const lib = [...get().unitLibrary];
@@ -877,6 +878,7 @@ export const useStore = create<StoreState>((set, get) => {
             raw.format === SCENARIO_FORMAT && typeof raw.duration === 'number' && raw.duration > 0
               ? raw.duration
               : parsed.duration,
+          narrationPack: parsed.narrationPack,
         };
         // merge bundled roster entries (by id) into the local library
         const lib = [...get().unitLibrary];
