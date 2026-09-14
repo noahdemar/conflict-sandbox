@@ -636,27 +636,6 @@ export class ParticleSystem {
     }
   }
 
-  /** IR aiming laser: a thin bright beam, brightest at the muzzle, with a small dot on target. */
-  laser(a: P3, b: P3, m: number, engaged: boolean, time: number) {
-    const len = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) / m; // meters
-    // overlap points so the beam reads as a continuous line
-    const n = Math.max(24, Math.min(420, Math.round(len * 9)));
-    const flicker = 0.9 + 0.1 * Math.sin(time * 37);
-    for (let i = 0; i <= n; i++) {
-      const k = i / n;
-      this.fire.push(
-        a.x + (b.x - a.x) * k,
-        a.y + (b.y - a.y) * k,
-        a.z + (b.z - a.z) * k,
-        (engaged ? 0.9 : 0.7) * m,
-        0.9, 1, 0.9,
-        (engaged ? 0.9 : 0.6) * (1 - 0.6 * k) * flicker,
-        i,
-      );
-    }
-    if (engaged) this.fire.push(b.x, b.y, b.z, 2.4 * m, 1, 1, 1, 0.9 * flicker, 99);
-  }
-
   /** Helicopter rotor downwash: a ring of dust rolling outward under the aircraft. */
   downwash(id: string, p: P3, m: number, time: number, strength: number) {
     if (strength <= 0.01) return;

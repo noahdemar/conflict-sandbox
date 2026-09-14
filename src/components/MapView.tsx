@@ -1160,43 +1160,6 @@ export default function MapView() {
       scheduleLayout();
     };
 
-    /**
-     * Infrared aiming lasers on operators' weapons, only while the active shot
-     * uses night vision. Beams snap onto the target while engaging.
-     */
-    const laserBeams = (): { from: LngLat; to: LngLat; engaged: boolean }[] => {
-      const st = useStore.getState();
-      const activeKf = [...st.scenario.keyframes].sort((a, b) => a.time - b.time).filter((k) => k.time <= st.time).pop();
-      if (!(st.playing || st.cameraLock) || activeKf?.sensor !== 'nvg') return [];
-      const strikesNow = resolvedStrikes();
-      const beams: { from: LngLat; to: LngLat; engaged: boolean }[] = [];
-      for (const u of st.scenario.units) {
-        if (u.type !== 'infantry' || st.time < u.appearAt) continue;
-        if (u.leavesAt !== undefined && st.time >= u.leavesAt) continue;
-        if (u.destroyedAt !== undefined && st.time >= u.destroyedAt) continue;
-        const aff = factionAffiliation(st.scenario.factions.find((f) => f.id === u.factionId), st.scenario.factions);
-        const rn = st.unitLibrary.find((e) => e.id === u.rosterId)?.name;
-        if (aff !== 'friend' || silhouetteFor(u, rn) !== 'soldier' || /interpreter/i.test(`${u.name} ${rn ?? ''}`)) continue;
-        const pose = unitPose(u);
-        const [lng, lat] = pose.point;
-        const shot = strikesNow.find(
-          (x) => x.fromUnitId === u.id && st.time >= (x.launchAt ?? x.appearAt) - 1.2 && st.time <= x.appearAt + 0.6,
-        );
-        let to: LngLat;
-        if (shot) {
-          to = [shot.lng, shot.lat];
-        } else {
-          const sweep = Math.sin(st.time * 1.3 + u.id.length * 1.7) * 9 + Math.sin(st.time * 5.1 + u.id.length) * 1.5;
-          const b = ((pose.bearing + sweep) * Math.PI) / 180;
-          const len = 26;
-          const cosLat = Math.cos((lat * Math.PI) / 180);
-          to = [lng + (Math.sin(b) * len) / (111320 * cosLat), lat + (Math.cos(b) * len) / 111320];
-        }
-        beams.push({ from: [lng, lat], to, engaged: !!shot });
-      }
-      return beams;
-    };
-
     const losCache = new Map<string, [number, number][]>();
 
     const syncAll = () => {
@@ -2145,10 +2108,6 @@ export default function MapView() {
             }
             // dust stays subtle: only mildly exaggerated
             particles.dust(u.id, trail, (m / fxScale) * Math.min(fxScale, 1.8), u.type === 'armor');
-          }
-          for (const beam of laserBeams()) {
-            const mB = maplibregl.MercatorCoordinate.fromLngLat({ lng: beam.from[0], lat: beam.from[1] }).meterInMercatorCoordinateUnits();
-            particles.laser(merc(beam.from[0], beam.from[1], 1.3), merc(beam.to[0], beam.to[1], beam.engaged ? 1 : 1.3), mB, beam.engaged, st.time);
           }
           particles.commit(map.getCanvas().height / 2);
 
