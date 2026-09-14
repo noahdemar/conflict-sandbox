@@ -1970,9 +1970,8 @@ input[type='color'] {
 }
 
 @keyframes sensor-on {
-  0% { opacity: 0; }
-  30% { opacity: 1; filter: brightness(2.5); }
-  100% { opacity: 1; filter: none; }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .sensor-nvg {

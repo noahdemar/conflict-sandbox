@@ -547,11 +547,12 @@ export class ParticleSystem {
   }
 
   /** Burning wreck: flickering fire + looping dark smoke column. */
-  wreck(id: string, p: P3, m: number, since: number, time: number) {
+  /** `cookOff`: secondary ammunition bursts (armored vehicles), off for aircraft */
+  wreck(id: string, p: P3, m: number, since: number, time: number, cookOff = true) {
     if (since < 0) return;
     const grow = Math.min(1, since / 2.5);
     // ammunition cooking off in the first seconds
-    if (since < 9) {
+    if (cookOff && since < 9) {
       for (let j = 0; j < 5; j++) {
         const tj = 0.9 + rnd(id, j + 950) * 7;
         const age = since - tj;
@@ -632,9 +633,6 @@ export class ParticleSystem {
         0.5 * Math.min(1, life * 5) * (1 - life) * grow,
         rnd(id, i + 940),
       );
-    }
-    if (Math.sin(time * 7.3 + id.length) > 0.93) {
-      this.fire.push(p.x, p.y, p.z + 10 * m, 18 * m, 1, 0.6, 0.2, 0.9 * grow, 5);
     }
   }
 

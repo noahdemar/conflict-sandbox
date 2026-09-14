@@ -2020,7 +2020,7 @@ export default function MapView() {
             if (u.destroyedAt !== undefined && st.time >= u.destroyedAt) {
               // only vehicles and equipment burn; fallen personnel are just marked
               if (u.type !== 'infantry') {
-                particles.wreck(u.id, merc(pose.point[0], pose.point[1]), m, st.time - u.destroyedAt, st.time);
+                particles.wreck(u.id, merc(pose.point[0], pose.point[1]), m, st.time - u.destroyedAt, st.time, u.type !== 'air');
               }
               continue;
             }
