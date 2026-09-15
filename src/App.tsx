@@ -7,7 +7,7 @@ import PropertiesPanel from './components/PropertiesPanel';
 import Timeline from './components/Timeline';
 import TopBar from './components/TopBar';
 import { useStore } from './store';
-import { loadNarrationPack, narrate, narrateRecorded, preloadKokoro, preloadNarrationPack, stopNarration } from './narration';
+import { kokoroState, loadNarrationPack, narrate, narrateRecorded, preloadKokoro, preloadNarrationPack, stopNarration } from './narration';
 import { boom, setRotor } from './audio';
 import { expandStrikes } from './particles';
 import { startRouting } from './routing';
@@ -19,6 +19,7 @@ import { hourAt } from './environment';
 import EnvironmentPanel from './components/EnvironmentPanel';
 import TranscriptPane from './components/TranscriptPane';
 import ConsentModal from './components/ConsentModal';
+import VoiceModelDialog from './components/VoiceModelDialog';
 
 /** Slide-style caption of the most recent keyframe at the current time. */
 function CaptionOverlay() {
@@ -211,11 +212,20 @@ function SensorOverlay({ view }: { view: 'nvg' | 'thermal' }) {
   );
 }
 
+/** Asked once per session whether to fetch the local voice model for authored voice lines. */
+let voicePromptAsked = false;
+
 export default function App() {
   const playing = useStore((s) => s.playing);
   const look = useStore((s) => s.look);
   const viewer = useStore((s) => s.viewer);
   const sensor = useSensorView();
+  const tool = useStore((s) => s.tool);
+  const narrationPack = useStore((s) => s.scenario.narrationPack);
+  // captions that will actually be read aloud
+  const hasVoiceLines = useStore((s) =>
+    s.scenario.keyframes.some((k) => !!k.caption?.trim() && k.narrate !== false),
+  );
   const spokenRef = useRef<string | null>(null);
   const spokenCaptionRef = useRef<string | null>(null);
   const prevTimeRef = useRef(0);
@@ -280,14 +290,34 @@ export default function App() {
   // snap ground movement to real roads
   useEffect(() => startRouting(), []);
 
-  // fetch the narrator's voice model ahead of the first line (player on open, editor on play)
+  // fetch the narrator's voice model only once a scenario that speaks is
+  // opened (viewer) or played (editor) — never on a plain first visit
   useEffect(() => {
-    const n = useStore.getState().narration;
-    if ((viewer || playing) && n.enabled && n.engine === 'kokoro' && !useStore.getState().scenario.narrationPack) preloadKokoro();
-  }, [viewer, playing]);
+    const st = useStore.getState();
+    const n = st.narration;
+    if (
+      (viewer || playing) &&
+      hasVoiceLines &&
+      n.enabled &&
+      n.engine === 'kokoro' &&
+      n.consent !== 'text' &&
+      !st.scenario.narrationPack
+    ) {
+      preloadKokoro();
+    }
+  }, [viewer, playing, hasVoiceLines, narrationPack]);
+
+  // first spoken caption authored in the editor: ask before pulling the ~90MB model
+  useEffect(() => {
+    if (voicePromptAsked || viewer || !hasVoiceLines) return;
+    const st = useStore.getState();
+    if (st.narration.enabled && st.narration.engine === 'kokoro' && kokoroState() === 'idle') {
+      voicePromptAsked = true;
+      useStore.setState({ voicePromptPending: true });
+    }
+  }, [hasVoiceLines, viewer]);
 
   // recorded narration: fetch the whole pack as soon as the scenario opens
-  const narrationPack = useStore((s) => s.scenario.narrationPack);
   useEffect(() => {
     if (narrationPack) preloadNarrationPack(narrationPack);
   }, [narrationPack]);
@@ -380,7 +410,10 @@ export default function App() {
   }, []);
 
   return (
-    <div className={`app ${playing ? 'presenting' : ''} look-${look} ${viewer ? 'viewer' : ''} view-${sensor}`}>
+    <div
+      className={`app ${playing ? 'presenting' : ''} look-${look} ${viewer ? 'viewer' : ''} view-${sensor}`}
+      data-tool={tool}
+    >
       <div className="letterbox top" />
       <div className="letterbox bottom" />
       <div className="vignette" />
@@ -399,6 +432,7 @@ export default function App() {
       <CaptionOverlay />
       <TranscriptPane />
       <ConsentModal />
+      <VoiceModelDialog />
       {viewer && <ViewerBar />}
       <TacticalHud />
     </div>

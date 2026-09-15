@@ -222,6 +222,8 @@ interface StoreState {
   /** Waiting for the viewer to choose voice or text-only narration before playing */
   consentPending: boolean;
   resolveConsent: (choice: 'voice' | 'text') => void;
+  /** First voice line authored: ask before downloading the local voice model */
+  voicePromptPending: boolean;
   /** Right-hand transcript pane */
   transcriptOpen: boolean;
   setTranscriptOpen: (open: boolean) => void;
@@ -404,6 +406,7 @@ export const useStore = create<StoreState>((set, get) => {
       set({ playing });
     },
     consentPending: false,
+    voicePromptPending: false,
     resolveConsent: (choice) => {
       const narration = { ...get().narration, consent: choice, enabled: choice === 'voice' };
       set({ narration, consentPending: false });

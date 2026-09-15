@@ -5,6 +5,8 @@ import { useStore } from '../store';
 export default function ConsentModal() {
   const pending = useStore((s) => s.consentPending);
   const resolve = useStore((s) => s.resolveConsent);
+  // voice playback pulls the local speech model unless the scenario ships recordings
+  const needsModel = useStore((s) => s.narration.engine === 'kokoro' && !s.scenario.narrationPack);
   const cancel = () => useStore.setState({ consentPending: false });
   if (!pending) return null;
   return (
@@ -12,8 +14,9 @@ export default function ConsentModal() {
       <div className="panel consent-dialog">
         <h2 id="consent-title">This scenario is narrated</h2>
         <p>
-          Captions can be read aloud by a synthesized voice as the scenario plays. You can change this later with the
-          speaker button, or per line in the transcript.
+          Captions can be read aloud by a synthesized voice as the scenario plays.
+          {needsModel && ' The first line downloads a local voice model once (~90MB, cached afterwards).'} You can
+          change this later with the speaker button, or per line in the transcript.
         </p>
         <div className="consent-actions">
           <button className="top-btn active" onClick={() => resolve('voice')} autoFocus>
