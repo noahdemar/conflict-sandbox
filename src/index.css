@@ -2642,3 +2642,240 @@ input[type='color'] {
   font-size: 12px;
   color: var(--text-dim);
 }
+
+/* =====================================================================
+   MOBILE — narrow screens and touch
+   ===================================================================== */
+
+/* dynamic viewport height so the app tracks the collapsing mobile toolbar */
+.app {
+  height: 100dvh;
+}
+
+body {
+  overscroll-behavior: none;
+}
+
+/* touch: no tap delay on buttons, hover-revealed controls stay visible */
+@media (pointer: coarse) {
+  button,
+  select,
+  .map-label,
+  .mk,
+  .mk-tag {
+    touch-action: manipulation;
+  }
+
+  /* iOS zooms into inputs below 16px */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .roster-del {
+    opacity: 1;
+  }
+
+  .icon-btn {
+    padding: 7px;
+  }
+
+  .tl-key {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  /* top bar: brand shrinks to the icon, actions scroll sideways */
+  .topbar {
+    top: max(8px, env(safe-area-inset-top));
+    left: 8px;
+    right: 8px;
+    gap: 8px;
+    padding: 5px 8px;
+  }
+
+  .brand span {
+    display: none;
+  }
+
+  .scenario-name {
+    flex: 0 1 110px;
+    min-width: 60px;
+  }
+
+  .topbar-actions {
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .topbar-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .top-btn {
+    white-space: nowrap;
+  }
+
+  /* tools become a horizontal strip under the top bar */
+  .toolbar {
+    top: calc(54px + env(safe-area-inset-top));
+    left: 8px;
+    right: 8px;
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px;
+  }
+
+  .toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tool-btn {
+    padding: 6px 8px;
+    white-space: nowrap;
+  }
+
+  .draft-actions {
+    border-top: none;
+    border-left: 1px solid var(--hairline);
+    margin-top: 0;
+    margin-left: 4px;
+    padding: 0 0 0 6px;
+    flex-wrap: nowrap;
+  }
+
+  /* unit roster only matters while placing units — hidden otherwise */
+  .roster-panel,
+  .unit-palette {
+    display: none;
+  }
+
+  .app[data-tool='unit'] .roster-panel {
+    display: flex;
+    top: calc(104px + env(safe-area-inset-top));
+    left: 8px;
+    width: min(230px, calc(100vw - 120px));
+    max-height: calc(100% - 320px);
+  }
+
+  /* right-hand panels stay reachable but bounded */
+  .right-stack {
+    top: calc(104px + env(safe-area-inset-top));
+    right: 8px;
+    width: min(200px, 52vw);
+    max-height: calc(100% - 330px);
+    overflow-y: auto;
+  }
+
+  /* timeline wraps into rows: controls / scrub / duration + narration */
+  .timeline {
+    left: 8px;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    transform: none;
+    width: auto;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 8px 10px;
+  }
+
+  .tl-track-wrap {
+    flex: 1 1 100%;
+    order: 3;
+    padding: 4px 0;
+  }
+
+  .tl-duration {
+    order: 4;
+  }
+
+  .tl-narration {
+    order: 5;
+    margin-left: auto;
+  }
+
+  .tl-engine,
+  .tl-voice {
+    max-width: 96px;
+  }
+
+  .tl-kokoro-status {
+    right: 0;
+    min-width: 0;
+  }
+
+  /* overlays clear the taller timeline */
+  .hud-tl,
+  .presenting .hud-tl {
+    bottom: 150px;
+    left: 10px;
+  }
+
+  .presenting .hud-tl {
+    bottom: calc(7vh + 140px);
+  }
+
+  .hud-br {
+    bottom: 150px;
+    right: 10px;
+  }
+
+  .sensor-readout {
+    bottom: 158px;
+  }
+
+  .media-overlay {
+    bottom: 150px;
+  }
+
+  .transcript-pane {
+    top: calc(104px + env(safe-area-inset-top));
+    right: 8px;
+    left: 8px;
+    bottom: 150px;
+    width: auto;
+  }
+
+  .tl-tracks {
+    bottom: 150px;
+    width: calc(100% - 16px);
+    max-height: 50vh;
+  }
+
+  .trk-head,
+  .trk-row {
+    grid-template-columns: 96px 1fr 24px;
+  }
+
+  .caption-overlay {
+    top: calc(104px + env(safe-area-inset-top));
+  }
+
+  .presenting .caption-overlay {
+    top: calc(7vh + 12px);
+  }
+
+  .presenting .hud-br {
+    bottom: calc(7vh + 140px);
+  }
+
+  .presenting .media-overlay {
+    bottom: calc(7vh + 140px);
+  }
+
+  .presenting .transcript-pane {
+    bottom: calc(7vh + 140px);
+  }
+
+  .viewer-bar {
+    top: max(8px, env(safe-area-inset-top));
+  }
+}
