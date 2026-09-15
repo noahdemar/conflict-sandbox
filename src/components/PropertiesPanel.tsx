@@ -1,7 +1,10 @@
 import { Trash2 } from 'lucide-react';
 import { strikeLaunchAt } from '../realism';
+import { MAX_SALVO_ROUNDS } from '../particles';
 import { useStore } from '../store';
 import { UNIT_TYPE_LABELS } from '../natoSymbols';
+import { ICON_CATALOG, ICON_CATEGORIES } from '../iconCatalog';
+import { resolveIconName, silhouetteFor, type SilhouetteKey } from '../silhouettes';
 import type { SensorView, ShotOverlay, StatusKind, UnitType } from '../types';
 import { STATUS_META } from '../statusEffects';
 import { FACILITY_META, type FacilityKind } from '../facilities';
@@ -85,6 +88,29 @@ export default function PropertiesPanel() {
           </select>
         </label>
         <label className="field">
+          <span>Icon</span>
+          <select value={u.icon ?? ''} onChange={(e) => updateUnit(u.id, { icon: e.target.value || undefined })}>
+            <option value="">Automatic ({ICON_CATALOG[silhouetteFor({ ...u, icon: undefined }, useStore.getState().unitLibrary.find((r) => r.id === u.rosterId))].label})</option>
+            {u.icon && !resolveIconName(u.icon) && <option value={u.icon}>Unknown: {u.icon}</option>}
+            {ICON_CATEGORIES.map((c) => (
+              <optgroup key={c} label={c}>
+                {(Object.keys(ICON_CATALOG) as SilhouetteKey[])
+                  .filter((k) => ICON_CATALOG[k].category === c)
+                  .map((k) => (
+                    <option key={k} value={k}>
+                      {ICON_CATALOG[k].label}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+        {u.icon && !resolveIconName(u.icon) && (
+          <p className="field-note">
+            “{u.icon}” isn’t in the icon library, so a generic icon is shown. Pick one above.
+          </p>
+        )}
+        <label className="field">
           <span>Faction</span>
           {factionSelect(u.factionId, (v) => updateUnit(u.id, { factionId: v }))}
         </label>
@@ -167,7 +193,7 @@ export default function PropertiesPanel() {
                       value={fx.targetUnitId ?? ''}
                       onChange={(e) => updateEffect(fx.id, { targetUnitId: e.target.value || undefined })}
                     >
-                      <option value="">—</option>
+                      <option value="">None</option>
                       {scenario.units
                         .filter((o) => o.id !== u.id)
                         .map((o) => (
@@ -319,11 +345,18 @@ export default function PropertiesPanel() {
             onChange={(e) => updateStrike(x.id, { name: e.target.value })}
           />
         </label>
-        {numField('Size', x.size, (v) =>
-          updateStrike(x.id, { size: Math.max(0.2, v) }),
-          0.2,
-          0.2,
+        {numField('Visual scale', x.size, (v) =>
+          updateStrike(x.id, { size: Math.max(0.02, v) }),
+          0.02,
+          0.02,
         )}
+        <label className="field">
+          <span>Impact treatment</span>
+          <select value={x.impactStyle ?? 'blast'} onChange={(e) => updateStrike(x.id, { impactStyle: e.target.value as 'blast' | 'fireball' })}>
+            <option value="blast">Brief flash and dust (default)</option>
+            <option value="fireball">Fuel-rich fireball (when supported)</option>
+          </select>
+        </label>
         <label className="field">
           <span>Launched from</span>
           <select
@@ -376,7 +409,12 @@ export default function PropertiesPanel() {
           0.5,
         )}
         {numField('Salvo rounds', x.salvo ?? 1, (v) =>
-          updateStrike(x.id, { salvo: Math.max(1, Math.round(v)) }),
+          updateStrike(x.id, { salvo: Math.min(MAX_SALVO_ROUNDS, Math.max(1, Math.round(v))) }),
+        )}
+        {numField('Scatter radius (m)', x.spreadM ?? 120, (v) =>
+          updateStrike(x.id, { spreadM: Math.max(0, v) }),
+          0,
+          1,
         )}
       </>
     );

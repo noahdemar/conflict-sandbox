@@ -1,6 +1,6 @@
 import { elevationAt, onElevationLoaded } from './elevation';
-import type { LngLat } from './geo';
-import { weaponKind, type WeaponKind } from './particles';
+import { pointAlongPath, type LngLat } from './geo';
+import { MAX_SALVO_ROUNDS, expandStrikes, weaponKind, type WeaponKind } from './particles';
 import type { Scenario, Strike, Unit, UnitType } from './types';
 
 /**
@@ -110,6 +110,11 @@ export function flightSeconds(kind: WeaponKind, meters: number, interceptor = fa
   const clamp = (lo: number, hi: number, v: number) => Math.min(hi, Math.max(lo, v));
   if (interceptor) return clamp(0.8, 4, 0.8 + km * 0.12);
   switch (kind) {
+    case 'melee':
+      return 0.3;
+    case 'arrow':
+      // a longbow arrow takes a few seconds to fly a couple of hundred meters
+      return clamp(0.8, 3.2, 0.8 + km * 6);
     case 'gun':
       return clamp(0.15, 0.9, 0.15 + km * 0.25);
     case 'shell':
@@ -122,10 +127,22 @@ export function flightSeconds(kind: WeaponKind, meters: number, interceptor = fa
 }
 
 /** Where a unit roughly is for timing purposes: route end if it moves, else its placement. */
-function roughPosition(s: Scenario, u: Unit): LngLat {
+function roughPosition(s: Scenario, u: Unit, at?: number): LngLat {
   const a = u.arrowId ? s.arrows.find((x) => x.id === u.arrowId) : undefined;
-  if (a && a.points.length) return a.points[a.points.length - 1];
-  return [u.lng, u.lat];
+  if (!a?.points.length) return [u.lng, u.lat];
+  if (at === undefined) return a.points[a.points.length - 1];
+  const t = Math.min(at, u.destroyedAt ?? Infinity);
+  if (a.times && a.times.length === a.points.length && a.points.length >= 2) {
+    let i = 0;
+    while (i < a.times.length - 2 && t >= a.times[i + 1]) i++;
+    const duration = a.times[i + 1] - a.times[i];
+    const f = duration > 0 ? Math.max(0, Math.min(1, (t - a.times[i]) / duration)) : 1;
+    const from = a.points[i];
+    const to = a.points[i + 1];
+    return [from[0] + (to[0] - from[0]) * f, from[1] + (to[1] - from[1]) * f];
+  }
+  const path = a.route ?? a.points;
+  return pointAlongPath(path, a.duration > 0 ? Math.max(0, Math.min(1, (t - a.appearAt) / a.duration)) : 1).point;
 }
 
 /** Launch time of a strike: explicit `launchAt`, else derived from weapon type and firing distance. */
@@ -140,6 +157,8 @@ export function strikeLaunchAt(s: Scenario, x: Strike): number {
 
 /** Approximate maximum reach (km) of common weapons, matched by name. */
 const WEAPON_RANGES: [RegExp, number, string][] = [
+  [/longbow|\bbow\b|archer|arrow volley/i, 0.3, 'longbow'],
+  [/crossbow/i, 0.3, 'crossbow'],
   [/gmlrs|himars|m270|mlrs/i, 85, 'GMLRS'],
   [/atacms|prsm/i, 500, 'ATACMS'],
   [/tomahawk|kalibr|cruise/i, 2500, 'cruise missile'],
@@ -173,6 +192,83 @@ export function weaponRangeKm(name: string): { km: number; label: string } | nul
  * ground units moving faster than their vehicles could even on a compressed
  * timeline, munitions that arrive implausibly fast, and events out of order.
  */
+export function scenarioErrors(s: Scenario, duration = s.duration): string[] {
+  const errors: string[] = [];
+  const lists = { factions: s.factions, units: s.units, arrows: s.arrows, strikes: s.strikes, keyframes: s.keyframes,
+    labels: s.labels, territories: s.territories, effects: s.effects ?? [] };
+  for (const [name, items] of Object.entries(lists)) {
+    const ids = new Set<string>();
+    items.forEach((item, i) => {
+      if (ids.has(item.id)) errors.push(`/${name}/${i}/id duplicates "${item.id}"`);
+      ids.add(item.id);
+    });
+  }
+  const ref = (path: string, id: string | undefined, items: { id: string }[]) => {
+    if (id !== undefined && !items.some((x) => x.id === id)) errors.push(`${path} references missing id "${id}"`);
+  };
+  const time = (path: string, t: number | undefined) => {
+    if (t !== undefined && (!Number.isFinite(t) || t < 0 || (duration !== undefined && t > duration + 0.001)))
+      errors.push(`${path} must be within the timeline`);
+  };
+  s.units.forEach((u, i) => {
+    ref(`/units/${i}/factionId`, u.factionId, s.factions);
+    ref(`/units/${i}/arrowId`, u.arrowId, s.arrows);
+    for (const key of ['appearAt', 'destroyedAt', 'leavesAt', 'captureAt'] as const) time(`/units/${i}/${key}`, u[key]);
+    if ((u.destroyedAt ?? Infinity) < u.appearAt || (u.leavesAt ?? Infinity) < u.appearAt)
+      errors.push(`/units/${i} leaves or is destroyed before appearing`);
+  });
+  s.arrows.forEach((a, i) => {
+    ref(`/arrows/${i}/factionId`, a.factionId, s.factions);
+    time(`/arrows/${i}/appearAt`, a.appearAt);
+    time(`/arrows/${i}/end`, a.appearAt + a.duration);
+    if (a.duration <= 0 || a.points.length < 2) errors.push(`/arrows/${i} needs two points and a positive duration`);
+    if (a.times) {
+      if (a.times.length !== a.points.length || a.times.some((t, j) => j > 0 && t <= a.times![j - 1]))
+        errors.push(`/arrows/${i}/times must match points and increase strictly (repeat positions, not times, for a hover)`);
+      a.times.forEach((t, j) => time(`/arrows/${i}/times/${j}`, t));
+    }
+  });
+  s.strikes.forEach((x, i) => {
+    ref(`/strikes/${i}/fromUnitId`, x.fromUnitId, s.units);
+    ref(`/strikes/${i}/targetUnitId`, x.targetUnitId, s.units);
+    ref(`/strikes/${i}/targetStrikeId`, x.targetStrikeId, s.strikes);
+    time(`/strikes/${i}/appearAt`, x.appearAt);
+    time(`/strikes/${i}/launchAt`, x.launchAt);
+    if (x.size <= 0) errors.push(`/strikes/${i}/size must be positive`);
+    if (x.salvo !== undefined && (!Number.isInteger(x.salvo) || x.salvo < 1 || x.salvo > MAX_SALVO_ROUNDS))
+      errors.push(`/strikes/${i}/salvo must be an integer from 1 to ${MAX_SALVO_ROUNDS}`);
+    if (x.spreadM !== undefined && x.spreadM < 0) errors.push(`/strikes/${i}/spreadM must not be negative`);
+    if (x.launchAt !== undefined && x.launchAt >= x.appearAt) errors.push(`/strikes/${i}/launchAt must precede impact`);
+    if (x.targetStrikeId === x.id) errors.push(`/strikes/${i}/targetStrikeId cannot reference itself`);
+  });
+  s.keyframes.forEach((k, i) => {
+    time(`/keyframes/${i}/time`, k.time);
+    ref(`/keyframes/${i}/followUnitId`, k.followUnitId, s.units);
+    k.highlightUnitIds?.forEach((id, j) => ref(`/keyframes/${i}/highlightUnitIds/${j}`, id, s.units));
+    k.overlayFactionIds?.forEach((id, j) => ref(`/keyframes/${i}/overlayFactionIds/${j}`, id, s.factions));
+  });
+  s.effects?.forEach((e, i) => {
+    ref(`/effects/${i}/unitId`, e.unitId, s.units);
+    ref(`/effects/${i}/targetUnitId`, e.targetUnitId, s.units);
+    time(`/effects/${i}/start`, e.start);
+    time(`/effects/${i}/end`, e.start + e.duration);
+  });
+  s.territories.forEach((x, i) => {
+    ref(`/territories/${i}/factionId`, x.factionId, s.factions);
+    time(`/territories/${i}/appearAt`, x.appearAt);
+  });
+  s.labels.forEach((x, i) => time(`/labels/${i}/appearAt`, x.appearAt));
+  s.article?.forEach((b, i) => {
+    if (b.kind !== 'scene') return;
+    ref(`/article/${i}/from`, b.from, s.keyframes);
+    ref(`/article/${i}/to`, b.to, s.keyframes);
+    const from = s.keyframes.find((k) => k.id === b.from);
+    const to = s.keyframes.find((k) => k.id === (b.to ?? b.from));
+    if (from && to && to.time < from.time) errors.push(`/article/${i}/to must not precede from`);
+  });
+  return errors;
+}
+
 export function realismWarnings(s: Scenario): string[] {
   const out: string[] = [];
   // compressed timelines are expected; only flag moves beyond ~200x real speed
@@ -192,20 +288,23 @@ export function realismWarnings(s: Scenario): string[] {
       );
     }
   }
-  for (const x of s.strikes) {
+  for (const x of expandStrikes(s.strikes)) {
     const from = x.fromUnitId ? s.units.find((u) => u.id === x.fromUnitId) : undefined;
     if (!from || x.targetStrikeId) continue;
-    const r = weaponRangeKm(x.name);
-    const d = metersBetween(roughPosition(s, from), [x.lng, x.lat]) / 1000;
-    if (r && d > r.km * 1.15 && from.type !== 'air') {
+    const kind = weaponKind(x.name);
+    const r = kind === 'melee' ? null : weaponRangeKm(x.name);
+    const launch = strikeLaunchAt(s, x);
+    const target = x.targetUnitId ? s.units.find((u) => u.id === x.targetUnitId) : undefined;
+    const impact: LngLat = target ? roughPosition(s, target, x.appearAt) : [x.lng, x.lat];
+    const d = metersBetween(roughPosition(s, from, launch), impact) / 1000;
+    if (!x.id.includes('#') && r && d > r.km * 1.15 && from.type !== 'air') {
       out.push(`Strike "${x.name}" (${x.id}) hits ${d.toFixed(1)} km from "${from.name}", beyond ${r.label} range of about ${r.km} km.`);
     }
-    const launch = strikeLaunchAt(s, x);
-    const kind = weaponKind(x.name);
-    if (kind !== 'gun' && x.appearAt - launch < flightSeconds(kind, d * 1000) * 0.35) {
+    if (!x.id.includes('#') && kind !== 'gun' && x.appearAt - launch < flightSeconds(kind, d * 1000) * 0.35) {
       out.push(`Strike "${x.name}" (${x.id}) flies ${d.toFixed(1)} km in ${(x.appearAt - launch).toFixed(1)}s; give it more flight time.`);
     }
-    if (x.appearAt < from.appearAt) out.push(`Strike ${x.id} lands before its shooter "${from.name}" appears.`);
+    if (launch < from.appearAt) out.push(`Strike ${x.id} launches before its shooter "${from.name}" appears.`);
+    if (from.leavesAt !== undefined && launch >= from.leavesAt) out.push(`Strike ${x.id} launches after its shooter leaves the scene.`);
     if (from.destroyedAt !== undefined && launch > from.destroyedAt) {
       out.push(`Strike ${x.id} is fired after its shooter "${from.name}" is destroyed.`);
     }

@@ -1,15 +1,17 @@
 {
-  "name": "conflict-sandbox",
+  "name": "openbrief",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/build-schema.mjs && tsc -b && vite build",
+    "build": "node scripts/build-schema.mjs && tsx scripts/export-examples.ts && tsc -b && vite build",
+    "examples": "tsx scripts/export-examples.ts",
     "preview": "vite preview",
     "narration": "tsx scripts/render-narration.ts",
     "schema": "node scripts/build-schema.mjs",
-    "validate": "tsx scripts/validate-scenario.ts"
+    "validate": "tsx scripts/validate-scenario.ts",
+    "test": "tsx --test scripts/quality.test.ts"
   },
   "dependencies": {
     "ajv": "^8.20.0",

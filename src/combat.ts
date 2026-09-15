@@ -44,14 +44,26 @@ export function unitStrength(
   return Math.max(u.destroyedAt !== undefined ? 0 : 8, Math.min(100, hp));
 }
 
+const ammoSchedules = new WeakMap<Scenario, Map<string, number[]>>();
 /** Ammunition 0..100 at time t, or null for units that never fire. */
 export function unitAmmo(s: Scenario, u: Unit, t: number): number | null {
-  const rounds = expandStrikes(s.strikes).filter((x) => x.fromUnitId === u.id);
+  let schedules = ammoSchedules.get(s);
+  if (!schedules) {
+    schedules = new Map();
+    for (const x of expandStrikes(s.strikes)) {
+      if (!x.fromUnitId) continue;
+      const times = schedules.get(x.fromUnitId) ?? [];
+      times.push(strikeLaunchAt(s, x));
+      schedules.set(x.fromUnitId, times);
+    }
+    ammoSchedules.set(s, schedules);
+  }
+  const rounds = schedules.get(u.id) ?? [];
   const dry = (s.effects ?? []).find((fx) => fx.unitId === u.id && fx.kind === 'noammo');
   if (!rounds.length && !dry) return null;
   if (dry && t >= dry.start) return 0;
   if (!rounds.length) return 100;
-  const fired = rounds.filter((x) => strikeLaunchAt(s, x) <= t).length;
+  const fired = rounds.filter((at) => at <= t).length;
   // units that run dry end empty; others finish with a reserve
   const floor = dry ? 0 : 25;
   return 100 - ((100 - floor) * fired) / rounds.length;

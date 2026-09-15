@@ -35,7 +35,7 @@ export default function Toolbar() {
           key={id}
           className={`tool-btn ${tool === id ? 'active' : ''}`}
           onClick={() => setTool(id)}
-          title={`${label} — ${hint}`}
+          title={`${label}: ${hint}`}
         >
           <Icon size={17} />
           <span>{label}</span>

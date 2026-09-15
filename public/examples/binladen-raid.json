@@ -1,0 +1,2579 @@
+{
+  "format": "conflict-sandbox-scenario",
+  "version": 1,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "duration": 170.8,
+  "roster": [
+    {
+      "id": "r_operator",
+      "name": "SEAL operator (DEVGRU Red Squadron)",
+      "type": "infantry",
+      "faction": "United States",
+      "wikiTitle": "United States Naval Special Warfare Development Group"
+    },
+    {
+      "id": "r_interpreter",
+      "name": "Interpreter",
+      "type": "infantry",
+      "faction": "United States"
+    },
+    {
+      "id": "r_k9",
+      "name": "Cairo, military working dog (K9)",
+      "type": "infantry",
+      "faction": "United States",
+      "wikiTitle": "Cairo (dog)"
+    },
+    {
+      "id": "r_stealth_hawk",
+      "name": "Modified Black Hawk (stealth-configured, 160th SOAR)",
+      "type": "air",
+      "faction": "United States",
+      "wikiTitle": "Stealth helicopter"
+    },
+    {
+      "id": "r_mh47",
+      "name": "Chinook (backup)",
+      "type": "air",
+      "faction": "United States",
+      "wikiTitle": "Boeing CH-47 Chinook"
+    },
+    {
+      "id": "r_rq170",
+      "name": "Reported RQ-170 Sentinel",
+      "type": "air",
+      "faction": "United States",
+      "wikiTitle": "Lockheed Martin RQ-170 Sentinel"
+    },
+    {
+      "id": "r_satellite",
+      "name": "Imaging satellite",
+      "type": "air",
+      "faction": "United States"
+    },
+    {
+      "id": "r_occupant",
+      "name": "Compound occupant",
+      "type": "infantry",
+      "faction": "Compound occupants"
+    },
+    {
+      "id": "r_noncombatants",
+      "name": "Non-combatants (women and children)",
+      "type": "infantry",
+      "faction": "Non-combatants"
+    }
+  ],
+  "scenario": {
+    "name": "The Bin Laden raid",
+    "subtitle": "Abbottabad, Pakistan · 2 May 2011",
+    "sources": [
+      "White House briefing on the operation, 2 May 2011",
+      "CIA, \"Minutes and Years: The Bin Ladin Operation\"",
+      "National September 11 Memorial and Museum, \"Operation Neptune Spear\"",
+      "Abbottabad Commission report, Government of Pakistan, 2013",
+      "GeoEye IKONOS post-raid imagery, collected 2 May 2011"
+    ],
+    "factions": [
+      {
+        "id": "f_us",
+        "name": "United States",
+        "color": "#3a6fc0",
+        "affiliation": "friend"
+      },
+      {
+        "id": "f_occupants",
+        "name": "Compound occupants",
+        "color": "#b0413e",
+        "affiliation": "hostile"
+      },
+      {
+        "id": "f_noncombatants",
+        "name": "Non-combatants",
+        "color": "#8a8f94",
+        "affiliation": "neutral"
+      }
+    ],
+    "units": [
+      {
+        "id": "op_1-1",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-1",
+        "rosterId": "r_operator",
+        "lat": 34.1690344,
+        "lng": 73.242532,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-1"
+      },
+      {
+        "id": "op_1-2",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-2",
+        "rosterId": "r_operator",
+        "lat": 34.1690164,
+        "lng": 73.2425537,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-2"
+      },
+      {
+        "id": "op_1-3",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-3",
+        "rosterId": "r_operator",
+        "lat": 34.1690524,
+        "lng": 73.2425103,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-3"
+      },
+      {
+        "id": "op_1-4",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-4",
+        "rosterId": "r_operator",
+        "lat": 34.1690524,
+        "lng": 73.2425754,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-4"
+      },
+      {
+        "id": "op_1-5",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-5",
+        "rosterId": "r_operator",
+        "lat": 34.1690703,
+        "lng": 73.2425211,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-5"
+      },
+      {
+        "id": "op_1-6",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-6",
+        "rosterId": "r_operator",
+        "lat": 34.1690614,
+        "lng": 73.2425429,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-6"
+      },
+      {
+        "id": "op_1-7",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-7",
+        "rosterId": "r_operator",
+        "lat": 34.1690703,
+        "lng": 73.2425646,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-7"
+      },
+      {
+        "id": "op_1-8",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-8",
+        "rosterId": "r_operator",
+        "lat": 34.1690614,
+        "lng": 73.2424994,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-8"
+      },
+      {
+        "id": "op_1-9",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-9",
+        "rosterId": "r_operator",
+        "lat": 34.1690344,
+        "lng": 73.2425863,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-9"
+      },
+      {
+        "id": "op_1-10",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-10",
+        "rosterId": "r_operator",
+        "lat": 34.1690254,
+        "lng": 73.2424886,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-10"
+      },
+      {
+        "id": "op_1-11",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-11",
+        "rosterId": "r_operator",
+        "lat": 34.1690075,
+        "lng": 73.2425971,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-11"
+      },
+      {
+        "id": "op_1-12",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 1-12",
+        "rosterId": "r_operator",
+        "lat": 34.1690075,
+        "lng": 73.2424777,
+        "appearAt": 53.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_1-12"
+      },
+      {
+        "id": "op_2-1",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 2-1",
+        "rosterId": "r_operator",
+        "lat": 34.1696992,
+        "lng": 73.2430314,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_2-1"
+      },
+      {
+        "id": "op_2-2",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 2-2",
+        "rosterId": "r_operator",
+        "lat": 34.1696812,
+        "lng": 73.2430532,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_2-2"
+      },
+      {
+        "id": "op_2-3",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 2-3",
+        "rosterId": "r_operator",
+        "lat": 34.1696992,
+        "lng": 73.2430749,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_2-3"
+      },
+      {
+        "id": "op_2-4",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 2-4",
+        "rosterId": "r_operator",
+        "lat": 34.1697171,
+        "lng": 73.2430097,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_2-4"
+      },
+      {
+        "id": "op_2-5",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 2-5",
+        "rosterId": "r_operator",
+        "lat": 34.1697351,
+        "lng": 73.2430314,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_2-5"
+      },
+      {
+        "id": "op_2-6",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 2-6",
+        "rosterId": "r_operator",
+        "lat": 34.1697351,
+        "lng": 73.2430749,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_2-6"
+      },
+      {
+        "id": "op_2-7",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 2-7",
+        "rosterId": "r_operator",
+        "lat": 34.1697171,
+        "lng": 73.2430966,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_2-7"
+      },
+      {
+        "id": "op_2-8",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 2-8",
+        "rosterId": "r_operator",
+        "lat": 34.1697531,
+        "lng": 73.2430314,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_2-8"
+      },
+      {
+        "id": "op_2-9",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 2-9",
+        "rosterId": "r_operator",
+        "lat": 34.1697531,
+        "lng": 73.2430532,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_2-9"
+      },
+      {
+        "id": "op_2-10",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Operator 2-10",
+        "rosterId": "r_operator",
+        "lat": 34.1696812,
+        "lng": 73.2430966,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_op_2-10"
+      },
+      {
+        "id": "interpreter",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Interpreter",
+        "rosterId": "r_interpreter",
+        "lat": 34.1696632,
+        "lng": 73.243064,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_interpreter"
+      },
+      {
+        "id": "k9",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "Cairo (K9) and handler",
+        "rosterId": "r_k9",
+        "lat": 34.1696632,
+        "lng": 73.2430857,
+        "appearAt": 55.9,
+        "heading": 0,
+        "leavesAt": 124.3,
+        "arrowId": "a_k9"
+      },
+      {
+        "id": "occ_courier",
+        "factionId": "f_occupants",
+        "type": "infantry",
+        "name": "Abu Ahmed al-Kuwaiti",
+        "rosterId": "r_occupant",
+        "lat": 34.1690344,
+        "lng": 73.2420434,
+        "appearAt": 0,
+        "heading": 0,
+        "destroyedAt": 61.5,
+        "leavesAt": 140.8
+      },
+      {
+        "id": "occ_ground",
+        "factionId": "f_occupants",
+        "type": "infantry",
+        "name": "Abrar al-Kuwaiti",
+        "rosterId": "r_occupant",
+        "lat": 34.1693039,
+        "lng": 73.2424451,
+        "appearAt": 0,
+        "heading": 0,
+        "destroyedAt": 75.5,
+        "leavesAt": 140.8
+      },
+      {
+        "id": "occ_ground2",
+        "factionId": "f_occupants",
+        "type": "infantry",
+        "name": "Bushra",
+        "rosterId": "r_occupant",
+        "lat": 34.1692859,
+        "lng": 73.2424777,
+        "appearAt": 0,
+        "heading": 0,
+        "destroyedAt": 75.7,
+        "leavesAt": 140.8
+      },
+      {
+        "id": "occ_stairs",
+        "factionId": "f_occupants",
+        "type": "infantry",
+        "name": "Khalid bin Laden",
+        "rosterId": "r_occupant",
+        "lat": 34.1693578,
+        "lng": 73.2425103,
+        "appearAt": 0,
+        "heading": 0,
+        "destroyedAt": 83.7,
+        "leavesAt": 140.8
+      },
+      {
+        "id": "occ_hvt",
+        "factionId": "f_occupants",
+        "type": "infantry",
+        "name": "Osama bin Laden",
+        "rosterId": "r_occupant",
+        "lat": 34.1694117,
+        "lng": 73.2425103,
+        "appearAt": 0,
+        "heading": 0,
+        "destroyedAt": 90.8,
+        "leavesAt": 140.8
+      },
+      {
+        "id": "noncombatants",
+        "factionId": "f_noncombatants",
+        "type": "infantry",
+        "name": "Women and children",
+        "rosterId": "r_noncombatants",
+        "lat": 34.1693758,
+        "lng": 73.24238,
+        "appearAt": 0,
+        "heading": 0,
+        "leavesAt": 140.8,
+        "arrowId": "a_noncombatants"
+      },
+      {
+        "id": "helo1",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "Modified Black Hawk 1",
+        "rosterId": "r_stealth_hawk",
+        "lat": 34.3995,
+        "lng": 70.4986,
+        "arrowId": "a_helo1",
+        "appearAt": 10.3,
+        "landAtEnd": true,
+        "destroyedAt": 123.3,
+        "leavesAt": 140.8
+      },
+      {
+        "id": "helo2",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "Modified Black Hawk 2",
+        "rosterId": "r_stealth_hawk",
+        "lat": 34.3995,
+        "lng": 70.4986,
+        "arrowId": "a_helo2",
+        "appearAt": 10.9,
+        "landAtEnd": true,
+        "leavesAt": 125.3
+      },
+      {
+        "id": "helo2_exfil",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "Modified Black Hawk 2",
+        "rosterId": "r_stealth_hawk",
+        "lat": 34.1697171,
+        "lng": 73.2430532,
+        "arrowId": "a_helo2_exfil",
+        "appearAt": 125.3,
+        "landAtEnd": true
+      },
+      {
+        "id": "chinook_qrf",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "Chinook 1 (backup)",
+        "rosterId": "r_mh47",
+        "lat": 34.26,
+        "lng": 72.33,
+        "arrowId": "a_chinook_in",
+        "appearAt": 22.3,
+        "landAtEnd": true,
+        "leavesAt": 125.3
+      },
+      {
+        "id": "chinook_exfil",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "Chinook 1 (backup)",
+        "rosterId": "r_mh47",
+        "lat": 34.1698249,
+        "lng": 73.24314,
+        "arrowId": "a_chinook_exfil",
+        "appearAt": 125.3,
+        "landAtEnd": true
+      },
+      {
+        "id": "imager",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "Imaging satellite",
+        "rosterId": "r_satellite",
+        "lat": 34.16925,
+        "lng": 73.24238,
+        "arrowId": "a_imager",
+        "appearAt": 145.5,
+        "leavesAt": 170.8,
+        "altitudeKm": 500,
+        "orbitRole": "imaging",
+        "captureAt": 155.8
+      },
+      {
+        "id": "rq170",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "Reported RQ-170 Sentinel",
+        "rosterId": "r_rq170",
+        "lat": 34.3995,
+        "lng": 70.4986,
+        "arrowId": "a_rq170",
+        "appearAt": 2
+      },
+      {
+        "id": "chinook_2",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "Chinook 2 (backup)",
+        "rosterId": "r_mh47",
+        "lat": 34.26,
+        "lng": 72.33,
+        "arrowId": "a_chinook2",
+        "appearAt": 22.3,
+        "landAtEnd": true,
+        "leavesAt": 126.3
+      },
+      {
+        "id": "chinook_2_exfil",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "Chinook 2 (backup)",
+        "rosterId": "r_mh47",
+        "lat": 34.26,
+        "lng": 72.33,
+        "arrowId": "a_chinook2_exfil",
+        "appearAt": 126.3,
+        "landAtEnd": true
+      }
+    ],
+    "arrows": [
+      {
+        "id": "a_op_1-1",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.242532,
+            34.1690344
+          ],
+          [
+            73.2424234,
+            34.1689985
+          ],
+          [
+            73.2421411,
+            34.1690164
+          ],
+          [
+            73.2420869,
+            34.1690344
+          ],
+          [
+            73.2420869,
+            34.1690344
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-1 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          55.9,
+          58.9,
+          61.9,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-2",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2425537,
+            34.1690164
+          ],
+          [
+            73.2424451,
+            34.1689805
+          ],
+          [
+            73.2421629,
+            34.1689895
+          ],
+          [
+            73.2421194,
+            34.1690075
+          ],
+          [
+            73.2421194,
+            34.1690075
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-2 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          55.9,
+          58.9,
+          61.9,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-3",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2425103,
+            34.1690524
+          ],
+          [
+            73.2424017,
+            34.1690164
+          ],
+          [
+            73.2421846,
+            34.1690434
+          ],
+          [
+            73.2421411,
+            34.1690614
+          ],
+          [
+            73.2421411,
+            34.1690614
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-3 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          55.9,
+          58.9,
+          61.9,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-4",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2425754,
+            34.1690524
+          ],
+          [
+            73.2424669,
+            34.1689625
+          ],
+          [
+            73.2422063,
+            34.1689625
+          ],
+          [
+            73.2421629,
+            34.1689805
+          ],
+          [
+            73.2421629,
+            34.1689805
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-4 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          56.9,
+          59.9,
+          62.9,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-5",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2425211,
+            34.1690703
+          ],
+          [
+            73.2424669,
+            34.1691781
+          ],
+          [
+            73.2424451,
+            34.169241
+          ],
+          [
+            73.2424669,
+            34.1693039
+          ],
+          [
+            73.2425103,
+            34.1693578
+          ],
+          [
+            73.2425211,
+            34.1694027
+          ],
+          [
+            73.2425211,
+            34.1694027
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-5 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          58.9,
+          68.7,
+          75.7,
+          84.2,
+          90.2,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-6",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2425429,
+            34.1690614
+          ],
+          [
+            73.2424886,
+            34.1691692
+          ],
+          [
+            73.2424669,
+            34.169232
+          ],
+          [
+            73.2424886,
+            34.1692949
+          ],
+          [
+            73.242532,
+            34.1693488
+          ],
+          [
+            73.2425429,
+            34.1693937
+          ],
+          [
+            73.2425429,
+            34.1693937
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-6 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          58.9,
+          68.7,
+          75.7,
+          84.2,
+          90.5,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-7",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2425646,
+            34.1690703
+          ],
+          [
+            73.2425103,
+            34.1691781
+          ],
+          [
+            73.2424886,
+            34.169241
+          ],
+          [
+            73.2424234,
+            34.1693219
+          ],
+          [
+            73.2424017,
+            34.1693398
+          ],
+          [
+            73.2424017,
+            34.1693398
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-7 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          58.9,
+          68.7,
+          75.7,
+          83.2,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-8",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2424994,
+            34.1690614
+          ],
+          [
+            73.2424451,
+            34.1691692
+          ],
+          [
+            73.2424234,
+            34.169232
+          ],
+          [
+            73.2424017,
+            34.1693039
+          ],
+          [
+            73.24238,
+            34.1693578
+          ],
+          [
+            73.24238,
+            34.1693578
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-8 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          58.9,
+          68.7,
+          75.7,
+          85.2,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-9",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2425863,
+            34.1690344
+          ],
+          [
+            73.242532,
+            34.1691602
+          ],
+          [
+            73.2425103,
+            34.1692231
+          ],
+          [
+            73.242532,
+            34.1692859
+          ],
+          [
+            73.2425537,
+            34.1693398
+          ],
+          [
+            73.2425537,
+            34.1693398
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-9 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          59.9,
+          69.7,
+          76.7,
+          85.2,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-10",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2424886,
+            34.1690254
+          ],
+          [
+            73.2424017,
+            34.1691422
+          ],
+          [
+            73.24238,
+            34.1691961
+          ],
+          [
+            73.24238,
+            34.1691961
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-10 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          59.9,
+          69.7,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-11",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2425971,
+            34.1690075
+          ],
+          [
+            73.2426406,
+            34.1691242
+          ],
+          [
+            73.2426189,
+            34.1691961
+          ],
+          [
+            73.2426189,
+            34.1691961
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-11 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          60.9,
+          69.7,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_1-12",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2424777,
+            34.1690075
+          ],
+          [
+            73.2423149,
+            34.1691063
+          ],
+          [
+            73.2422714,
+            34.1691422
+          ],
+          [
+            73.2422714,
+            34.1691422
+          ],
+          [
+            73.2430532,
+            34.169771
+          ]
+        ],
+        "name": "Operator 1-12 movement",
+        "appearAt": 53.9,
+        "duration": 68.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          53.9,
+          60.9,
+          69.7,
+          115.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_2-1",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430314,
+            34.1696992
+          ],
+          [
+            73.2427926,
+            34.1695914
+          ],
+          [
+            73.2426189,
+            34.1694836
+          ],
+          [
+            73.2425537,
+            34.1694297
+          ],
+          [
+            73.242532,
+            34.1694117
+          ],
+          [
+            73.242532,
+            34.1694117
+          ],
+          [
+            73.2430966,
+            34.169789
+          ]
+        ],
+        "name": "Operator 2-1 movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          60.9,
+          69.7,
+          77.7,
+          87.2,
+          116.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_2-2",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430532,
+            34.1696812
+          ],
+          [
+            73.2428143,
+            34.1695734
+          ],
+          [
+            73.2426406,
+            34.1694656
+          ],
+          [
+            73.2425754,
+            34.1694117
+          ],
+          [
+            73.2425754,
+            34.1694117
+          ],
+          [
+            73.2430966,
+            34.169789
+          ]
+        ],
+        "name": "Operator 2-2 movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          60.9,
+          69.7,
+          77.7,
+          116.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_2-3",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430749,
+            34.1696992
+          ],
+          [
+            73.242836,
+            34.1695914
+          ],
+          [
+            73.2426623,
+            34.1694836
+          ],
+          [
+            73.2425971,
+            34.1694476
+          ],
+          [
+            73.2425971,
+            34.1694476
+          ],
+          [
+            73.2430966,
+            34.169789
+          ]
+        ],
+        "name": "Operator 2-3 movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          60.9,
+          69.7,
+          77.7,
+          116.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_2-4",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430097,
+            34.1697171
+          ],
+          [
+            73.2427709,
+            34.1696093
+          ],
+          [
+            73.2425971,
+            34.1695015
+          ],
+          [
+            73.2425971,
+            34.1695015
+          ],
+          [
+            73.2430966,
+            34.169789
+          ]
+        ],
+        "name": "Operator 2-4 movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          60.9,
+          69.7,
+          116.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_2-5",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430314,
+            34.1697351
+          ],
+          [
+            73.2428794,
+            34.1695195
+          ],
+          [
+            73.2427709,
+            34.1693578
+          ],
+          [
+            73.2427709,
+            34.1693578
+          ],
+          [
+            73.2430966,
+            34.169789
+          ]
+        ],
+        "name": "Operator 2-5 movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          62.9,
+          73.7,
+          116.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_2-6",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430749,
+            34.1697351
+          ],
+          [
+            73.2429229,
+            34.1694836
+          ],
+          [
+            73.242836,
+            34.169232
+          ],
+          [
+            73.242836,
+            34.169232
+          ],
+          [
+            73.2430966,
+            34.169789
+          ]
+        ],
+        "name": "Operator 2-6 movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          62.9,
+          73.7,
+          116.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_2-7",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430966,
+            34.1697171
+          ],
+          [
+            73.2427057,
+            34.169807
+          ],
+          [
+            73.2427057,
+            34.169807
+          ],
+          [
+            73.2430966,
+            34.169789
+          ]
+        ],
+        "name": "Operator 2-7 movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          61.9,
+          116.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_2-8",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430314,
+            34.1697531
+          ],
+          [
+            73.2421629,
+            34.169771
+          ],
+          [
+            73.2421629,
+            34.169771
+          ],
+          [
+            73.2430966,
+            34.169789
+          ]
+        ],
+        "name": "Operator 2-8 movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          61.9,
+          116.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_2-9",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430532,
+            34.1697531
+          ],
+          [
+            73.2431183,
+            34.1693398
+          ],
+          [
+            73.2431183,
+            34.1693398
+          ],
+          [
+            73.2430966,
+            34.169789
+          ]
+        ],
+        "name": "Operator 2-9 movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          61.9,
+          116.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_op_2-10",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430966,
+            34.1696812
+          ],
+          [
+            73.2430097,
+            34.1688547
+          ],
+          [
+            73.2430097,
+            34.1688547
+          ],
+          [
+            73.2430966,
+            34.169789
+          ]
+        ],
+        "name": "Operator 2-10 movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          62.9,
+          116.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_interpreter",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.243064,
+            34.1696632
+          ],
+          [
+            73.2424886,
+            34.1698429
+          ],
+          [
+            73.2424886,
+            34.1698429
+          ],
+          [
+            73.2430749,
+            34.169771
+          ]
+        ],
+        "name": "Interpreter movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          62.9,
+          117.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_k9",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430857,
+            34.1696632
+          ],
+          [
+            73.2425537,
+            34.1698609
+          ],
+          [
+            73.2425537,
+            34.1698609
+          ],
+          [
+            73.2430966,
+            34.1697531
+          ]
+        ],
+        "name": "Cairo (K9) and handler movement",
+        "appearAt": 55.9,
+        "duration": 66.4,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          55.9,
+          62.9,
+          117.3,
+          122.3
+        ]
+      },
+      {
+        "id": "a_noncombatants",
+        "factionId": "f_noncombatants",
+        "points": [
+          [
+            73.24238,
+            34.1693758
+          ],
+          [
+            73.24238,
+            34.1693758
+          ],
+          [
+            73.2422497,
+            34.1691781
+          ]
+        ],
+        "name": "Women and children movement",
+        "appearAt": 0,
+        "duration": 111.3,
+        "followRoads": false,
+        "hideLine": true,
+        "times": [
+          0,
+          104.8,
+          111.3
+        ]
+      },
+      {
+        "id": "a_helo1",
+        "factionId": "f_us",
+        "name": "Modified Black Hawk 1 ingress",
+        "appearAt": 10.3,
+        "duration": 42.900000000000006,
+        "followRoads": false,
+        "hideAt": 140.8,
+        "points": [
+          [
+            70.4986,
+            34.3995
+          ],
+          [
+            71.35,
+            34.2
+          ],
+          [
+            72.6,
+            34.12
+          ],
+          [
+            73.24162,
+            34.1684415
+          ],
+          [
+            73.2424886,
+            34.1691063
+          ],
+          [
+            73.2425646,
+            34.1690614
+          ],
+          [
+            73.2424994,
+            34.1690434
+          ],
+          [
+            73.242532,
+            34.1690344
+          ],
+          [
+            73.242532,
+            34.1690344
+          ]
+        ],
+        "times": [
+          10.3,
+          16.3,
+          32.8,
+          43,
+          49.9,
+          50.9,
+          52,
+          52.5,
+          53.2
+        ]
+      },
+      {
+        "id": "a_helo2",
+        "factionId": "f_us",
+        "points": [
+          [
+            70.4986,
+            34.3995
+          ],
+          [
+            71.36,
+            34.22
+          ],
+          [
+            72.62,
+            34.15
+          ],
+          [
+            73.2436829,
+            34.1702381
+          ],
+          [
+            73.2430532,
+            34.1697171
+          ]
+        ],
+        "name": "Modified Black Hawk 2 ingress",
+        "appearAt": 10.9,
+        "duration": 44.6,
+        "followRoads": false,
+        "hideAt": 140.8
+      },
+      {
+        "id": "a_helo2_exfil",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.2430532,
+            34.1697171
+          ],
+          [
+            73.2380371,
+            34.1746399
+          ],
+          [
+            72.6,
+            34.2
+          ],
+          [
+            71.35,
+            34.2
+          ],
+          [
+            70.4986,
+            34.3995
+          ]
+        ],
+        "name": "Exfil to Jalalabad",
+        "appearAt": 125.3,
+        "duration": 16.500000000000014,
+        "followRoads": false,
+        "hideAt": 140.8
+      },
+      {
+        "id": "a_chinook_in",
+        "factionId": "f_us",
+        "points": [
+          [
+            72.33,
+            34.26
+          ],
+          [
+            72.8,
+            34.22
+          ],
+          [
+            73.2456372,
+            34.1728432
+          ],
+          [
+            73.24314,
+            34.1698249
+          ]
+        ],
+        "name": "Backup Chinook called in",
+        "appearAt": 102.8,
+        "duration": 10.5,
+        "followRoads": false,
+        "hideAt": 140.8
+      },
+      {
+        "id": "a_chinook_exfil",
+        "factionId": "f_us",
+        "points": [
+          [
+            73.24314,
+            34.1698249
+          ],
+          [
+            73.2488944,
+            34.1773348
+          ],
+          [
+            72.9,
+            34.3
+          ],
+          [
+            71.35,
+            34.2
+          ],
+          [
+            70.4986,
+            34.3995
+          ]
+        ],
+        "name": "Exfil to Jalalabad",
+        "appearAt": 125.3,
+        "duration": 16.500000000000014,
+        "followRoads": false,
+        "hideAt": 140.8
+      },
+      {
+        "id": "a_imager",
+        "factionId": "f_us",
+        "points": [
+          [
+            66.5,
+            26.4
+          ],
+          [
+            73.24238,
+            34.16925
+          ],
+          [
+            79.8,
+            41.8
+          ]
+        ],
+        "times": [
+          145.5,
+          155.8,
+          168.8
+        ],
+        "name": "Imaging pass ground track",
+        "appearAt": 145.5,
+        "duration": 23.30000000000001,
+        "followRoads": false,
+        "hideLine": true
+      },
+      {
+        "id": "a_rq170",
+        "factionId": "f_us",
+        "points": [
+          [
+            70.4986,
+            34.3995
+          ],
+          [
+            71.9,
+            34.3
+          ],
+          [
+            73.24238,
+            34.1917078
+          ]
+        ],
+        "name": "RQ-170 to station",
+        "appearAt": 2,
+        "duration": 24.3,
+        "followRoads": false,
+        "hideLine": true
+      },
+      {
+        "id": "a_chinook2",
+        "factionId": "f_us",
+        "points": [
+          [
+            70.4986,
+            34.3995
+          ],
+          [
+            71.4,
+            34.3
+          ],
+          [
+            72.33,
+            34.26
+          ]
+        ],
+        "name": "Backup Chinooks to staging area",
+        "appearAt": 13.3,
+        "duration": 9,
+        "followRoads": false,
+        "hideAt": 140.8
+      },
+      {
+        "id": "a_chinook2_exfil",
+        "factionId": "f_us",
+        "points": [
+          [
+            72.33,
+            34.26
+          ],
+          [
+            71.35,
+            34.2
+          ],
+          [
+            70.4986,
+            34.3995
+          ]
+        ],
+        "name": "Return to Jalalabad",
+        "appearAt": 126.3,
+        "duration": 13.500000000000014,
+        "followRoads": false,
+        "hideLine": true
+      }
+    ],
+    "territories": [
+      {
+        "id": "t_compound",
+        "factionId": "f_noncombatants",
+        "name": "Compound outer wall (approx.)",
+        "points": [
+          [
+            73.2418589,
+            34.1688547
+          ],
+          [
+            73.2428577,
+            34.1688547
+          ],
+          [
+            73.2429229,
+            34.1695914
+          ],
+          [
+            73.2422931,
+            34.1696812
+          ],
+          [
+            73.2418589,
+            34.1694476
+          ]
+        ],
+        "appearAt": 0,
+        "duration": 2
+      },
+      {
+        "id": "t_mainhouse",
+        "factionId": "f_noncombatants",
+        "name": "Main house, 3 floors (approx.)",
+        "points": [
+          [
+            73.2423366,
+            34.16925
+          ],
+          [
+            73.2426189,
+            34.16925
+          ],
+          [
+            73.2426189,
+            34.1694476
+          ],
+          [
+            73.2423366,
+            34.1694476
+          ]
+        ],
+        "appearAt": 0,
+        "duration": 2
+      },
+      {
+        "id": "t_guesthouse",
+        "factionId": "f_noncombatants",
+        "name": "Guest house (approx.)",
+        "points": [
+          [
+            73.2419457,
+            34.1689625
+          ],
+          [
+            73.2421194,
+            34.1689625
+          ],
+          [
+            73.2421194,
+            34.1690883
+          ],
+          [
+            73.2419457,
+            34.1690883
+          ]
+        ],
+        "appearAt": 0,
+        "duration": 2
+      },
+      {
+        "id": "t_innerwall",
+        "factionId": "f_noncombatants",
+        "name": "Inner courtyard wall (approx.)",
+        "points": [
+          [
+            73.242228,
+            34.1691422
+          ],
+          [
+            73.2427491,
+            34.1691422
+          ],
+          [
+            73.2427491,
+            34.1691602
+          ],
+          [
+            73.242228,
+            34.1691602
+          ]
+        ],
+        "appearAt": 0,
+        "duration": 2
+      }
+    ],
+    "labels": [
+      {
+        "id": "l_jbad",
+        "text": "Jalalabad airfield",
+        "facility": "airbase",
+        "lat": 34.3995,
+        "lng": 70.4986,
+        "size": 12,
+        "color": "#1c1f22",
+        "appearAt": 0
+      },
+      {
+        "id": "l_abbottabad",
+        "text": "Abbottabad",
+        "facility": "town",
+        "lat": 34.1495,
+        "lng": 73.1995,
+        "size": 12,
+        "color": "#1c1f22",
+        "appearAt": 0
+      },
+      {
+        "id": "l_holding",
+        "text": "Backup Chinooks staging (approx.)",
+        "facility": "base",
+        "lat": 34.26,
+        "lng": 72.33,
+        "size": 11,
+        "color": "#1c1f22",
+        "appearAt": 0
+      },
+      {
+        "id": "l_mainhouse",
+        "text": "MAIN HOUSE",
+        "lat": 34.1694746,
+        "lng": 73.2424777,
+        "size": 10,
+        "color": "#1c1f22",
+        "appearAt": 0
+      },
+      {
+        "id": "l_guesthouse",
+        "text": "GUEST HOUSE",
+        "lat": 34.1691242,
+        "lng": 73.2420326,
+        "size": 10,
+        "color": "#1c1f22",
+        "appearAt": 0
+      },
+      {
+        "id": "l_af",
+        "text": "AFGHANISTAN",
+        "lat": 34,
+        "lng": 69.6,
+        "size": 13,
+        "color": "#4a4a4a",
+        "appearAt": 0
+      },
+      {
+        "id": "l_pk",
+        "text": "PAKISTAN",
+        "lat": 33.4,
+        "lng": 72.6,
+        "size": 13,
+        "color": "#4a4a4a",
+        "appearAt": 0
+      }
+    ],
+    "strikes": [
+      {
+        "id": "sh_courier_fire",
+        "name": "Rifle fire from guest house",
+        "fromUnitId": "occ_courier",
+        "targetUnitId": "op_1-1",
+        "lat": 34.1690344,
+        "lng": 73.242532,
+        "size": 0.08,
+        "salvo": 3,
+        "spreadM": 1.2,
+        "appearAt": 60.3,
+        "launchAt": 60.15
+      },
+      {
+        "id": "sh_gh1",
+        "name": "Suppressed rifle fire",
+        "fromUnitId": "op_1-1",
+        "targetUnitId": "occ_courier",
+        "lat": 34.1690344,
+        "lng": 73.2420434,
+        "size": 0.08,
+        "salvo": 3,
+        "spreadM": 1.2,
+        "appearAt": 61.1,
+        "launchAt": 60.95
+      },
+      {
+        "id": "sh_gh2",
+        "name": "Suppressed rifle fire",
+        "fromUnitId": "op_1-2",
+        "targetUnitId": "occ_courier",
+        "lat": 34.1690344,
+        "lng": 73.2420434,
+        "size": 0.08,
+        "salvo": 2,
+        "spreadM": 1.2,
+        "appearAt": 61.4,
+        "launchAt": 61.25
+      },
+      {
+        "id": "sh_mh1",
+        "name": "Suppressed rifle fire",
+        "fromUnitId": "op_1-5",
+        "targetUnitId": "occ_ground",
+        "lat": 34.1693039,
+        "lng": 73.2424451,
+        "size": 0.08,
+        "salvo": 3,
+        "spreadM": 1.2,
+        "appearAt": 75.1,
+        "launchAt": 74.95
+      },
+      {
+        "id": "sh_mh2",
+        "name": "Suppressed rifle fire",
+        "fromUnitId": "op_1-6",
+        "targetUnitId": "occ_ground",
+        "lat": 34.1693039,
+        "lng": 73.2424451,
+        "size": 0.08,
+        "salvo": 2,
+        "spreadM": 1.2,
+        "appearAt": 75.3,
+        "launchAt": 75.15
+      },
+      {
+        "id": "sh_st1",
+        "name": "Suppressed rifle fire",
+        "fromUnitId": "op_1-5",
+        "targetUnitId": "occ_stairs",
+        "lat": 34.1693578,
+        "lng": 73.2425103,
+        "size": 0.08,
+        "salvo": 2,
+        "spreadM": 1.2,
+        "appearAt": 83.4,
+        "launchAt": 83.25
+      },
+      {
+        "id": "sh_hvt1",
+        "name": "Suppressed rifle fire",
+        "fromUnitId": "op_1-5",
+        "targetUnitId": "occ_hvt",
+        "lat": 34.1694117,
+        "lng": 73.2425103,
+        "size": 0.08,
+        "salvo": 2,
+        "spreadM": 1.2,
+        "appearAt": 90.4,
+        "launchAt": 90.25
+      },
+      {
+        "id": "sh_hvt2",
+        "name": "Suppressed rifle fire",
+        "fromUnitId": "op_1-6",
+        "targetUnitId": "occ_hvt",
+        "lat": 34.1694117,
+        "lng": 73.2425103,
+        "size": 0.08,
+        "salvo": 2,
+        "spreadM": 1.2,
+        "appearAt": 90.7,
+        "launchAt": 90.55
+      },
+      {
+        "id": "demo_helo1",
+        "name": "Demolition charges",
+        "targetUnitId": "helo1",
+        "lat": 34.1690344,
+        "lng": 73.242532,
+        "size": 0.4,
+        "appearAt": 123.3
+      }
+    ],
+    "keyframes": [
+      {
+        "id": "k1",
+        "time": 0,
+        "lng": 71.8,
+        "lat": 34.1,
+        "zoom": 6.4,
+        "pitch": 0,
+        "bearing": 0,
+        "caption": "On the night of 1 May 2011, a secret American force prepared to fly from Jalalabad into Pakistan."
+      },
+      {
+        "id": "k2",
+        "time": 9.3,
+        "lng": 70.62,
+        "lat": 34.38,
+        "zoom": 9.5,
+        "pitch": 48,
+        "bearing": 70,
+        "caption": "Two modified Black Hawk helicopters lifted off with about two dozen special operators, an interpreter, and a dog named Cairo.",
+        "followUnitId": "helo1",
+        "followMode": "chase",
+        "highlightUnitIds": [
+          "helo1",
+          "helo2",
+          "op_1-1",
+          "interpreter",
+          "k9"
+        ]
+      },
+      {
+        "id": "k3",
+        "time": 24.3,
+        "lng": 71.9,
+        "lat": 34.25,
+        "zoom": 7.6,
+        "pitch": 28,
+        "bearing": 0,
+        "caption": "Far behind them, backup Chinooks waited in case the assault force needed help or another aircraft.",
+        "highlightUnitIds": [
+          "chinook_qrf",
+          "chinook_2"
+        ]
+      },
+      {
+        "id": "k4",
+        "time": 32.3,
+        "lng": 73.1,
+        "lat": 34.2,
+        "zoom": 9.4,
+        "pitch": 44,
+        "bearing": -20,
+        "caption": "Over Abbottabad, a surveillance drone circled in darkness and relayed the approaching helicopters to commanders.",
+        "followUnitId": "rq170",
+        "followMode": "track",
+        "orbitSpeed": 2,
+        "highlightUnitIds": [
+          "rq170"
+        ]
+      },
+      {
+        "id": "k5",
+        "time": 41,
+        "lng": 73.24238,
+        "lat": 34.16925,
+        "zoom": 16.6,
+        "pitch": 58,
+        "bearing": 35,
+        "caption": "After about 90 minutes in the air, the helicopters reached the compound without warning the city below.",
+        "sensor": "nvg",
+        "highlightUnitIds": [
+          "helo1",
+          "helo2"
+        ]
+      },
+      {
+        "id": "k6",
+        "time": 48.9,
+        "lng": 73.2424886,
+        "lat": 34.1691422,
+        "zoom": 18.6,
+        "pitch": 58,
+        "bearing": 20,
+        "caption": "As Modified Black Hawk 1 settled over the high walls, it lost lift and came down hard inside the yard.",
+        "sensor": "nvg",
+        "followUnitId": "helo1",
+        "followMode": "track",
+        "highlightUnitIds": [
+          "helo1"
+        ]
+      },
+      {
+        "id": "k7",
+        "time": 57.9,
+        "lng": 73.2421194,
+        "lat": 34.1690524,
+        "zoom": 19.3,
+        "pitch": 52,
+        "bearing": -10,
+        "caption": "At the guest house, courier Abu Ahmed al-Kuwaiti opened fire. The assault team returned fire and killed him.",
+        "sensor": "nvg",
+        "overlay": "orbat",
+        "highlightUnitIds": [
+          "occ_courier",
+          "op_1-1",
+          "op_1-2"
+        ]
+      },
+      {
+        "id": "k8",
+        "time": 66.7,
+        "lng": 73.2424886,
+        "lat": 34.16925,
+        "zoom": 19.1,
+        "pitch": 58,
+        "bearing": 25,
+        "caption": "The teams pressed through the inner gate while a second group sealed the streets outside the compound.",
+        "sensor": "nvg",
+        "highlightUnitIds": [
+          "op_1-5",
+          "op_2-1"
+        ]
+      },
+      {
+        "id": "k9",
+        "time": 73.7,
+        "lng": 73.2424669,
+        "lat": 34.1693039,
+        "zoom": 19.5,
+        "pitch": 48,
+        "bearing": 0,
+        "caption": "Inside the main house, Abrar al-Kuwaiti and his wife Bushra were killed during the clearing of the ground floor.",
+        "sensor": "thermal",
+        "highlightUnitIds": [
+          "occ_ground",
+          "occ_ground2",
+          "op_1-5",
+          "op_1-6"
+        ]
+      },
+      {
+        "id": "k10",
+        "time": 82.2,
+        "lng": 73.2425103,
+        "lat": 34.1693578,
+        "zoom": 19.6,
+        "pitch": 48,
+        "bearing": 40,
+        "caption": "Moving up the narrow stairs, the operators encountered and killed Khalid bin Laden.",
+        "sensor": "thermal",
+        "highlightUnitIds": [
+          "occ_stairs",
+          "op_1-5"
+        ]
+      },
+      {
+        "id": "k11",
+        "time": 89.2,
+        "lng": 73.2425103,
+        "lat": 34.1694027,
+        "zoom": 19.6,
+        "pitch": 52,
+        "bearing": 60,
+        "caption": "On the third floor, the operators found and killed Osama bin Laden. The message Geronimo, E K I A, was sent back.",
+        "sensor": "thermal",
+        "highlightUnitIds": [
+          "occ_hvt",
+          "op_1-5",
+          "op_1-6"
+        ]
+      },
+      {
+        "id": "k12",
+        "time": 98.8,
+        "lng": 73.2424234,
+        "lat": 34.1693219,
+        "zoom": 18.4,
+        "pitch": 42,
+        "bearing": 10,
+        "caption": "With the fighting over, the team gathered computers and documents while women and children were moved into the yard.",
+        "highlightUnitIds": [
+          "op_1-9",
+          "noncombatants"
+        ]
+      },
+      {
+        "id": "k13",
+        "time": 107.3,
+        "lng": 73.2428143,
+        "lat": 34.1695195,
+        "zoom": 17.6,
+        "pitch": 52,
+        "bearing": -30,
+        "caption": "The damaged Modified Black Hawk could not fly out, so one of the waiting Chinooks was called forward.",
+        "sensor": "nvg",
+        "highlightUnitIds": [
+          "helo1",
+          "chinook_qrf"
+        ]
+      },
+      {
+        "id": "k14",
+        "time": 119.3,
+        "lng": 73.242532,
+        "lat": 34.1690344,
+        "zoom": 18,
+        "pitch": 52,
+        "bearing": 15,
+        "caption": "Before leaving, the team destroyed the crippled helicopter to keep its secret technology from being recovered.",
+        "sensor": "nvg",
+        "highlightUnitIds": [
+          "helo1",
+          "op_1-5"
+        ]
+      },
+      {
+        "id": "k14b",
+        "time": 128.3,
+        "lng": 73.242532,
+        "lat": 34.1690344,
+        "zoom": 17.8,
+        "pitch": 52,
+        "bearing": 18,
+        "caption": "Before leaving, the team destroyed the crippled helicopter to keep its secret technology from being recovered.",
+        "sensor": "nvg",
+        "highlightUnitIds": [
+          "helo1"
+        ]
+      },
+      {
+        "id": "k15",
+        "time": 131.3,
+        "lng": 72.2,
+        "lat": 34.2,
+        "zoom": 7.4,
+        "pitch": 32,
+        "bearing": 0,
+        "caption": "After about 38 minutes on the ground, the force left Abbottabad without suffering an American casualty.",
+        "followUnitId": "helo2_exfil",
+        "followMode": "chase",
+        "highlightUnitIds": [
+          "helo2_exfil",
+          "chinook_exfil"
+        ]
+      },
+      {
+        "id": "k16",
+        "time": 139.8,
+        "lng": 71.9,
+        "lat": 34.2,
+        "zoom": 6.2,
+        "pitch": 10,
+        "bearing": 0,
+        "caption": "The mission was over. Its name was Operation Neptune Spear."
+      },
+      {
+        "id": "k17",
+        "time": 145.5,
+        "lng": 72.2,
+        "lat": 31.2,
+        "zoom": 4.6,
+        "pitch": 62,
+        "bearing": 16,
+        "caption": "By morning, the compound had become the focus of the world and satellites were recording the aftermath.",
+        "highlightUnitIds": [
+          "imager"
+        ]
+      },
+      {
+        "id": "k17b",
+        "time": 153.3,
+        "lng": 72.9,
+        "lat": 32.6,
+        "zoom": 5.1,
+        "pitch": 60,
+        "bearing": 20,
+        "caption": "By morning, the compound had become the focus of the world and satellites were recording the aftermath.",
+        "highlightUnitIds": [
+          "imager"
+        ]
+      },
+      {
+        "id": "k18",
+        "time": 155.3,
+        "lng": 73.24238,
+        "lat": 34.16925,
+        "zoom": 10,
+        "pitch": 0,
+        "bearing": 0,
+        "caption": "In daylight, the damaged compound and the remains of the helicopter could be seen from above.",
+        "highlightUnitIds": [
+          "imager",
+          "helo1"
+        ]
+      },
+      {
+        "id": "k19",
+        "time": 162.8,
+        "lng": 73.24162,
+        "lat": 34.16925,
+        "zoom": 17.4,
+        "pitch": 0,
+        "bearing": -3,
+        "caption": "The morning after the raid, satellite images preserved the first clear record of what had happened here.",
+        "highlightUnitIds": [
+          "imager"
+        ],
+        "media": {
+          "anchor": [
+            73.24238,
+            34.16925
+          ],
+          "anchorRadiusM": 55,
+          "src": "media/abbottabad-aftermath.webp",
+          "caption": "Aftermath imagery of the site",
+          "credit": "GeoEye IKONOS imagery, 2 May 2011"
+        }
+      }
+    ],
+    "effects": [
+      {
+        "id": "fx_isr_feed",
+        "kind": "datalink",
+        "unitId": "rq170",
+        "targetUnitId": "helo1",
+        "start": 28.3,
+        "duration": 24.599999999999998,
+        "label": "OVERHEAD FEED"
+      },
+      {
+        "id": "fx_hard_landing",
+        "kind": "wounded",
+        "unitId": "helo1",
+        "start": 53.2,
+        "duration": 69.89999999999999,
+        "label": "HARD LANDING"
+      },
+      {
+        "id": "fx_breach_radio",
+        "kind": "radio",
+        "unitId": "op_1-5",
+        "start": 67.7,
+        "duration": 3,
+        "label": "BREACHING"
+      },
+      {
+        "id": "fx_geronimo",
+        "kind": "radio",
+        "unitId": "op_1-5",
+        "start": 91.2,
+        "duration": 7.599999999999994,
+        "label": "GERONIMO, EKIA"
+      },
+      {
+        "id": "fx_sse",
+        "kind": "radio",
+        "unitId": "op_1-9",
+        "start": 98.8,
+        "duration": 12.5,
+        "label": "COLLECTING MATERIAL"
+      },
+      {
+        "id": "fx_qrf_call",
+        "kind": "radio",
+        "unitId": "op_2-1",
+        "start": 100.8,
+        "duration": 4,
+        "label": "REQUESTING BACKUP CHINOOK"
+      }
+    ],
+    "environment": {
+      "startHour": 23,
+      "endHour": 2.6,
+      "date": "2011-05-01",
+      "utcOffset": 5,
+      "hourKeys": [
+        [
+          0,
+          23
+        ],
+        [
+          140.8,
+          26.6
+        ],
+        [
+          142.3,
+          33.2
+        ],
+        [
+          170.8,
+          34.4
+        ]
+      ],
+      "windDirDeg": 120,
+      "windKph": 6,
+      "haze": 0.1
+    },
+    "duration": 170.8
+  }
+}

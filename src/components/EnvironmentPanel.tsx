@@ -1,4 +1,5 @@
 import { useStore, DEFAULT_ENVIRONMENT } from '../store';
+import PanelTitle, { useCollapsed } from './PanelTitle';
 
 /** Time of day, wind, haze, clouds and precipitation for the scenario. */
 export default function EnvironmentPanel() {
@@ -22,9 +23,10 @@ export default function EnvironmentPanel() {
     </label>
   );
 
+  const fold = useCollapsed();
   return (
-    <div className="panel env-panel">
-      <div className="panel-title">Environment</div>
+    <div className={`panel env-panel ${fold.collapsed ? 'collapsed' : ''}`}>
+      <PanelTitle label="Environment" collapsed={fold.collapsed} onToggle={fold.toggle} />
       {field('Start hour', env.startHour, (v) => update({ startHour: v }), 0, 24, 0.25)}
       {field('End hour', env.endHour, (v) => update({ endHour: v }), 0, 24, 0.25)}
       {field('Wind toward (°)', env.windDirDeg, (v) => update({ windDirDeg: v }), 0, 360, 15)}

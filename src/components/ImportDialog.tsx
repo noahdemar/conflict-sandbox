@@ -3,7 +3,8 @@ import { Check, Copy, FileUp, X } from 'lucide-react';
 import { useStore } from '../store';
 import { llmPrompt, validateScenarioJson } from '../scenarioValidation';
 import { realismWarnings } from '../realism';
-import type { Scenario } from '../types';
+import { iconFallbacks } from '../iconCatalog';
+import type { RosterEntry, Scenario } from '../types';
 
 /** Paste or pick scenario JSON, validate it against the schema, and load it. */
 export default function ImportDialog({ onClose }: { onClose: () => void }) {
@@ -26,8 +27,8 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
     }
     // plausibility issues don't block loading, but are shown once first
     if (warnings === null) {
-      const doc = JSON.parse(json) as { scenario?: Scenario } & Scenario;
-      const found = realismWarnings(doc.scenario ?? doc);
+      const doc = JSON.parse(json) as { scenario?: Scenario; roster?: RosterEntry[] } & Scenario;
+      const found = [...iconFallbacks(doc.scenario ?? doc, doc.roster), ...realismWarnings(doc.scenario ?? doc)];
       if (found.length) {
         setWarnings(found);
         return;
@@ -78,7 +79,7 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
 
         <textarea
           className="import-text"
-          placeholder='Paste scenario JSON here — {"format": "conflict-sandbox-scenario", ...}'
+          placeholder='Paste scenario JSON here: {"format": "conflict-sandbox-scenario", ...}'
           value={text}
           spellCheck={false}
           onChange={(e) => {
@@ -108,7 +109,7 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
         {errors.length === 0 && warnings && warnings.length > 0 && (
           <div className="import-errors" role="status">
             <div className="import-errors-head">
-              <strong>{warnings.length} realism issue{warnings.length === 1 ? '' : 's'}</strong>
+              <strong>{warnings.length} thing{warnings.length === 1 ? '' : 's'} to check</strong>
               <button className="top-btn" onClick={() => copy('errors')}>
                 {copied === 'errors' ? <Check size={14} /> : <Copy size={14} />}
                 {copied === 'errors' ? 'Copied' : 'Copy for LLM'}

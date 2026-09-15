@@ -1,6 +1,8 @@
 import type { RosterEntry, Scenario } from './types';
 import { DEMO_ROSTER, demoScenario } from './demoScenario';
 import { RAID_ROSTER, raidScenario } from './demoRaid';
+import { AGINCOURT_ROSTER, agincourtScenario } from './demoAgincourt';
+import { DOGFIGHT_ROSTER, dogfightScenario } from './demoDogfight';
 import { retimeScenario, totalInserted } from './retime';
 
 /**
@@ -17,7 +19,7 @@ const RAID_INSERTS: [number, number][] = [
   [115.99, 2.8], [119.99, 5.5],
 ];
 
-export type DemoId = 'khasham' | 'binladen-raid';
+export type DemoId = 'khasham' | 'binladen-raid' | 'agincourt' | 'dogfight';
 
 export const DEMOS: {
   id: DemoId;
@@ -33,6 +35,16 @@ export const DEMOS: {
   {
     id: 'binladen-raid', name: 'Bin Laden raid (2011)', duration: 128 + totalInserted(RAID_INSERTS), roster: RAID_ROSTER,
     scenario: () => retimeScenario(raidScenario(), RAID_INSERTS),
+  },
+  {
+    // no recorded narration yet: captions show as text until clips are rendered
+    id: 'agincourt', name: 'Battle of Agincourt (1415)', duration: 110, roster: AGINCOURT_ROSTER,
+    scenario: agincourtScenario,
+  },
+  {
+    // 3D aerial reconstruction; no recorded narration yet
+    id: 'dogfight', name: 'Phantom vs MiG-17 (1967)', duration: dogfightScenario().duration ?? 110, roster: DOGFIGHT_ROSTER,
+    scenario: dogfightScenario,
   },
 ];
 

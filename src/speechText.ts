@@ -19,9 +19,9 @@ type Rep = string | ((match: string, ...groups: string[]) => string);
 const REPLACE: [RegExp, Rep][] = [
   [/\bbin Laden\b/gi, 'bin Lahden'],
   [/\bU\.S\.A\.?/g, 'U S A'],
-  [/\bU\.S\.(?=\s|$|[,;:)—–-])/g, 'U S'],
-  [/\bU\.K\.(?=\s|$|[,;:)—–-])/g, 'U K'],
-  [/\bU\.N\.(?=\s|$|[,;:)—–-])/g, 'U N'],
+  [/\bU\.S\.(?=\s|$|[,;:)\u2014\u2013-])/g, 'U S'],
+  [/\bU\.K\.(?=\s|$|[,;:)\u2014\u2013-])/g, 'U K'],
+  [/\bU\.N\.(?=\s|$|[,;:)\u2014\u2013-])/g, 'U N'],
   [/\b([ap])\.m\./gi, (_m, p) => `${p.toUpperCase()} M`],
   [/\bapprox\./gi, 'approximately'],
   [/\bc\.\s?(?=\d)/g, 'circa '],
@@ -94,7 +94,7 @@ export function toSpokenText(input: string): string {
   );
 
   // punctuation that TTS stumbles over or reads aloud
-  t = t.replace(/\s*[—–]\s*/g, ', ');
+  t = t.replace(/\s*[\u2014\u2013]\s*/g, ', ');
   t = t.replace(/\s-\s/g, ', ');
   t = t.replace(/[()[\]]/g, ', ');
   t = t.replace(/["“”]/g, '');

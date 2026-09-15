@@ -1,0 +1,1643 @@
+{
+  "format": "conflict-sandbox-scenario",
+  "version": 1,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "duration": 80,
+  "roster": [
+    {
+      "id": "r_sf",
+      "name": "US SOF Team",
+      "type": "infantry",
+      "faction": "United States",
+      "wikiTitle": "Special Operations Joint Task Force – Operation Inherent Resolve"
+    },
+    {
+      "id": "r_sdf",
+      "name": "SDF Fighters",
+      "type": "infantry",
+      "faction": "SDF",
+      "wikiTitle": "Syrian Democratic Forces"
+    },
+    {
+      "id": "r_sdf_tech",
+      "name": "SDF Technical",
+      "type": "armor",
+      "faction": "SDF",
+      "wikiTitle": "Technical (vehicle)"
+    },
+    {
+      "id": "r_himars",
+      "name": "HIMARS",
+      "type": "missile",
+      "faction": "United States",
+      "wikiTitle": "M142 HIMARS"
+    },
+    {
+      "id": "r_m777",
+      "name": "M777 howitzer battery",
+      "type": "artillery",
+      "faction": "United States",
+      "wikiTitle": "M777 howitzer"
+    },
+    {
+      "id": "r_f15",
+      "name": "F-15E Strike Eagle",
+      "type": "air",
+      "faction": "United States",
+      "wikiTitle": "McDonnell Douglas F-15E Strike Eagle"
+    },
+    {
+      "id": "r_f22",
+      "name": "F-22 Raptor",
+      "type": "air",
+      "faction": "United States",
+      "wikiTitle": "Lockheed Martin F-22 Raptor"
+    },
+    {
+      "id": "r_mq9",
+      "name": "MQ-9 Reaper",
+      "type": "air",
+      "faction": "United States",
+      "wikiTitle": "General Atomics MQ-9 Reaper"
+    },
+    {
+      "id": "r_ac130",
+      "name": "AC-130J Gunship",
+      "type": "air",
+      "faction": "United States",
+      "wikiTitle": "Lockheed AC-130"
+    },
+    {
+      "id": "r_ah64",
+      "name": "AH-64 Apache",
+      "type": "air",
+      "faction": "United States",
+      "wikiTitle": "Boeing AH-64 Apache"
+    },
+    {
+      "id": "r_b52",
+      "name": "B-52H Stratofortress",
+      "type": "air",
+      "faction": "United States",
+      "wikiTitle": "Boeing B-52 Stratofortress"
+    },
+    {
+      "id": "r_t72",
+      "name": "T-72 Tank",
+      "type": "armor",
+      "faction": "Wagner / SAA",
+      "wikiTitle": "T-72"
+    },
+    {
+      "id": "r_t55",
+      "name": "T-55 Tank",
+      "type": "armor",
+      "faction": "Wagner / SAA",
+      "wikiTitle": "T-54/T-55"
+    },
+    {
+      "id": "r_bmp",
+      "name": "BMP-1 IFV",
+      "type": "armor",
+      "faction": "Wagner / SAA",
+      "wikiTitle": "BMP-1"
+    },
+    {
+      "id": "r_tech",
+      "name": "Technical",
+      "type": "armor",
+      "faction": "Wagner / SAA",
+      "wikiTitle": "Technical (vehicle)"
+    },
+    {
+      "id": "r_wagner",
+      "name": "Wagner Infantry",
+      "type": "infantry",
+      "faction": "Wagner / SAA",
+      "wikiTitle": "Wagner Group"
+    },
+    {
+      "id": "r_d30",
+      "name": "D-30 Howitzer",
+      "type": "artillery",
+      "faction": "Wagner / SAA",
+      "wikiTitle": "122 mm howitzer 2A18 (D-30)"
+    },
+    {
+      "id": "r_grad",
+      "name": "BM-21 Grad",
+      "type": "missile",
+      "faction": "Wagner / SAA",
+      "wikiTitle": "BM-21 Grad"
+    },
+    {
+      "id": "r_zu23",
+      "name": "ZU-23-2 AA gun",
+      "type": "artillery",
+      "faction": "Wagner / SAA",
+      "wikiTitle": "ZU-23-2"
+    }
+  ],
+  "scenario": {
+    "name": "Battle of Khasham",
+    "subtitle": "Deir ez-Zor, Syria · 7–8 February 2018",
+    "sources": [
+      "US Department of Defense and Operation Inherent Resolve statements, February 2018",
+      "The New York Times, \"How a 4-Hour Battle Between Russian Mercenaries and U.S. Commandos Unfolded in Syria\", 24 May 2018"
+    ],
+    "article": [
+      {
+        "kind": "text",
+        "text": "By early 2018, the war against the Islamic State in eastern Syria had left two rival coalitions facing each other across the Euphrates. American-backed Syrian Democratic Forces held the east bank; Syrian government forces and their allies held the west. American and Russian commanders kept a telephone line open to stop their forces from colliding."
+      },
+      {
+        "kind": "text",
+        "text": "On the east bank, near the village of Khasham, sat the Conoco gas plant, one of the most valuable facilities in the region. A small team of American special operators was stationed there alongside SDF fighters."
+      },
+      {
+        "kind": "callout",
+        "title": "The Conoco plant",
+        "text": "A gas processing facility in Deir ez-Zor province, taken from the Islamic State in 2017 and held by the SDF with American support."
+      },
+      {
+        "kind": "scene",
+        "from": "k1",
+        "to": "k2",
+        "caption": "The Euphrates deconfliction line and the defenders at the Conoco plant."
+      },
+      {
+        "kind": "heading",
+        "text": "The column moves"
+      },
+      {
+        "kind": "text",
+        "text": "On the evening of 7 February, a pro-government force of roughly 500 men gathered near Khasham with tanks, armored vehicles and artillery. Later reporting identified many of them as Russian contractors working alongside Syrian government troops. The column crossed to the east bank and advanced toward the plant."
+      },
+      {
+        "kind": "callout",
+        "title": "T-72 tank",
+        "text": "Soviet-designed main battle tanks of this family, along with older T-55s, were reported in the attacking column.",
+        "wikiTitle": "T-72",
+        "side": "left"
+      },
+      {
+        "kind": "text",
+        "text": "As the vehicles closed in, their artillery and rocket launchers opened fire on the defenders. American officials said they used the deconfliction line to contact the Russian military, and were told Russian forces were not involved."
+      },
+      {
+        "kind": "scene",
+        "from": "k3",
+        "to": "k4",
+        "caption": "The column advances as its artillery opens fire across the river."
+      },
+      {
+        "kind": "heading",
+        "text": "The American response"
+      },
+      {
+        "kind": "text",
+        "text": "The United States answered with overwhelming firepower. Fighter jets, a Reaper drone, Apache helicopters and B-52 bombers struck the column, while Marine artillery fired from nearby positions."
+      },
+      {
+        "kind": "callout",
+        "title": "AC-130 gunship",
+        "text": "A heavily armed transport aircraft that circles its target, firing cannon and a 105mm howitzer from the side of the fuselage.",
+        "wikiTitle": "Lockheed AC-130"
+      },
+      {
+        "kind": "text",
+        "text": "Strikes hit the lead vehicles first and worked back along the road. An AC-130 gunship circled overhead, firing on vehicles and troops below."
+      },
+      {
+        "kind": "scene",
+        "from": "k5",
+        "to": "k7",
+        "caption": "Air strikes break up the column, vehicle by vehicle."
+      },
+      {
+        "kind": "text",
+        "text": "American rocket artillery then targeted the guns that had been shelling the plant, silencing the attackers’ remaining batteries."
+      },
+      {
+        "kind": "callout",
+        "title": "HIMARS",
+        "text": "A truck-mounted launcher that fires GPS-guided rockets over long distances, used here against the attackers’ artillery.",
+        "wikiTitle": "M142 HIMARS",
+        "side": "left"
+      },
+      {
+        "kind": "scene",
+        "from": "k8",
+        "caption": "Counter-battery fire against the attacking artillery."
+      },
+      {
+        "kind": "heading",
+        "text": "Aftermath"
+      },
+      {
+        "kind": "text",
+        "text": "After about four hours the assault had collapsed and the survivors withdrew. No Americans were killed; one SDF fighter was reported wounded. Estimates of the attackers’ dead varied widely, from dozens to a few hundred, and Russia acknowledged only that some of its citizens had been killed or wounded."
+      },
+      {
+        "kind": "scene",
+        "from": "k9",
+        "caption": "The battlefield once the attack had failed."
+      }
+    ],
+    "factions": [
+      {
+        "id": "f_us",
+        "name": "United States",
+        "color": "#3a6fc0",
+        "affiliation": "friend"
+      },
+      {
+        "id": "f_sdf",
+        "name": "SDF",
+        "color": "#3f9b4b",
+        "affiliation": "friend"
+      },
+      {
+        "id": "f_wagner",
+        "name": "Pro-government force",
+        "color": "#cf5a50",
+        "affiliation": "hostile"
+      }
+    ],
+    "units": [
+      {
+        "id": "u_sf",
+        "factionId": "f_us",
+        "type": "infantry",
+        "name": "US SOF",
+        "rosterId": "r_sf",
+        "lat": 35.321,
+        "lng": 40.314,
+        "heading": 220,
+        "appearAt": 0,
+        "sensorKm": 4.5
+      },
+      {
+        "id": "u_sdf",
+        "factionId": "f_sdf",
+        "type": "infantry",
+        "name": "SDF",
+        "rosterId": "r_sdf",
+        "lat": 35.314,
+        "lng": 40.33,
+        "heading": 220,
+        "appearAt": 0
+      },
+      {
+        "id": "u_sdf_tech",
+        "factionId": "f_sdf",
+        "type": "armor",
+        "name": "SDF technical",
+        "rosterId": "r_sdf_tech",
+        "lat": 35.31,
+        "lng": 40.318,
+        "heading": 210,
+        "appearAt": 0
+      },
+      {
+        "id": "u_sdf_cp",
+        "factionId": "f_sdf",
+        "type": "infantry",
+        "name": "SDF checkpoint",
+        "rosterId": "r_sdf",
+        "lat": 35.279,
+        "lng": 40.338,
+        "heading": 240,
+        "appearAt": 0,
+        "sensorKm": 3
+      },
+      {
+        "id": "u_himars",
+        "factionId": "f_us",
+        "type": "missile",
+        "name": "HIMARS",
+        "rosterId": "r_himars",
+        "lat": 35.372,
+        "lng": 40.43,
+        "heading": 225,
+        "appearAt": 0
+      },
+      {
+        "id": "u_m777",
+        "factionId": "f_us",
+        "type": "artillery",
+        "name": "Marine M777 battery",
+        "rosterId": "r_m777",
+        "lat": 35.367,
+        "lng": 40.42,
+        "heading": 225,
+        "appearAt": 0
+      },
+      {
+        "id": "u_t72a",
+        "factionId": "f_wagner",
+        "type": "armor",
+        "name": "T-72",
+        "rosterId": "r_t72",
+        "lat": 35.2968,
+        "lng": 40.2845,
+        "arrowId": "a_u_t72a",
+        "appearAt": 0,
+        "destroyedAt": 49.3
+      },
+      {
+        "id": "u_t72b",
+        "factionId": "f_wagner",
+        "type": "armor",
+        "name": "T-72",
+        "rosterId": "r_t72",
+        "lat": 35.2968,
+        "lng": 40.2845,
+        "arrowId": "a_u_t72b",
+        "appearAt": 0,
+        "destroyedAt": 52.3
+      },
+      {
+        "id": "u_bmp1",
+        "factionId": "f_wagner",
+        "type": "armor",
+        "name": "BMP-1",
+        "rosterId": "r_bmp",
+        "lat": 35.2968,
+        "lng": 40.2845,
+        "arrowId": "a_u_bmp1",
+        "appearAt": 0,
+        "destroyedAt": 54.8
+      },
+      {
+        "id": "u_t55",
+        "factionId": "f_wagner",
+        "type": "armor",
+        "name": "T-55",
+        "rosterId": "r_t55",
+        "lat": 35.2968,
+        "lng": 40.2845,
+        "arrowId": "a_u_t55",
+        "appearAt": 0,
+        "destroyedAt": 57.8
+      },
+      {
+        "id": "u_bmp2",
+        "factionId": "f_wagner",
+        "type": "armor",
+        "name": "BMP-1",
+        "rosterId": "r_bmp",
+        "lat": 35.2968,
+        "lng": 40.2845,
+        "arrowId": "a_u_bmp2",
+        "appearAt": 0,
+        "destroyedAt": 60.3
+      },
+      {
+        "id": "u_tech1",
+        "factionId": "f_wagner",
+        "type": "armor",
+        "name": "Technical",
+        "rosterId": "r_tech",
+        "lat": 35.2968,
+        "lng": 40.2845,
+        "arrowId": "a_u_tech1",
+        "appearAt": 0,
+        "destroyedAt": 62.3
+      },
+      {
+        "id": "u_tech2",
+        "factionId": "f_wagner",
+        "type": "armor",
+        "name": "Technical",
+        "rosterId": "r_tech",
+        "lat": 35.2968,
+        "lng": 40.2845,
+        "arrowId": "a_u_tech2",
+        "appearAt": 0,
+        "destroyedAt": 65.4
+      },
+      {
+        "id": "u_wag",
+        "factionId": "f_wagner",
+        "type": "infantry",
+        "name": "Pro-government infantry",
+        "rosterId": "r_wagner",
+        "lat": 35.2968,
+        "lng": 40.2845,
+        "arrowId": "a_u_wag",
+        "appearAt": 0,
+        "destroyedAt": 68.4
+      },
+      {
+        "id": "u_d30",
+        "factionId": "f_wagner",
+        "type": "artillery",
+        "name": "D-30 battery",
+        "rosterId": "r_d30",
+        "lat": 35.236,
+        "lng": 40.238,
+        "heading": 40,
+        "appearAt": 0,
+        "destroyedAt": 66.9
+      },
+      {
+        "id": "u_grad",
+        "factionId": "f_wagner",
+        "type": "missile",
+        "name": "BM-21 Grad",
+        "rosterId": "r_grad",
+        "lat": 35.251,
+        "lng": 40.222,
+        "heading": 60,
+        "appearAt": 0,
+        "destroyedAt": 69.9
+      },
+      {
+        "id": "u_zu23",
+        "factionId": "f_wagner",
+        "type": "artillery",
+        "name": "ZU-23-2",
+        "rosterId": "r_zu23",
+        "lat": 35.2935,
+        "lng": 40.2805,
+        "heading": 60,
+        "appearAt": 0,
+        "airDefenseKm": 2.5,
+        "destroyedAt": 63.8
+      },
+      {
+        "id": "u_f22a",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "F-22 Raptor",
+        "rosterId": "r_f22",
+        "lat": 35.47,
+        "lng": 40.48,
+        "arrowId": "a_f22a",
+        "appearAt": 31.2
+      },
+      {
+        "id": "u_f22b",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "F-22 Raptor",
+        "rosterId": "r_f22",
+        "lat": 35.48,
+        "lng": 40.46,
+        "arrowId": "a_f22b",
+        "appearAt": 32.2
+      },
+      {
+        "id": "u_f15a",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "F-15E",
+        "rosterId": "r_f15",
+        "lat": 35.44,
+        "lng": 40.52,
+        "arrowId": "a_f15a",
+        "appearAt": 33.2
+      },
+      {
+        "id": "u_f15b",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "F-15E",
+        "rosterId": "r_f15",
+        "lat": 35.45,
+        "lng": 40.5,
+        "arrowId": "a_f15b",
+        "appearAt": 34.2
+      },
+      {
+        "id": "u_mq9",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "MQ-9",
+        "rosterId": "r_mq9",
+        "lat": 35.36,
+        "lng": 40.44,
+        "arrowId": "a_mq9",
+        "appearAt": 33.2
+      },
+      {
+        "id": "u_ac130",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "AC-130J",
+        "rosterId": "r_ac130",
+        "lat": 35.4,
+        "lng": 40.4,
+        "arrowId": "a_ac130",
+        "appearAt": 39.1
+      },
+      {
+        "id": "u_ah64a",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "AH-64",
+        "rosterId": "r_ah64",
+        "lat": 35.34,
+        "lng": 40.4,
+        "arrowId": "a_ah64a",
+        "appearAt": 50.3
+      },
+      {
+        "id": "u_ah64b",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "AH-64",
+        "rosterId": "r_ah64",
+        "lat": 35.33,
+        "lng": 40.41,
+        "arrowId": "a_ah64b",
+        "appearAt": 51.3
+      },
+      {
+        "id": "u_b52",
+        "factionId": "f_us",
+        "type": "air",
+        "name": "B-52H",
+        "rosterId": "r_b52",
+        "lat": 35.5,
+        "lng": 40.5,
+        "arrowId": "a_b52",
+        "appearAt": 58.3
+      }
+    ],
+    "arrows": [
+      {
+        "id": "a_u_t72a",
+        "factionId": "f_wagner",
+        "points": [
+          [
+            40.2845,
+            35.2968
+          ],
+          [
+            40.2992,
+            35.3043
+          ],
+          [
+            40.309,
+            35.3105
+          ]
+        ],
+        "name": "Pro-government advance",
+        "appearAt": 9.1,
+        "duration": 45.199999999999996
+      },
+      {
+        "id": "a_u_t72b",
+        "factionId": "f_wagner",
+        "points": [
+          [
+            40.2845,
+            35.2968
+          ],
+          [
+            40.2992,
+            35.3043
+          ],
+          [
+            40.309,
+            35.3105
+          ]
+        ],
+        "name": "T-72 follows",
+        "appearAt": 10.6,
+        "duration": 45.199999999999996
+      },
+      {
+        "id": "a_u_bmp1",
+        "factionId": "f_wagner",
+        "points": [
+          [
+            40.2845,
+            35.2968
+          ],
+          [
+            40.2992,
+            35.3043
+          ],
+          [
+            40.309,
+            35.3105
+          ]
+        ],
+        "name": "BMP-1 follows",
+        "appearAt": 12.1,
+        "duration": 45.199999999999996
+      },
+      {
+        "id": "a_u_t55",
+        "factionId": "f_wagner",
+        "points": [
+          [
+            40.2845,
+            35.2968
+          ],
+          [
+            40.2992,
+            35.3043
+          ],
+          [
+            40.309,
+            35.3105
+          ]
+        ],
+        "name": "T-55 follows",
+        "appearAt": 13.6,
+        "duration": 45.199999999999996
+      },
+      {
+        "id": "a_u_bmp2",
+        "factionId": "f_wagner",
+        "points": [
+          [
+            40.2845,
+            35.2968
+          ],
+          [
+            40.2992,
+            35.3043
+          ],
+          [
+            40.309,
+            35.3105
+          ]
+        ],
+        "name": "BMP-1 follows",
+        "appearAt": 18,
+        "duration": 42.3
+      },
+      {
+        "id": "a_u_tech1",
+        "factionId": "f_wagner",
+        "points": [
+          [
+            40.2845,
+            35.2968
+          ],
+          [
+            40.2992,
+            35.3043
+          ],
+          [
+            40.309,
+            35.3105
+          ]
+        ],
+        "name": "Technical follows",
+        "appearAt": 19.5,
+        "duration": 42.3
+      },
+      {
+        "id": "a_u_tech2",
+        "factionId": "f_wagner",
+        "points": [
+          [
+            40.2845,
+            35.2968
+          ],
+          [
+            40.2992,
+            35.3043
+          ],
+          [
+            40.309,
+            35.3105
+          ]
+        ],
+        "name": "Technical follows",
+        "appearAt": 21,
+        "duration": 42.3
+      },
+      {
+        "id": "a_u_wag",
+        "factionId": "f_wagner",
+        "points": [
+          [
+            40.2845,
+            35.2968
+          ],
+          [
+            40.2992,
+            35.3043
+          ],
+          [
+            40.309,
+            35.3105
+          ]
+        ],
+        "name": "Pro-government infantry follows",
+        "appearAt": 22.5,
+        "duration": 43.400000000000006
+      },
+      {
+        "id": "a_f22a",
+        "factionId": "f_us",
+        "points": [
+          [
+            40.48,
+            35.47
+          ],
+          [
+            40.39,
+            35.4
+          ],
+          [
+            40.32,
+            35.35
+          ]
+        ],
+        "name": "F-22 defensive cover",
+        "appearAt": 31.2,
+        "duration": 8.900000000000002
+      },
+      {
+        "id": "a_f22b",
+        "factionId": "f_us",
+        "points": [
+          [
+            40.46,
+            35.48
+          ],
+          [
+            40.37,
+            35.41
+          ],
+          [
+            40.3,
+            35.36
+          ]
+        ],
+        "name": "F-22 defensive cover",
+        "appearAt": 32.2,
+        "duration": 8.899999999999999
+      },
+      {
+        "id": "a_f15a",
+        "factionId": "f_us",
+        "points": [
+          [
+            40.52,
+            35.44
+          ],
+          [
+            40.42,
+            35.37
+          ],
+          [
+            40.34,
+            35.322
+          ]
+        ],
+        "name": "F-15E ingress",
+        "appearAt": 33.2,
+        "duration": 7.899999999999999
+      },
+      {
+        "id": "a_f15b",
+        "factionId": "f_us",
+        "points": [
+          [
+            40.5,
+            35.45
+          ],
+          [
+            40.4,
+            35.39
+          ],
+          [
+            40.325,
+            35.335
+          ]
+        ],
+        "name": "F-15E ingress",
+        "appearAt": 34.2,
+        "duration": 15.099999999999994
+      },
+      {
+        "id": "a_mq9",
+        "factionId": "f_us",
+        "points": [
+          [
+            40.44,
+            35.36
+          ],
+          [
+            40.39,
+            35.32
+          ],
+          [
+            40.335,
+            35.28
+          ]
+        ],
+        "name": "MQ-9 on station",
+        "appearAt": 33.2,
+        "duration": 19.099999999999994
+      },
+      {
+        "id": "a_ac130",
+        "factionId": "f_us",
+        "points": [
+          [
+            40.4,
+            35.4
+          ],
+          [
+            40.35,
+            35.36
+          ],
+          [
+            40.3,
+            35.345
+          ],
+          [
+            40.265,
+            35.31
+          ],
+          [
+            40.27,
+            35.27
+          ]
+        ],
+        "name": "AC-130 firing orbit",
+        "appearAt": 39.1,
+        "duration": 27.300000000000004
+      },
+      {
+        "id": "a_ah64a",
+        "factionId": "f_us",
+        "points": [
+          [
+            40.4,
+            35.34
+          ],
+          [
+            40.36,
+            35.29
+          ],
+          [
+            40.31,
+            35.27
+          ]
+        ],
+        "name": "AH-64 attack run",
+        "appearAt": 50.3,
+        "duration": 12
+      },
+      {
+        "id": "a_ah64b",
+        "factionId": "f_us",
+        "points": [
+          [
+            40.41,
+            35.33
+          ],
+          [
+            40.37,
+            35.3
+          ],
+          [
+            40.322,
+            35.285
+          ]
+        ],
+        "name": "AH-64 attack run",
+        "appearAt": 51.3,
+        "duration": 12
+      },
+      {
+        "id": "a_b52",
+        "factionId": "f_us",
+        "points": [
+          [
+            40.5,
+            35.5
+          ],
+          [
+            40.38,
+            35.38
+          ],
+          [
+            40.27,
+            35.27
+          ]
+        ],
+        "name": "B-52 bomb run",
+        "appearAt": 58.3,
+        "duration": 10.100000000000009
+      }
+    ],
+    "territories": [
+      {
+        "id": "t_sdf",
+        "factionId": "f_sdf",
+        "points": [
+          [
+            40.05,
+            35.43
+          ],
+          [
+            40.1,
+            35.4
+          ],
+          [
+            40.118,
+            35.36
+          ],
+          [
+            40.141,
+            35.34
+          ],
+          [
+            40.165,
+            35.321
+          ],
+          [
+            40.185,
+            35.304
+          ],
+          [
+            40.205,
+            35.316
+          ],
+          [
+            40.223,
+            35.311
+          ],
+          [
+            40.227,
+            35.289
+          ],
+          [
+            40.243,
+            35.282
+          ],
+          [
+            40.259,
+            35.282
+          ],
+          [
+            40.272,
+            35.278
+          ],
+          [
+            40.275,
+            35.261
+          ],
+          [
+            40.29,
+            35.26
+          ],
+          [
+            40.313,
+            35.262
+          ],
+          [
+            40.345,
+            35.253
+          ],
+          [
+            40.342,
+            35.222
+          ],
+          [
+            40.371,
+            35.216
+          ],
+          [
+            40.403,
+            35.207
+          ],
+          [
+            40.414,
+            35.196
+          ],
+          [
+            40.43,
+            35.17
+          ],
+          [
+            40.6,
+            35.17
+          ],
+          [
+            40.6,
+            35.5
+          ],
+          [
+            40,
+            35.5
+          ],
+          [
+            40,
+            35.43
+          ]
+        ],
+        "name": "SDF-held east bank",
+        "label": "SDF",
+        "labelAt": [
+          40.4,
+          35.34
+        ],
+        "labelRotate": -12,
+        "appearAt": 0,
+        "duration": 4
+      },
+      {
+        "id": "t_saa",
+        "factionId": "f_wagner",
+        "points": [
+          [
+            40.05,
+            35.43
+          ],
+          [
+            40.1,
+            35.4
+          ],
+          [
+            40.118,
+            35.36
+          ],
+          [
+            40.141,
+            35.34
+          ],
+          [
+            40.165,
+            35.321
+          ],
+          [
+            40.185,
+            35.304
+          ],
+          [
+            40.205,
+            35.316
+          ],
+          [
+            40.223,
+            35.311
+          ],
+          [
+            40.227,
+            35.289
+          ],
+          [
+            40.243,
+            35.282
+          ],
+          [
+            40.259,
+            35.282
+          ],
+          [
+            40.272,
+            35.278
+          ],
+          [
+            40.275,
+            35.261
+          ],
+          [
+            40.29,
+            35.26
+          ],
+          [
+            40.313,
+            35.262
+          ],
+          [
+            40.345,
+            35.253
+          ],
+          [
+            40.342,
+            35.222
+          ],
+          [
+            40.371,
+            35.216
+          ],
+          [
+            40.403,
+            35.207
+          ],
+          [
+            40.414,
+            35.196
+          ],
+          [
+            40.43,
+            35.17
+          ],
+          [
+            40.43,
+            35.05
+          ],
+          [
+            40,
+            35.05
+          ],
+          [
+            40,
+            35.43
+          ]
+        ],
+        "name": "SAA-held west bank",
+        "label": "SAA",
+        "labelAt": [
+          40.18,
+          35.22
+        ],
+        "labelRotate": -12,
+        "appearAt": 0,
+        "duration": 4
+      }
+    ],
+    "labels": [
+      {
+        "id": "l_conoco",
+        "text": "Conoco gas plant",
+        "facility": "gas",
+        "lat": 35.318,
+        "lng": 40.318,
+        "size": 12,
+        "color": "#1c1f22",
+        "appearAt": 0
+      },
+      {
+        "id": "l_euph",
+        "text": "Euphrates River",
+        "lat": 35.268,
+        "lng": 40.33,
+        "size": 11,
+        "color": "#3d5a66",
+        "appearAt": 0
+      },
+      {
+        "id": "l_flag_us",
+        "text": "US & SDF",
+        "flag": "us",
+        "lat": 35.345,
+        "lng": 40.36,
+        "size": 12,
+        "color": "#1c1f22",
+        "appearAt": 0
+      },
+      {
+        "id": "l_flag_ru",
+        "text": "Reported Wagner PMC",
+        "flag": "ru",
+        "lat": 35.288,
+        "lng": 40.268,
+        "size": 12,
+        "color": "#1c1f22",
+        "appearAt": 2
+      },
+      {
+        "id": "l_flag_sy",
+        "text": "Syrian Army",
+        "flag": "sy",
+        "lat": 35.26,
+        "lng": 40.18,
+        "size": 12,
+        "color": "#1c1f22",
+        "appearAt": 2
+      }
+    ],
+    "strikes": [
+      {
+        "id": "s_d30a",
+        "lat": 35.318,
+        "lng": 40.318,
+        "name": "D-30 fire mission",
+        "size": 0.7,
+        "salvo": 4,
+        "spreadM": 160,
+        "appearAt": 28.2,
+        "fromUnitId": "u_d30",
+        "launchAt": 20
+      },
+      {
+        "id": "s_d30b",
+        "lat": 35.321,
+        "lng": 40.328,
+        "name": "D-30 fire mission",
+        "size": 0.7,
+        "salvo": 4,
+        "spreadM": 160,
+        "appearAt": 31.7,
+        "fromUnitId": "u_d30",
+        "launchAt": 28.7
+      },
+      {
+        "id": "s_grad",
+        "lat": 35.28,
+        "lng": 40.337,
+        "name": "Grad rocket barrage",
+        "size": 0.55,
+        "salvo": 12,
+        "spreadM": 280,
+        "appearAt": 34.2,
+        "fromUnitId": "u_grad",
+        "launchAt": 30.7
+      },
+      {
+        "id": "s_m777",
+        "lat": 35.304,
+        "lng": 40.3,
+        "name": "155mm coalition artillery",
+        "size": 0.65,
+        "salvo": 4,
+        "spreadM": 100,
+        "appearAt": 41.1,
+        "fromUnitId": "u_m777",
+        "launchAt": 39.6
+      },
+      {
+        "id": "s_jdam1",
+        "name": "GBU-38 JDAM",
+        "size": 1.5,
+        "fromUnitId": "u_f15a",
+        "targetUnitId": "u_t72a",
+        "lat": 35.3043,
+        "lng": 40.2992,
+        "appearAt": 49.3,
+        "launchAt": 39.1
+      },
+      {
+        "id": "s_jdam2",
+        "name": "GBU-38 JDAM",
+        "size": 1.5,
+        "fromUnitId": "u_f15b",
+        "targetUnitId": "u_t72b",
+        "lat": 35.3043,
+        "lng": 40.2992,
+        "appearAt": 52.3,
+        "launchAt": 48.3
+      },
+      {
+        "id": "s_hellfire1",
+        "name": "AGM-114 Hellfire",
+        "size": 0.9,
+        "fromUnitId": "u_mq9",
+        "targetUnitId": "u_bmp1",
+        "lat": 35.3043,
+        "lng": 40.2992,
+        "appearAt": 54.8,
+        "launchAt": 51.8
+      },
+      {
+        "id": "s_ac130a",
+        "name": "105mm howitzer",
+        "size": 0.8,
+        "salvo": 5,
+        "spreadM": 70,
+        "fromUnitId": "u_ac130",
+        "targetUnitId": "u_t55",
+        "lat": 35.3043,
+        "lng": 40.2992,
+        "appearAt": 57.8,
+        "launchAt": 56.6
+      },
+      {
+        "id": "s_ah64a",
+        "name": "30mm chain gun",
+        "size": 0.35,
+        "salvo": 10,
+        "spreadM": 45,
+        "fromUnitId": "u_ah64a",
+        "targetUnitId": "u_bmp2",
+        "lat": 35.3043,
+        "lng": 40.2992,
+        "appearAt": 60.3,
+        "launchAt": 58.9
+      },
+      {
+        "id": "s_hellfire2",
+        "name": "AGM-114 Hellfire",
+        "size": 0.9,
+        "fromUnitId": "u_ah64b",
+        "targetUnitId": "u_tech1",
+        "lat": 35.3043,
+        "lng": 40.2992,
+        "appearAt": 62.3,
+        "launchAt": 59.8
+      },
+      {
+        "id": "s_ac130b",
+        "name": "105mm howitzer",
+        "size": 0.8,
+        "salvo": 5,
+        "spreadM": 70,
+        "fromUnitId": "u_ac130",
+        "targetUnitId": "u_tech2",
+        "lat": 35.3043,
+        "lng": 40.2992,
+        "appearAt": 65.4,
+        "launchAt": 63.1
+      },
+      {
+        "id": "s_b52",
+        "name": "Mk 82 bomb string",
+        "size": 1.1,
+        "salvo": 9,
+        "spreadM": 320,
+        "fromUnitId": "u_b52",
+        "targetUnitId": "u_wag",
+        "lat": 35.3043,
+        "lng": 40.2992,
+        "appearAt": 68.4,
+        "launchAt": 62.3
+      },
+      {
+        "id": "s_zu23",
+        "targetUnitId": "u_zu23",
+        "lat": 35.2935,
+        "lng": 40.2805,
+        "name": "105mm howitzer",
+        "size": 0.8,
+        "salvo": 3,
+        "spreadM": 40,
+        "appearAt": 63.8,
+        "fromUnitId": "u_ac130",
+        "launchAt": 62.6
+      },
+      {
+        "id": "s_himars1",
+        "lat": 35.236,
+        "lng": 40.238,
+        "name": "GMLRS counter-battery",
+        "size": 1.3,
+        "salvo": 3,
+        "spreadM": 90,
+        "appearAt": 66.9,
+        "fromUnitId": "u_himars",
+        "launchAt": 61.8
+      },
+      {
+        "id": "s_himars2",
+        "lat": 35.251,
+        "lng": 40.222,
+        "name": "GMLRS counter-battery",
+        "size": 1.3,
+        "salvo": 2,
+        "spreadM": 60,
+        "appearAt": 69.9,
+        "fromUnitId": "u_himars",
+        "launchAt": 65.9
+      }
+    ],
+    "environment": {
+      "startHour": 21.5,
+      "endHour": 2,
+      "date": "2018-02-07",
+      "utcOffset": 3,
+      "windDirDeg": 65,
+      "windKph": 14,
+      "haze": 0.15,
+      "cloudCover": 0
+    },
+    "effects": [
+      {
+        "id": "fx_radio",
+        "kind": "radio",
+        "unitId": "u_sf",
+        "start": 29.2,
+        "duration": 6.900000000000002,
+        "label": "CALLING AIR SUPPORT"
+      },
+      {
+        "id": "fx_handoff",
+        "kind": "datalink",
+        "unitId": "u_sf",
+        "targetUnitId": "u_f15a",
+        "start": 36.6,
+        "duration": 5,
+        "label": "TARGET HANDOFF"
+      },
+      {
+        "id": "fx_isr",
+        "kind": "datalink",
+        "unitId": "u_mq9",
+        "targetUnitId": "u_ac130",
+        "start": 41.1,
+        "duration": 17.199999999999996,
+        "label": "ISR FEED"
+      },
+      {
+        "id": "fx_counterbattery",
+        "kind": "datalink",
+        "unitId": "u_sf",
+        "targetUnitId": "u_himars",
+        "start": 61.3,
+        "duration": 9.100000000000009,
+        "label": "COUNTER-BATTERY"
+      },
+      {
+        "id": "fx_sdf_wounded",
+        "kind": "wounded",
+        "unitId": "u_sdf",
+        "start": 31.7,
+        "duration": 8.900000000000002,
+        "label": "ONE FIGHTER WOUNDED"
+      },
+      {
+        "id": "fx_t55_hit",
+        "kind": "wounded",
+        "unitId": "u_t55",
+        "start": 54.8,
+        "duration": 3
+      },
+      {
+        "id": "fx_panic",
+        "kind": "panic",
+        "unitId": "u_wag",
+        "start": 59.3,
+        "duration": 9.100000000000009,
+        "label": "ROUTED"
+      },
+      {
+        "id": "fx_d30_dry",
+        "kind": "noammo",
+        "unitId": "u_d30",
+        "start": 58.3,
+        "duration": 8.600000000000009
+      }
+    ],
+    "keyframes": [
+      {
+        "id": "k1",
+        "time": 0,
+        "lng": 40.29,
+        "lat": 35.285,
+        "zoom": 11.3,
+        "pitch": 0,
+        "bearing": 0,
+        "caption": "On 7 February 2018, an uneasy boundary followed the Euphrates through eastern Syria."
+      },
+      {
+        "id": "k2",
+        "time": 8.1,
+        "lng": 40.322,
+        "lat": 35.314,
+        "zoom": 13.8,
+        "pitch": 48,
+        "bearing": -20,
+        "caption": "At the Conoco gas plant, American special operators and Syrian Democratic Forces held the eastern bank.",
+        "highlightUnitIds": [
+          "u_sf",
+          "u_sdf",
+          "u_sdf_tech",
+          "u_sdf_cp"
+        ]
+      },
+      {
+        "id": "k3",
+        "time": 17,
+        "lng": 40.29,
+        "lat": 35.3,
+        "zoom": 13.2,
+        "pitch": 58,
+        "bearing": 25,
+        "followUnitId": "u_t72a",
+        "followMode": "chase",
+        "caption": "That night, a pro-government column of tanks, fighting vehicles, and about 500 men moved out of Khasham, including reported Wagner personnel.",
+        "overlay": "orbat",
+        "overlayFactionIds": [
+          "f_wagner"
+        ],
+        "highlightUnitIds": [
+          "u_t72a",
+          "u_t72b",
+          "u_bmp1",
+          "u_t55",
+          "u_bmp2",
+          "u_tech1",
+          "u_tech2",
+          "u_wag"
+        ]
+      },
+      {
+        "id": "k4",
+        "time": 28.2,
+        "lng": 40.24,
+        "lat": 35.25,
+        "zoom": 13.1,
+        "pitch": 52,
+        "bearing": 35,
+        "caption": "As the column closed on the plant, its howitzers and Grad rockets opened fire across the river.",
+        "highlightUnitIds": [
+          "u_d30",
+          "u_grad"
+        ]
+      },
+      {
+        "id": "k5",
+        "time": 36.1,
+        "lng": 40.35,
+        "lat": 35.33,
+        "zoom": 11.8,
+        "pitch": 52,
+        "bearing": -30,
+        "caption": "American aircraft and artillery answered the call, including Raptors, Strike Eagles, a Reaper drone, a gunship, Apache helicopters, and B 52 bombers.",
+        "highlightUnitIds": [
+          "u_m777",
+          "u_f22a",
+          "u_f22b",
+          "u_f15a",
+          "u_f15b",
+          "u_mq9",
+          "u_ac130",
+          "u_ah64a",
+          "u_ah64b",
+          "u_b52"
+        ]
+      },
+      {
+        "id": "k6",
+        "time": 48.3,
+        "lng": 40.298,
+        "lat": 35.305,
+        "zoom": 13.7,
+        "pitch": 58,
+        "bearing": 10,
+        "orbitSpeed": 4,
+        "caption": "One by one, precision strikes began tearing the advancing column apart.",
+        "highlightUnitIds": [
+          "u_t72a",
+          "u_t72b",
+          "u_bmp1",
+          "u_t55",
+          "u_bmp2",
+          "u_tech1",
+          "u_tech2",
+          "u_wag"
+        ]
+      },
+      {
+        "id": "k7",
+        "time": 57.3,
+        "lng": 40.294,
+        "lat": 35.302,
+        "zoom": 12.8,
+        "pitch": 58,
+        "bearing": 40,
+        "orbitSpeed": 2,
+        "followUnitId": "u_ac130",
+        "followMode": "track",
+        "caption": "The A C 130 circled the battlefield, sending heavy shells into the column below.",
+        "highlightUnitIds": [
+          "u_ac130",
+          "u_t72a",
+          "u_t72b",
+          "u_bmp1",
+          "u_t55",
+          "u_bmp2",
+          "u_tech1",
+          "u_tech2",
+          "u_wag"
+        ]
+      },
+      {
+        "id": "k8",
+        "time": 65.4,
+        "lng": 40.25,
+        "lat": 35.25,
+        "zoom": 13.1,
+        "pitch": 52,
+        "bearing": -15,
+        "caption": "American rocket artillery turned on the attacking guns and silenced their remaining batteries.",
+        "highlightUnitIds": [
+          "u_himars",
+          "u_d30",
+          "u_grad"
+        ]
+      },
+      {
+        "id": "k9",
+        "time": 73,
+        "lng": 40.3,
+        "lat": 35.285,
+        "zoom": 11.5,
+        "pitch": 34,
+        "bearing": 0,
+        "caption": "After about four hours, the assault had collapsed. No American troops were killed.",
+        "highlightUnitIds": [
+          "u_sf",
+          "u_sdf",
+          "u_sdf_tech",
+          "u_sdf_cp"
+        ]
+      }
+    ],
+    "duration": 80
+  }
+}

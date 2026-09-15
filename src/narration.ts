@@ -1,5 +1,9 @@
 /**
- * Narration engine for keyframe captions.
+ * Narration for keyframe captions. Pre-recorded clips are the default and the
+ * only voice viewers ever hear; live synthesis runs only after an editor has
+ * explicitly allowed it (see setVoiceGeneration), so the speech library is
+ * never fetched otherwise.
+ *
  * Engines:
  *  - 'webspeech': built-in browser TTS, instant, no download
  *  - 'kokoro': Kokoro-82M local model via kokoro-js (ONNX, runs fully
@@ -40,6 +44,13 @@ type KokoroTTS = {
 };
 
 let kokoroPromise: Promise<KokoroTTS> | null = null;
+/** Live voice generation is off until an editor opts in. */
+let generationAllowed = false;
+
+export function setVoiceGeneration(allowed: boolean) {
+  if (generationAllowed && !allowed) stopNarration();
+  generationAllowed = allowed;
+}
 let kokoroStatus: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
 
 /** Voice model download/load state for the UI. `pct` is 0..100 while downloading. */
@@ -78,6 +89,7 @@ export function kokoroState() {
 }
 
 async function loadKokoro(): Promise<KokoroTTS> {
+  if (!generationAllowed) throw new Error('voice generation not allowed');
   if (!kokoroPromise) {
     setStatus('loading', 'Preparing voice model…');
     // aggregate byte progress across every file the model needs
@@ -110,7 +122,7 @@ async function loadKokoro(): Promise<KokoroTTS> {
       })
       .catch((e) => {
         kokoroPromise = null;
-        setStatus('error', 'Local model failed — using browser voice');
+        setStatus('error', 'Voice model failed to load');
         throw e;
       });
   }
@@ -124,8 +136,10 @@ export function preloadKokoro() {
 
 let currentAudio: HTMLAudioElement | null = null;
 let currentUrl: string | null = null;
+let disconnectAudio: (() => void) | undefined;
+let epoch = 0;
 
-type Queued = { text: string; engine: NarrationEngine; voiceId: string | null; rate: number; file?: string; at: number };
+type Queued = { text: string; engine: NarrationEngine; voiceId: string | null; rate: number; file?: string; offset?: number; at: number };
 /** Lines waiting for the current one to finish, oldest first. */
 let queue: Queued[] = [];
 /** A waiting line older than this is dropped if something newer is also waiting. */
@@ -133,14 +147,18 @@ const STALE_MS = 3500;
 let speaking = false;
 
 export function stopNarration() {
+  epoch++;
   queue = [];
   speaking = false;
   setVoiceActive(false);
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   if (currentAudio) {
+    currentAudio.onended = currentAudio.onerror = null;
     currentAudio.pause();
     currentAudio = null;
   }
+  disconnectAudio?.();
+  disconnectAudio = undefined;
   if (currentUrl) {
     URL.revokeObjectURL(currentUrl);
     currentUrl = null;
@@ -181,12 +199,14 @@ export function bestWebVoice(): SpeechSynthesisVoice | undefined {
 
 function speakWeb(text: string, voiceId: string | null, rate: number) {
   if (!('speechSynthesis' in window)) return;
+  const token = epoch;
   const utt = new SpeechSynthesisUtterance(text);
   const voice =
     window.speechSynthesis.getVoices().find((v) => v.voiceURI === voiceId) ?? bestWebVoice();
   if (voice) utt.voice = voice;
   utt.rate = rate;
   utt.onend = utt.onerror = () => {
+    if (token !== epoch) return;
     speaking = false;
     setVoiceActive(false);
     playPending();
@@ -203,15 +223,21 @@ function playPending() {
   const next = queue.shift();
   if (!next) return;
   if (next.file) {
-    playFile(next.file, next.rate).catch(() => speak(next.text, next.engine, next.voiceId, next.rate));
+    narrateRecorded(next.file, next.text, next.engine, next.voiceId, next.rate,
+      (next.offset ?? 0) + (now - next.at) / 1000 * next.rate);
   } else {
     speak(next.text, next.engine, next.voiceId, next.rate);
   }
 }
 
 /** Play a pre-recorded narration line through the recordable audio bus. */
-async function playFile(url: string, rate: number) {
+async function playFile(url: string, rate: number, offset: number) {
+  const token = epoch;
+  const requested = performance.now();
+  speaking = true;
   if (currentAudio) currentAudio.pause();
+  disconnectAudio?.();
+  disconnectAudio = undefined;
   if (currentUrl) {
     URL.revokeObjectURL(currentUrl);
     currentUrl = null;
@@ -219,24 +245,34 @@ async function playFile(url: string, rate: number) {
   // use the preloaded in-memory clip when available (not revoked: it's shared and reused)
   const cached = clipCache.get(url);
   const src = cached ? await cached : url;
-  currentAudio = new Audio(src);
-  currentAudio.crossOrigin = 'anonymous';
-  currentAudio.playbackRate = rate;
-  speaking = true;
+  if (token !== epoch) return;
+  const audio = new Audio(src);
+  currentAudio = audio;
+  audio.crossOrigin = 'anonymous';
+  audio.playbackRate = rate;
+  audio.currentTime = Math.max(0, offset + (performance.now() - requested) / 1000 * rate);
   setVoiceActive(true);
-  currentAudio.onended = () => {
+  audio.onended = audio.onerror = () => {
+    if (token !== epoch || currentAudio !== audio) return;
+    currentAudio = null;
+    disconnectAudio?.();
+    disconnectAudio = undefined;
     speaking = false;
     setVoiceActive(false);
     playPending();
   };
   try {
-    routeElement(currentAudio);
+    disconnectAudio = routeElement(audio);
   } catch {
     /* element already routed */
   }
   try {
-    await currentAudio.play();
+    await audio.play();
   } catch (e) {
+    if (token !== epoch || currentAudio !== audio) return;
+    currentAudio = null;
+    disconnectAudio?.();
+    disconnectAudio = undefined;
     speaking = false;
     setVoiceActive(false);
     throw e;
@@ -253,12 +289,16 @@ export function narrateRecorded(
   engine: NarrationEngine,
   voiceId: string | null,
   rate = 1,
+  offset = 0,
 ) {
   if (speaking) {
-    queue.push({ text, engine, voiceId, rate, file, at: performance.now() });
+    queue.push({ text, engine, voiceId, rate, file, offset, at: performance.now() });
     return;
   }
-  playFile(file, rate).catch(() => speak(text, engine, voiceId, rate));
+  const token = epoch;
+  playFile(file, rate, offset).catch(() => {
+    if (token === epoch) speak(text, engine, voiceId, rate);
+  });
 }
 
 type Manifest = { voice: string; items: Record<string, { text: string; file: string }> };
@@ -267,19 +307,23 @@ const clipCache = new Map<string, Promise<string>>();
 
 /** Fetch every clip of a narration pack up front so lines start without network delay. */
 export function preloadNarrationPack(pack: string) {
-  void loadNarrationPack(pack).then((m) => {
+  void loadNarrationPack(pack).then(async (m) => {
     if (!m) return;
-    for (const item of new Set(Object.values(m.items).map((i) => i.file))) {
-      const url = `${import.meta.env.BASE_URL}${pack}/${item}`;
-      if (clipCache.has(url)) continue;
-      clipCache.set(
-        url,
-        fetch(url)
+    const files = [...new Set(Object.values(m.items).map((i) => i.file))];
+    let next = 0;
+    const worker = async () => {
+      while (next < files.length) {
+        const url = `${import.meta.env.BASE_URL}${pack}/${files[next++]}`;
+        if (clipCache.has(url)) continue;
+        const loading = fetch(url, { signal: AbortSignal.timeout(15000) })
           .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
           .then((b) => URL.createObjectURL(b))
-          .catch(() => url),
-      );
-    }
+          .catch(() => url);
+        clipCache.set(url, loading);
+        await loading;
+      }
+    };
+    await Promise.all([worker(), worker(), worker()]);
   });
 }
 const manifests = new Map<string, Promise<Manifest | null>>();
@@ -288,7 +332,7 @@ const manifests = new Map<string, Promise<Manifest | null>>();
 export function loadNarrationPack(pack: string): Promise<Manifest | null> {
   let p = manifests.get(pack);
   if (!p) {
-    p = fetch(`${import.meta.env.BASE_URL}${pack}/manifest.json`)
+    p = fetch(`${import.meta.env.BASE_URL}${pack}/manifest.json`, { signal: AbortSignal.timeout(15000) })
       .then((r) => (r.ok ? (r.json() as Promise<Manifest>) : null))
       .catch(() => null);
     manifests.set(pack, p);
@@ -297,24 +341,39 @@ export function loadNarrationPack(pack: string): Promise<Manifest | null> {
 }
 
 function speak(caption: string, engine: NarrationEngine, voiceId: string | null, rate: number) {
-  const text = toSpokenText(caption);
-  if (engine === 'kokoro') {
-    speakKokoro(text, voiceId ?? 'bm_george', rate).catch(() => speakWeb(text, null, rate));
-  } else {
-    speakWeb(text, voiceId, rate);
+  // without an editor's permission to generate, a line with no recording stays text-only
+  if (!generationAllowed) {
+    playPending();
+    return;
   }
+  const text = toSpokenText(caption);
+  if (engine === 'webspeech') {
+    speakWeb(text, voiceId, rate);
+    return;
+  }
+  const token = epoch;
+  speakKokoro(text, voiceId ?? 'bm_george', rate).catch(() => {
+    if (token !== epoch) return;
+    speaking = false;
+    setVoiceActive(false);
+    playPending();
+  });
 }
 
 async function speakKokoro(text: string, voiceId: string, rate: number) {
+  const token = epoch;
+  speaking = true;
   const tts = await loadKokoro();
+  if (token !== epoch || !generationAllowed) return;
   const out = await tts.generate(text, { voice: voiceId });
+  if (token !== epoch || !generationAllowed) return;
   let blob: Blob;
   if ('toBlob' in out && typeof out.toBlob === 'function') {
     blob = out.toBlob();
   } else if ('audio' in out) {
     blob = floatToWav(out.audio, out.sampling_rate);
   } else {
-    return;
+    throw new Error('Voice generator returned no audio');
   }
   if (currentAudio) currentAudio.pause();
   if (currentUrl) URL.revokeObjectURL(currentUrl);
@@ -323,17 +382,31 @@ async function speakKokoro(text: string, voiceId: string, rate: number) {
   currentAudio.playbackRate = rate;
   speaking = true;
   setVoiceActive(true);
+  const audio = currentAudio;
   currentAudio.onended = currentAudio.onerror = () => {
+    if (token !== epoch || currentAudio !== audio) return;
+    currentAudio = null;
+    disconnectAudio?.();
+    disconnectAudio = undefined;
     speaking = false;
     setVoiceActive(false);
     playPending();
   };
   try {
-    routeElement(currentAudio); // route through recordable bus
+    disconnectAudio?.();
+    disconnectAudio = routeElement(currentAudio); // route through recordable bus
   } catch {
     /* element already routed */
   }
-  await currentAudio.play();
+  try {
+    await audio.play();
+  } catch (e) {
+    if (token !== epoch || currentAudio !== audio) return;
+    currentAudio = null;
+    disconnectAudio?.();
+    disconnectAudio = undefined;
+    throw e;
+  }
 }
 
 /** Minimal Float32 → WAV encoder for raw model output. */

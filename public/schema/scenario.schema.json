@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://noahdemar.github.io/conflict-sandbox/schema/scenario.schema.json",
-  "title": "Conflict Sandbox scenario",
-  "description": "A battle-map scenario for Conflict Sandbox. Either a bare Scenario object, or the exported file wrapper {format, version, duration, roster, scenario}. Times are timeline seconds; coordinates are [longitude, latitude] or {lat, lng}.",
+  "title": "OpenBrief scenario",
+  "description": "A map scenario for OpenBrief. Either a bare Scenario object, or the exported file wrapper {format, version, duration, roster, scenario}. Times are timeline seconds; coordinates are [longitude, latitude] or {lat, lng}.",
   "oneOf": [
     {
       "$ref": "#/definitions/ScenarioFile"
@@ -73,6 +73,10 @@
         "rosterId": {
           "type": "string",
           "description": "Roster entry this unit was placed from (enables custom 3D assets)"
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon from the shared library (see the catalog in llms.txt), e.g. \"tank\", \"archers\", \"carrier\". Unknown names fall back to a generic icon for the unit type and are reported when the scenario is imported."
         },
         "heading": {
           "type": "number",
@@ -362,6 +366,13 @@
           "type": "number",
           "description": "Explosion visual scale multiplier"
         },
+        "impactStyle": {
+          "type": "string",
+          "enum": [
+            "blast",
+            "fireball"
+          ]
+        },
         "appearAt": {
           "type": "number"
         },
@@ -462,6 +473,10 @@
           "$ref": "#/definitions/SensorView",
           "description": "Sensor view applied while this keyframe is active"
         },
+        "aerial": {
+          "$ref": "#/definitions/AerialShot",
+          "description": "While this keyframe is active, show the 3D aerial scene from this camera shot instead of the map"
+        },
         "overlay": {
           "$ref": "#/definitions/ShotOverlay",
           "description": "On-screen graphic flashed up while this keyframe is active"
@@ -525,6 +540,96 @@
         "nvg",
         "thermal"
       ]
+    },
+    "AerialShot": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "chase",
+            "side",
+            "flyby",
+            "overview",
+            "compare"
+          ],
+          "description": "chase: behind the target; side: beside it; flyby: fixed point it passes; overview: orbit above the fight; compare: the target and secondary aircraft side by side on turntables with a stats panel (pair it with a hold)"
+        },
+        "target": {
+          "type": "string",
+          "description": "Aircraft the camera follows or frames"
+        },
+        "secondary": {
+          "type": "string",
+          "description": "Second aircraft kept in frame (overview)"
+        },
+        "distanceM": {
+          "type": "number",
+          "description": "Camera distance in meters (defaults per mode)"
+        },
+        "orbitDegPerS": {
+          "type": "number",
+          "description": "Degrees per second the overview orbits"
+        },
+        "compare": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AerialCompareRow"
+              }
+            },
+            "note": {
+              "type": "string",
+              "description": "Small print under the panel, e.g. that figures are approximate"
+            }
+          },
+          "required": [
+            "rows"
+          ],
+          "additionalProperties": false,
+          "description": "Stats panel for the compare shot: target on the left, secondary on the right"
+        }
+      },
+      "required": [
+        "mode",
+        "target"
+      ],
+      "additionalProperties": false,
+      "description": "Camera for a keyframe in the aerial scene."
+    },
+    "AerialCompareRow": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Text for [left, right]"
+        },
+        "bars": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Numbers for [left, right] to draw proportional bars (same unit on both sides)"
+        }
+      },
+      "required": [
+        "label",
+        "values"
+      ],
+      "additionalProperties": false,
+      "description": "One line of an aircraft comparison: a value for each aircraft and optional bar sizes."
     },
     "ShotOverlay": {
       "type": "string",
@@ -656,6 +761,315 @@
       "additionalProperties": false,
       "description": "Lighting and weather over the scenario timeline."
     },
+    "AerialScene": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lng, lat] of the local origin"
+        },
+        "style": {
+          "$ref": "#/definitions/AerialStyle",
+          "description": "Default look; viewers can switch"
+        },
+        "aircraft": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AerialAircraft"
+          }
+        },
+        "weapons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AerialWeapon"
+          }
+        },
+        "holds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "number"
+              },
+              "seconds": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "at",
+              "seconds"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Explanatory freezes: at timeline second `at`, aircraft hold for `seconds`"
+        },
+        "terrain": {
+          "type": "string",
+          "enum": [
+            "real",
+            "jungle",
+            "desert",
+            "sea",
+            "plain"
+          ],
+          "description": "Ground: \"real\" builds the actual terrain around `origin` from elevation data; the others are stylized textures on flat ground (default plain)."
+        },
+        "terrainTexture": {
+          "type": "string",
+          "enum": [
+            "basemap",
+            "satellite"
+          ],
+          "description": "Texture draped on real terrain: \"basemap\" is our map with every name, road, border and building removed; \"satellite\" is cloud-free Sentinel-2 imagery (shows the present-day landscape). Default basemap."
+        },
+        "terrainRadiusKm": {
+          "type": "number",
+          "description": "Half-width of the real-terrain square in km (default 30)"
+        },
+        "terrainExaggeration": {
+          "type": "number",
+          "description": "Vertical exaggeration for real terrain (default 1)"
+        }
+      },
+      "required": [
+        "origin",
+        "aircraft"
+      ],
+      "additionalProperties": false,
+      "description": "A 3D air-combat reconstruction, in a local frame anchored at `origin`. Aircraft times are flight seconds; `holds` pause the aircraft (not the camera) for explanation, so flight time falls behind timeline time."
+    },
+    "AerialStyle": {
+      "type": "string",
+      "enum": [
+        "cinematic",
+        "briefing"
+      ],
+      "description": "Visual treatment of the 3D aerial scene."
+    },
+    "AerialAircraft": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "factionId": {
+          "type": "string"
+        },
+        "airframe": {
+          "$ref": "#/definitions/Airframe"
+        },
+        "track": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "description": "Flight path as [flight seconds, meters east, meters north, meters altitude] relative to the scene origin. Points are smoothed; bank and pitch come from the curvature, so sample every second or two through maneuvers."
+        },
+        "destroyedAt": {
+          "type": "number",
+          "description": "Flight time the aircraft is shot down: it falls trailing smoke from here"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "factionId",
+        "airframe",
+        "track"
+      ],
+      "additionalProperties": false,
+      "description": "One aircraft in the aerial scene."
+    },
+    "Airframe": {
+      "type": "string",
+      "enum": [
+        "f4",
+        "mig17",
+        "jet"
+      ],
+      "description": "Built-in procedural airframes (no model files)."
+    },
+    "AerialWeapon": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "guns",
+            "missile"
+          ]
+        },
+        "from": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "time": {
+          "type": "number",
+          "description": "Fire time (flight seconds)"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Seconds the burst lasts, or the missile flies (default 1.2 guns, 3 missile)"
+        },
+        "hit": {
+          "type": "boolean",
+          "description": "Missile hits its target at the end of its flight (default true)"
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "from",
+        "target",
+        "time"
+      ],
+      "additionalProperties": false,
+      "description": "Guns burst or missile shot between aircraft. Times are flight seconds."
+    },
+    "ArticleBlock": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "heading"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "text"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "scene"
+            },
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            },
+            "caption": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "from"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "image"
+            },
+            "src": {
+              "type": "string"
+            },
+            "caption": {
+              "type": "string"
+            },
+            "credit": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "src"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "callout"
+            },
+            "title": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            },
+            "image": {
+              "type": "string"
+            },
+            "wikiTitle": {
+              "type": "string"
+            },
+            "credit": {
+              "type": "string"
+            },
+            "side": {
+              "type": "string",
+              "enum": [
+                "left",
+                "right"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "title",
+            "text"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "One block of the article presentation. A scene embeds the map and plays the timeline from keyframe `from` up to the keyframe that follows `to` (or the end), holding on its last frame."
+    },
     "Scenario": {
       "type": "object",
       "properties": {
@@ -725,14 +1139,33 @@
         },
         "subtitle": {
           "type": "string",
-          "description": "One-line subtitle for the opening title card, e.g. \"Deir ez-Zor, Syria\""
+          "description": "Standfirst under the article headline, e.g. \"Deir ez-Zor, Syria · 7–8 February 2018\""
         },
         "sources": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "References shown on the closing card, e.g. \"US Department of Defense briefing, 13 February 2018\""
+          "description": "References listed at the end of the article, e.g. \"US Department of Defense briefing, 13 February 2018\""
+        },
+        "era": {
+          "type": "string",
+          "enum": [
+            "modern",
+            "historical"
+          ],
+          "description": "Visual era. \"historical\" hides modern map features (roads, buildings, borders, place labels), uses an aged parchment palette, and drops modern interface elements; for events before the modern period."
+        },
+        "aerial": {
+          "$ref": "#/definitions/AerialScene",
+          "description": "3D air-combat scene shown by keyframes that set `aerial`"
+        },
+        "article": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ArticleBlock"
+          },
+          "description": "Article presentation: prose with embedded map scenes. Generated from captions when absent"
         }
       },
       "required": [

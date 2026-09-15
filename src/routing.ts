@@ -38,6 +38,8 @@ export const routeKey = (points: LngLat[]) =>
 /** Arrow carries at least one ground unit and hasn't opted out of roads. */
 export function wantsRoads(s: Scenario, a: Arrow): boolean {
   if (a.followRoads === false) return false;
+  // modern road networks didn't exist; historical movement goes cross-country
+  if (s.era === 'historical') return false;
   return s.units.some((u) => u.arrowId === a.id && GROUND.has(u.type));
 }
 

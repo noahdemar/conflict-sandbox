@@ -52,6 +52,12 @@ export interface Unit {
   arrowId?: string;
   /** Roster entry this unit was placed from (enables custom 3D assets) */
   rosterId?: string;
+  /**
+   * Icon from the shared library (see the catalog in llms.txt), e.g. "tank",
+   * "archers", "carrier". Unknown names fall back to a generic icon for the
+   * unit type and are reported when the scenario is imported.
+   */
+  icon?: string;
   /** Facing direction in degrees when not following an arrow */
   heading?: number;
   /** Weapon/sensor range ring in km; 0/undefined = none */
@@ -83,6 +89,7 @@ export interface Strike {
   name: string;
   /** Explosion visual scale multiplier */
   size: number;
+  impactStyle?: 'blast' | 'fireball';
   appearAt: number;
   /** Unit the missile launches from; ballistic arc is rendered in flight */
   fromUnitId?: string;
@@ -158,6 +165,8 @@ export interface RosterEntry {
   type: UnitType;
   /** Faction name to auto-assign on placement (optional) */
   faction?: string;
+  /** Icon from the shared library used by units placed from this entry */
+  icon?: string;
   /** URL of a .glb/.gltf model to render instead of the built-in symbol */
   modelUrl?: string;
   /** Extra yaw (degrees) to correct model forward axis */
@@ -195,6 +204,8 @@ export interface Keyframe {
   narrate?: boolean;
   /** Sensor view applied while this keyframe is active */
   sensor?: SensorView;
+  /** While this keyframe is active, show the 3D aerial scene from this camera shot instead of the map */
+  aerial?: AerialShot;
   /** On-screen graphic flashed up while this keyframe is active */
   overlay?: ShotOverlay;
   /** Factions included when the order-of-battle overlay is active */
@@ -270,6 +281,123 @@ export interface Environment {
   precipIntensity?: number;
 }
 
+/**
+ * One block of the article presentation. A scene embeds the map and plays the
+ * timeline from keyframe `from` up to the keyframe that follows `to` (or the
+ * end), holding on its last frame.
+ */
+export type ArticleBlock =
+  | { kind: 'heading'; text: string }
+  | { kind: 'text'; text: string }
+  | { kind: 'scene'; from: string; to?: string; caption?: string }
+  | { kind: 'image'; src: string; caption?: string; credit?: string }
+  /**
+   * Image callout floated beside the prose. `image` is a URL; or give
+   * `wikiTitle` to use that Wikipedia article's lead image, credited with a link.
+   */
+  | { kind: 'callout'; title: string; text: string; image?: string; wikiTitle?: string; credit?: string; side?: 'left' | 'right' };
+
+/** Visual treatment of the 3D aerial scene. */
+export type AerialStyle = 'cinematic' | 'briefing';
+
+/** Built-in procedural airframes (no model files). */
+export type Airframe = 'f4' | 'mig17' | 'jet';
+
+/** One aircraft in the aerial scene. */
+export interface AerialAircraft {
+  id: string;
+  name: string;
+  factionId: string;
+  airframe: Airframe;
+  /**
+   * Flight path as [flight seconds, meters east, meters north, meters altitude]
+   * relative to the scene origin. Points are smoothed; bank and pitch come from
+   * the curvature, so sample every second or two through maneuvers.
+   */
+  track: [number, number, number, number][];
+  /** Flight time the aircraft is shot down: it falls trailing smoke from here */
+  destroyedAt?: number;
+}
+
+/** Guns burst or missile shot between aircraft. Times are flight seconds. */
+export interface AerialWeapon {
+  id: string;
+  kind: 'guns' | 'missile';
+  from: string;
+  target: string;
+  /** Fire time (flight seconds) */
+  time: number;
+  /** Seconds the burst lasts, or the missile flies (default 1.2 guns, 3 missile) */
+  duration?: number;
+  /** Missile hits its target at the end of its flight (default true) */
+  hit?: boolean;
+  label?: string;
+}
+
+/** One line of an aircraft comparison: a value for each aircraft and optional bar sizes. */
+export interface AerialCompareRow {
+  label: string;
+  /** Text for [left, right] */
+  values: [string, string];
+  /** Numbers for [left, right] to draw proportional bars (same unit on both sides) */
+  bars?: [number, number];
+}
+
+/** Camera for a keyframe in the aerial scene. */
+export interface AerialShot {
+  /**
+   * chase: behind the target; side: beside it; flyby: fixed point it passes;
+   * overview: orbit above the fight; compare: the target and secondary aircraft
+   * side by side on turntables with a stats panel (pair it with a hold)
+   */
+  mode: 'chase' | 'side' | 'flyby' | 'overview' | 'compare';
+  /** Aircraft the camera follows or frames */
+  target: string;
+  /** Second aircraft kept in frame (overview) */
+  secondary?: string;
+  /** Camera distance in meters (defaults per mode) */
+  distanceM?: number;
+  /** Degrees per second the overview orbits */
+  orbitDegPerS?: number;
+  /** Stats panel for the compare shot: target on the left, secondary on the right */
+  compare?: {
+    rows: AerialCompareRow[];
+    /** Small print under the panel, e.g. that figures are approximate */
+    note?: string;
+  };
+}
+
+/**
+ * A 3D air-combat reconstruction, in a local frame anchored at `origin`.
+ * Aircraft times are flight seconds; `holds` pause the aircraft (not the
+ * camera) for explanation, so flight time falls behind timeline time.
+ */
+export interface AerialScene {
+  /** [lng, lat] of the local origin */
+  origin: [number, number];
+  /** Default look; viewers can switch */
+  style?: AerialStyle;
+  aircraft: AerialAircraft[];
+  weapons?: AerialWeapon[];
+  /** Explanatory freezes: at timeline second `at`, aircraft hold for `seconds` */
+  holds?: { at: number; seconds: number }[];
+  /**
+   * Ground: "real" builds the actual terrain around `origin` from elevation
+   * data; the others are stylized textures on flat ground (default plain).
+   */
+  terrain?: 'real' | 'jungle' | 'desert' | 'sea' | 'plain';
+  /**
+   * Texture draped on real terrain: "basemap" is our map with every name,
+   * road, border and building removed; "satellite" is cloud-free Sentinel-2
+   * imagery (shows the present-day landscape). Default basemap.
+   */
+  terrainTexture?: 'basemap' | 'satellite';
+  /** Half-width of the real-terrain square in km (default 30) */
+  terrainRadiusKm?: number;
+  /** Vertical exaggeration for real terrain (default 1) */
+  terrainExaggeration?: number;
+}
+
 export interface Scenario {
   name: string;
   factions: Faction[];
@@ -287,8 +415,18 @@ export interface Scenario {
   duration?: number;
   /** Folder of pre-recorded caption narration (with manifest.json), relative to the site base */
   narrationPack?: string;
-  /** One-line subtitle for the opening title card, e.g. "Deir ez-Zor, Syria" */
+  /** Standfirst under the article headline, e.g. "Deir ez-Zor, Syria · 7–8 February 2018" */
   subtitle?: string;
-  /** References shown on the closing card, e.g. "US Department of Defense briefing, 13 February 2018" */
+  /** References listed at the end of the article, e.g. "US Department of Defense briefing, 13 February 2018" */
   sources?: string[];
+  /**
+   * Visual era. "historical" hides modern map features (roads, buildings,
+   * borders, place labels), uses an aged parchment palette, and drops modern
+   * interface elements; for events before the modern period.
+   */
+  era?: 'modern' | 'historical';
+  /** 3D air-combat scene shown by keyframes that set `aerial` */
+  aerial?: AerialScene;
+  /** Article presentation: prose with embedded map scenes. Generated from captions when absent */
+  article?: ArticleBlock[];
 }

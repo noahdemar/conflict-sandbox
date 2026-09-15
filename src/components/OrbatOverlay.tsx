@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, Minus, Users } from 'lucide-react';
 import { useStore } from '../store';
 import { UNIT_TYPE_LABELS } from '../natoSymbols';
 import { silhouetteFor, silhouetteSvg } from '../silhouettes';
@@ -21,7 +23,8 @@ interface Row {
 /**
  * Order-of-battle card flashed up by a camera keyframe: the force structure,
  * grouped by faction and roster entry. Units gray out as they are destroyed;
- * forces not yet on scene sit dimmed.
+ * forces not yet on scene sit dimmed. The card scrolls, can be minimized, and
+ * each faction or unit group folds away.
  */
 export default function OrbatOverlay() {
   const scenario = useStore((s) => s.scenario);
@@ -38,11 +41,36 @@ export default function OrbatOverlay() {
 
   const isDead = (u: Unit) => deadAt(u) && time >= u.destroyedAt!;
   const isPending = (u: Unit) => time < u.appearAt;
+  const [minimized, setMinimized] = useState(false);
+  const [folded, setFolded] = useState<Set<string>>(new Set());
+  const toggle = (key: string) =>
+    setFolded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  if (minimized) {
+    return (
+      <div className="orbat-overlay">
+        <button className="orbat-pill" onClick={() => setMinimized(false)} title="Show the order of battle">
+          <Users size={13} />
+          Order of battle
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="orbat-overlay" aria-hidden>
+    <div className="orbat-overlay">
       <div className="orbat-card">
-        <div className="orbat-title">ORDER OF BATTLE</div>
+        <div className="orbat-top">
+          <div className="orbat-title">ORDER OF BATTLE</div>
+          <button className="icon-btn orbat-min" onClick={() => setMinimized(true)} title="Minimize">
+            <Minus size={14} />
+          </button>
+        </div>
         {factions.map((f) => {
           const units = scenario.units.filter((u) => u.factionId === f.id);
           if (!units.length) return null;
@@ -57,14 +85,15 @@ export default function OrbatOverlay() {
           }
           return (
             <section className="orbat-faction" key={f.id}>
-              <header className="orbat-fhead">
+              <button className="orbat-fhead" onClick={() => toggle(f.id)} aria-expanded={!folded.has(f.id)}>
+                {folded.has(f.id) ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
                 <i className="orbat-chip" style={{ background: f.color }} />
                 <span>{f.name}</span>
                 <em className="orbat-count">
                   {alive} / {units.length}
                 </em>
-              </header>
-              {[...groups].map(([g, us]) => {
+              </button>
+              {!folded.has(f.id) && [...groups].map(([g, us]) => {
                 // identical names collapse ("F-15E ×2"); a big group of numbered
                 // siblings collapses by its common prefix ("Operator 1" ×12)
                 const clusters = new Map<string, Unit[]>();
@@ -78,7 +107,7 @@ export default function OrbatOverlay() {
                   key: `${f.id}/${g}/${label}`,
                   label,
                   icon: silhouetteSvg(
-                    silhouetteFor(cu[0], roster.find((e) => e.id === cu[0].rosterId)?.name),
+                    silhouetteFor(cu[0], roster.find((e) => e.id === cu[0].rosterId)),
                     f.color,
                     cu.every(isDead),
                   ),
@@ -90,11 +119,18 @@ export default function OrbatOverlay() {
                 const groupAlive = us.filter((u) => !isDead(u)).length;
                 return (
                   <div className="orbat-group" key={g}>
-                    <div className="orbat-gname">
-                      <span>{g}</span>
+                    <button
+                      className="orbat-gname"
+                      onClick={() => toggle(`${f.id}/${g}`)}
+                      aria-expanded={!folded.has(`${f.id}/${g}`)}
+                    >
+                      <span>
+                        {folded.has(`${f.id}/${g}`) ? <ChevronRight size={11} /> : <ChevronDown size={11} />}
+                        {g}
+                      </span>
                       <em className="orbat-count">{groupAlive} / {us.length}</em>
-                    </div>
-                    {rows.map((r) => (
+                    </button>
+                    {!folded.has(`${f.id}/${g}`) && rows.map((r) => (
                       <div
                         key={r.key}
                         className={`orbat-row ${r.dead ? 'dead' : ''} ${r.pending ? 'pending' : ''}`}

@@ -7,8 +7,8 @@ import PropertiesPanel from './components/PropertiesPanel';
 import Timeline from './components/Timeline';
 import TopBar from './components/TopBar';
 import { useStore } from './store';
-import { kokoroState, loadNarrationPack, narrate, narrateRecorded, preloadKokoro, preloadNarrationPack, stopNarration } from './narration';
-import { boom, gunshot, setRotor } from './audio';
+import { loadNarrationPack, narrate, narrateRecorded, preloadKokoro, preloadNarrationPack, setVoiceGeneration, stopNarration } from './narration';
+import { arrowVolley, boom, gallop, gunshot, meleeClash, setRotor } from './audio';
 import { expandStrikes, weaponKind } from './particles';
 import { strikeLaunchAt } from './realism';
 import { startRouting } from './routing';
@@ -16,16 +16,15 @@ import { clearShareHash, readShareLink } from './share';
 import { demoFromUrl } from './demos';
 import { validateScenarioJson } from './scenarioValidation';
 import { lossesByFaction } from './combat';
-import { hourAt, utcInstant } from './environment';
+import { hourAt } from './environment';
 import OrbatOverlay from './components/OrbatOverlay';
 import type { ShotOverlay, Unit, UnitType } from './types';
 import EnvironmentPanel from './components/EnvironmentPanel';
 import TranscriptPane from './components/TranscriptPane';
 import ConsentModal from './components/ConsentModal';
-import VoiceModelDialog from './components/VoiceModelDialog';
-
-/** Seconds the documentary opening title card stays on screen. */
-const DOC_TITLE_S = 4.5;
+import NarrationPanel from './components/NarrationPanel';
+import ArticleView from './components/ArticleView';
+import AerialView from './components/AerialView';
 
 const TYPE_TERMS: Record<UnitType, string[]> = {
   infantry: ['Syrian Democratic Forces', 'women and children', 'special operators', 'operators', 'assault team', 'troops', 'fighters', 'infantry', 'teams', 'team', 'Cairo'],
@@ -88,7 +87,6 @@ function CaptionOverlay() {
   const factions = useStore((s) => s.scenario.factions);
   const playing = useStore((s) => s.playing);
   const cameraLock = useStore((s) => s.cameraLock);
-  const look = useStore((s) => s.look);
   if (!playing && !cameraLock) return null;
   const sorted = [...keyframes].sort((a, b) => a.time - b.time);
   const active = sorted.filter((k) => k.time <= time).pop();
@@ -96,15 +94,6 @@ function CaptionOverlay() {
   const phase = sorted.indexOf(active) + 1;
   const ids = new Set(active.highlightUnitIds ?? []);
   const caption = highlightedCaption(active.caption, units.filter((u) => ids.has(u.id)), factions);
-  if (look === 'documentary') {
-    // lower-third subtitle, like a narrated history programme; held back while the title card is up
-    if (time < DOC_TITLE_S) return null;
-    return (
-      <div className="doc-subtitle" key={active.id}>
-        {caption}
-      </div>
-    );
-  }
   return (
     <div className="caption-overlay" key={active.id}>
       <div className="caption-kicker">
@@ -124,62 +113,6 @@ const dms = (v: number, pos: string, neg: string) => {
   const sec = Math.floor(((a - d) * 60 - m) * 60);
   return `${d}°${pad(m)}'${pad(sec)}"${v >= 0 ? pos : neg}`;
 };
-
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-/** Local calendar date and clock at timeline time t, e.g. "7 February 2018" and "10:40 PM". */
-function localDateTime(env: NonNullable<ReturnType<typeof useStore.getState>['scenario']['environment']>, t: number, duration: number) {
-  const local = new Date(utcInstant(env, t, duration) + (env.utcOffset ?? 0) * 3600_000);
-  const h = local.getUTCHours();
-  // round to five minutes: a history programme doesn't tick like a mission clock
-  const m = Math.floor(local.getUTCMinutes() / 5) * 5;
-  return {
-    date: `${local.getUTCDate()} ${MONTHS[local.getUTCMonth()]} ${local.getUTCFullYear()}`,
-    time: `${((h + 11) % 12) + 1}:${pad(m)} ${h < 12 ? 'AM' : 'PM'}`,
-  };
-}
-
-/** Opening title card, quiet date and local-time stamp, and closing sources card. */
-function DocumentaryChrome() {
-  const time = useStore((s) => s.time);
-  const scenario = useStore((s) => s.scenario);
-  const duration = useStore((s) => s.duration);
-  const playing = useStore((s) => s.playing);
-  const cameraLock = useStore((s) => s.cameraLock);
-  if (!playing && !cameraLock) return null;
-  const env = scenario.environment;
-  const stamp = env?.date ? localDateTime(env, time, duration) : null;
-  const sources = scenario.sources ?? [];
-  const atEnd = sources.length > 0 && time >= duration - 0.05;
-  return (
-    <>
-      {time < DOC_TITLE_S && (
-        <div className="doc-title" style={{ '--p': (time / DOC_TITLE_S).toFixed(3) } as React.CSSProperties}>
-          <div className="doc-title-rule" />
-          <h1>{scenario.name.split(/\s+[—–-]\s+/)[0]}</h1>
-          {(scenario.subtitle || stamp) && <p>{scenario.subtitle ?? stamp?.date}</p>}
-        </div>
-      )}
-      {stamp && time >= DOC_TITLE_S && !atEnd && (
-        <div className="doc-stamp" key={stamp.date}>
-          <span>{stamp.date}</span>
-          <b>{stamp.time} local time</b>
-        </div>
-      )}
-      {atEnd && (
-        <div className="doc-sources">
-          <h2>Sources</h2>
-          <ul>
-            {sources.map((x) => (
-              <li key={x}>{x}</li>
-            ))}
-          </ul>
-          <p>Positions, timings, unit counts, and individual weapon-to-target pairings are simplified for illustration.</p>
-        </div>
-      )}
-    </>
-  );
-}
 
 /** Ops-style HUD: mission clock, scenario tag and view-center coordinates. */
 function TacticalHud() {
@@ -231,23 +164,14 @@ function TacticalHud() {
   );
 }
 
-/** Minimal chrome for read-only view links. */
-function ViewerBar() {
-  const name = useStore((s) => s.scenario.name);
-  const openInEditor = () => {
-    const st = useStore.getState();
-    // keep a copy in this browser, then drop the read-only mode
-    st.importScenario(st.exportScenario());
-    st.setViewer(false);
-    clearShareHash();
-  };
+/** Shown after a viewer pans or zooms during playback: hands the camera back to the script. */
+function FollowCameraButton() {
+  const show = useStore((s) => s.cameraOverride && (s.playing || s.cameraLock));
+  if (!show) return null;
   return (
-    <div className="panel viewer-bar">
-      <span className="viewer-title">{name}</span>
-      <button className="top-btn" onClick={openInEditor} title="Save a copy and open it in the editor">
-        Open in editor
-      </button>
-    </div>
+    <button className="top-btn active follow-camera" onClick={() => useStore.setState({ cameraOverride: false })}>
+      Follow camera
+    </button>
   );
 }
 
@@ -350,20 +274,20 @@ function SensorOverlay({ view }: { view: 'nvg' | 'thermal' }) {
   );
 }
 
-/** Asked once per session whether to fetch the local voice model for authored voice lines. */
-let voicePromptAsked = false;
-
 export default function App() {
   const playing = useStore((s) => s.playing);
   const look = useStore((s) => s.look);
   const viewer = useStore((s) => s.viewer);
+  // view links and the editor's preview open the article presentation
+  const article = useStore((s) => s.viewer || s.articlePreview);
+  const embed = useStore((s) => s.embed);
+  const exploring = useStore((s) => s.exploring);
+  const historical = useStore((s) => s.scenario.era === 'historical');
   const sensor = useSensorView();
   const tool = useStore((s) => s.tool);
   const narrationPack = useStore((s) => s.scenario.narrationPack);
-  // captions that will actually be read aloud
-  const hasVoiceLines = useStore((s) =>
-    s.scenario.keyframes.some((k) => !!k.caption?.trim() && k.narrate !== false),
-  );
+  // an editor explicitly allowed generating voice for unrecorded lines
+  const allowGeneration = useStore((s) => !s.viewer && s.narration.allowGeneration);
   const overlay = useActiveOverlay();
   const spokenRef = useRef<string | null>(null);
   const spokenCaptionRef = useRef<string | null>(null);
@@ -378,25 +302,55 @@ export default function App() {
       return;
     }
     prevTimeRef.current = useStore.getState().time;
+    let disposed = false;
+    let eventScenario: ReturnType<typeof useStore.getState>['scenario'] | undefined;
+    let events: { strike: ReturnType<typeof expandStrikes>[number]; kind: ReturnType<typeof weaponKind>; at: number }[] = [];
     const check = () => {
       const st = useStore.getState();
+      if (!st.playing) return;
+      const discontinuity = st.time < prevTimeRef.current || st.time - prevTimeRef.current > Math.max(0.5, st.speed * 0.5);
+      if (discontinuity || (eventScenario && eventScenario !== st.scenario)) {
+        stopNarration();
+        spokenRef.current = null;
+        spokenCaptionRef.current = null;
+      }
+      if (eventScenario !== st.scenario) {
+        eventScenario = st.scenario;
+        events = expandStrikes(st.scenario.strikes).flatMap((strike) => {
+          const kind = weaponKind(strike.name);
+          const at = kind === 'gun' || kind === 'arrow' ? strikeLaunchAt(st.scenario, strike) : strike.appearAt;
+          if (kind !== 'gun' && kind !== 'arrow' && st.scenario.strikes.some((x) =>
+            x.targetStrikeId === strike.id.split('#')[0] && x.appearAt < at && x.appearAt > strikeLaunchAt(st.scenario, strike))) return [];
+          return [{ strike, kind, at }];
+        });
+      }
       // Strike SFX: boom when playback crosses a detonation time
       const prev = prevTimeRef.current;
       prevTimeRef.current = st.time;
-      for (const x of expandStrikes(st.scenario.strikes)) {
-        const gun = weaponKind(x.name) === 'gun';
-        // gunshots crack when the round leaves the muzzle; blasts land on impact
-        const t0 = gun ? strikeLaunchAt(st.scenario, x) : x.appearAt;
-        if (t0 > prev && t0 <= st.time) {
-          if (gun) gunshot(/suppress|silenc|subsonic/i.test(x.name), 0.5 + x.size * 5);
-          else boom(x.size);
+      for (const { strike: x, kind, at } of events) {
+        // a salvo of arrows is one volley sound, not one per arrow
+        if (kind === 'arrow' && x.id.includes('#')) continue;
+        if (kind === 'melee' && x.id.includes('#')) continue;
+        // gunshots crack and bows loose at launch; blasts and melee land on impact
+        const t0 = at;
+        if (!discontinuity && t0 > prev && t0 <= st.time) {
+          if (kind === 'gun') gunshot(/suppress|silenc|subsonic/i.test(x.name), 0.5 + x.size * 5);
+          else if (kind === 'arrow') arrowVolley(0.6 + x.size * 2);
+          else if (kind === 'melee') {
+            meleeClash(0.6 + x.size * 2);
+            if (/cavalry|horse|mounted|charge/i.test(x.name)) gallop(0.8, 2);
+          } else boom(x.size);
         }
       }
-      if (!st.narration.enabled) return;
-      const active = [...st.scenario.keyframes]
-        .sort((a, b) => a.time - b.time)
-        .filter((k) => k.time <= st.time)
-        .pop();
+      // article scenes stay silent unless the reader turned narration on
+      if (!st.narration.enabled || ((st.viewer || st.articlePreview) && !st.articleNarration)) {
+        if (spokenRef.current !== null) stopNarration();
+        spokenRef.current = null;
+        spokenCaptionRef.current = null;
+        return;
+      }
+      const sorted = [...st.scenario.keyframes].sort((a, b) => a.time - b.time);
+      const active = sorted.filter((k) => k.time <= st.time).pop();
       if (active && active.caption && active.id !== spokenRef.current) {
         spokenRef.current = active.id;
         // a shot that repeats the previous caption doesn't say it again
@@ -408,19 +362,30 @@ export default function App() {
         }
         spokenCaptionRef.current = active.caption;
         const caption = active.caption;
+        let first = sorted.indexOf(active);
+        while (first > 0 && sorted[first - 1].caption === caption && sorted[first - 1].narrate !== false) first--;
+        const captionStart = sorted[first].time;
         const kfId = active.id;
-        const { engine, voice, rate } = st.narration;
+        const { voice } = st.narration;
+        const rate = st.narration.rate * st.speed;
+        const engine = 'kokoro';
+        const generate = !st.viewer && st.narration.allowGeneration;
         const pack = st.scenario.narrationPack;
         if (!pack) {
-          narrate(caption, engine, voice, rate);
+          // no recordings: speak only if an editor allowed generation, else text only
+          if (generate) narrate(caption, engine, voice, rate);
         } else {
           // prefer the pre-recorded line when its text still matches the caption
           loadNarrationPack(pack).then((m) => {
             const item = m?.items[kfId];
-            if (useStore.getState().time < active.time - 0.5) return; // scrubbed away meanwhile
+            const current = useStore.getState();
+            if (disposed || !current.playing || current.scenario !== st.scenario || spokenRef.current !== kfId ||
+              !current.narration.enabled || ((current.viewer || current.articlePreview) && !current.articleNarration)) return;
+            if (current.time < active.time - 0.5) return; // scrubbed away meanwhile
             if (item && item.text === caption) {
-              narrateRecorded(`${import.meta.env.BASE_URL}${pack}/${item.file}`, caption, engine, voice, rate);
-            } else {
+              narrateRecorded(`${import.meta.env.BASE_URL}${pack}/${item.file}`, caption, engine, voice, rate,
+                Math.max(0, current.time - captionStart) * st.narration.rate);
+            } else if (generate) {
               narrate(caption, engine, voice, rate);
             }
           });
@@ -429,38 +394,21 @@ export default function App() {
     };
     check();
     const unsub = useStore.subscribe(check);
-    return unsub;
+    return () => {
+      disposed = true;
+      unsub();
+      stopNarration();
+    };
   }, [playing]);
 
   // snap ground movement to real roads
   useEffect(() => startRouting(), []);
 
-  // fetch the narrator's voice model only once a scenario that speaks is
-  // opened (viewer) or played (editor) — never on a plain first visit
+  // the speech library loads only after an editor opts in; viewers never fetch it
   useEffect(() => {
-    const st = useStore.getState();
-    const n = st.narration;
-    if (
-      (viewer || playing) &&
-      hasVoiceLines &&
-      n.enabled &&
-      n.engine === 'kokoro' &&
-      n.consent !== 'text' &&
-      !st.scenario.narrationPack
-    ) {
-      preloadKokoro();
-    }
-  }, [viewer, playing, hasVoiceLines, narrationPack]);
-
-  // first spoken caption authored in the editor: ask before pulling the ~90MB model
-  useEffect(() => {
-    if (voicePromptAsked || viewer || !hasVoiceLines) return;
-    const st = useStore.getState();
-    if (st.narration.enabled && st.narration.engine === 'kokoro' && kokoroState() === 'idle') {
-      voicePromptAsked = true;
-      useStore.setState({ voicePromptPending: true });
-    }
-  }, [hasVoiceLines, viewer]);
+    setVoiceGeneration(allowGeneration);
+    if (allowGeneration) preloadKokoro();
+  }, [allowGeneration]);
 
   // recorded narration: fetch the whole pack as soon as the scenario opens
   useEffect(() => {
@@ -517,7 +465,7 @@ export default function App() {
         return;
       }
       const st = useStore.getState();
-      if (shared.mode === 'view') {
+      if (shared.mode === 'view' || st.embed) {
         if (st.importScenario(shared.json, { persist: false })) {
           st.setViewer(true);
           st.setCameraLock(true);
@@ -556,32 +504,55 @@ export default function App() {
 
   return (
     <div
-      className={`app ${playing ? 'presenting' : ''} look-${look} ${viewer ? 'viewer' : ''} view-${sensor}`}
+      className={`app ${playing && !article ? 'presenting' : ''} look-${look} ${viewer ? 'viewer' : ''} ${article ? 'article-mode' : ''} ${embed ? 'embed' : ''} ${exploring ? 'exploring-map' : ''} ${historical ? 'era-historical' : ''} view-${sensor}`}
       data-tool={tool}
     >
       <div className="letterbox top" />
       <div className="letterbox bottom" />
       <div className="vignette" />
-      <MapView />
-      <TopBar />
-      <Toolbar />
-      <RosterPanel />
-      <div className="right-stack">
-        <FactionPanel />
-        <EnvironmentPanel />
-        <PropertiesPanel />
+      {article && <ArticleView />}
+      <div className="map-stage">
+        <MapView />
+        <AerialView />
+        {article && (
+          <a
+            className="create-own"
+            href={`${window.location.origin}${import.meta.env.BASE_URL}`}
+            target="_blank"
+            rel="noreferrer"
+            title="Make an illustrated map article of your own with OpenBrief"
+          >
+            Create your own
+          </a>
+        )}
+        {sensor !== 'normal' && <SensorOverlay view={sensor} />}
+        {overlay === 'orbat' && <OrbatOverlay />}
       </div>
+      {!article && (
+        <>
+          <TopBar />
+          <Toolbar />
+          <RosterPanel />
+          <div className="right-stack">
+            <FactionPanel />
+            <EnvironmentPanel />
+            <NarrationPanel />
+            <PropertiesPanel />
+          </div>
+        </>
+      )}
+      {/* the timeline also drives the playback clock, so it stays mounted (hidden) in the article */}
       <Timeline />
-      {sensor !== 'normal' && <SensorOverlay view={sensor} />}
-      {overlay === 'orbat' && <OrbatOverlay />}
-      <MediaOverlay />
-      <CaptionOverlay />
-      <TranscriptPane />
+      {!article && (
+        <>
+          <MediaOverlay />
+          <CaptionOverlay />
+          <TranscriptPane />
+          {!historical && <TacticalHud />}
+          <FollowCameraButton />
+        </>
+      )}
       <ConsentModal />
-      <VoiceModelDialog />
-      {viewer && <ViewerBar />}
-      {look === 'documentary' ? <DocumentaryChrome /> : <TacticalHud />}
-      {look === 'documentary' && <div className="film-grain" />}
     </div>
   );
 }

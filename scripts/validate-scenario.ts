@@ -5,8 +5,10 @@
  *   npm run validate -- my.json      # any scenario file (bare or exported)
  */
 import Ajv from 'ajv';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { DEMOS } from '../src/demos';
+import { realismWarnings, scenarioErrors } from '../src/realism';
+import type { Scenario } from '../src/types';
 
 const schema = JSON.parse(readFileSync('public/schema/scenario.schema.json', 'utf8'));
 const validate = new Ajv({ allErrors: true, strict: false }).compile(schema);
@@ -20,14 +22,22 @@ const targets: [string, unknown][] = process.argv[2]
         version: 1,
         duration: d.duration,
         roster: d.roster,
-        scenario: { ...d.scenario(), duration: d.duration, narrationPack: `narration/${d.id}` },
+        scenario: { ...d.scenario(), duration: d.duration,
+          ...(existsSync(`public/narration/${d.id}/manifest.json`) ? { narrationPack: `narration/${d.id}` } : {}) },
       },
     ]);
 
 let failed = 0;
 for (const [name, data] of targets) {
   if (validate(JSON.parse(JSON.stringify(data)))) {
-    console.log(`${name}: valid`);
+    const file = data as { scenario?: Scenario; duration?: number };
+    const scenario = file.scenario ?? data as Scenario;
+    const duration = file.duration ?? scenario.duration;
+    const errors = scenarioErrors(scenario, duration);
+    if (errors.length) failed++;
+    console.log(`${name}: ${errors.length ? 'INVALID' : 'valid'}`);
+    errors.forEach((e) => console.log(`  ${e}`));
+    realismWarnings({ ...scenario, duration }).forEach((w) => console.log(`  Warning: ${w}`));
   } else {
     failed++;
     console.log(`${name}: INVALID`);

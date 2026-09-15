@@ -237,7 +237,7 @@ export default function RosterPanel() {
             key={e.id}
             className={`roster-row ${activeRosterId === e.id ? 'active' : ''}`}
             onClick={() => pickRoster(e.id)}
-            title={`${UNIT_TYPE_LABELS[e.type]}${e.faction ? ` — ${e.faction}` : ''}${e.modelUrl ? ' — custom 3D model' : ''}`}
+            title={`${UNIT_TYPE_LABELS[e.type]}${e.faction ? `, ${e.faction}` : ''}${e.modelUrl ? ', custom 3D model' : ''}`}
           >
             <span
               className="unit-glyph"

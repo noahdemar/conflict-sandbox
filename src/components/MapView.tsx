@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl';
 import * as THREE from 'three';
 import { useStore } from '../store';
 import { getMissileModel, getSatelliteModel, loadGlbModel } from '../models3d';
-import { ParticleSystem, expandStrikes, weaponKind } from '../particles';
+import { ParticleSystem, expandStrikes, isQuietWeapon, weaponKind } from '../particles';
 import { arrowPath, routeKey } from '../routing';
 import { FACILITY_META, facilityIconSvg } from '../facilities';
 import { STATUS_META, activeEffects, statusIconSvg } from '../statusEffects';
@@ -12,7 +12,7 @@ import { unitAmmo } from '../combat';
 import { groundProgress, strikeLaunchAt } from '../realism';
 import { lightingFromSun, nightPolygon, sunElevation, utcInstant, windVector } from '../environment';
 import { APP6_FILL, factionAffiliation, unitSymbolSvg } from '../natoSymbols';
-import { TAN_BLUE_STYLE } from '../mapStyle';
+import { HISTORICAL_PAINT, MODERN_LAYERS, TAN_BLUE_STYLE } from '../mapStyle';
 import {
   circlePolygon,
   interpolateCamera,
@@ -84,7 +84,7 @@ function buildGraticule(lng: number, lat: number, step: number): GeoJSON.Feature
   return { type: 'FeatureCollection', features: feats };
 }
 
-/** White square with dark outline — settlement marker. */
+/** White square with dark outline: settlement marker. */
 function makeCitySquareImage(size = 28) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
@@ -127,6 +127,7 @@ export default function MapView() {
   const hoverPt = useRef<LngLat | null>(null);
   const lastProjection = useRef<string>('mercator');
   const interactionLocked = useRef(false);
+  const appliedEra = useRef<'modern' | 'historical'>('modern');
 
   useEffect(() => {
     const map = new maplibregl.Map({
@@ -153,8 +154,7 @@ export default function MapView() {
 
     /** Loiter orbit per airframe: [radius m, period s]. */
     const orbitFor = (u: Unit): [number, number] => {
-      const name = useStore.getState().unitLibrary.find((e) => e.id === u.rosterId)?.name;
-      switch (silhouetteFor(u, name)) {
+      switch (silhouetteFor(u, useStore.getState().unitLibrary.find((e) => e.id === u.rosterId))) {
         case 'heli':
           return [450, 12];
         case 'drone':
@@ -171,6 +171,12 @@ export default function MapView() {
           return [2400, 14];
       }
     };
+
+    const isHeli = (u: Unit) =>
+      u.type === 'air' && silhouetteFor(u, useStore.getState().unitLibrary.find((e) => e.id === u.rosterId)) === 'heli';
+
+    /** Seconds a helicopter spends lifting into a hover before moving off, or hovering before touchdown. */
+    const heliHoverS = (D: number) => Math.min(1.5, D * 0.08);
 
     /** Path length in meters (paths are lng/lat degrees). */
     const pathMeters = (path: LngLat[]) => {
@@ -192,31 +198,36 @@ export default function MapView() {
       const e = t - arrow.appearAt;
       if (e <= 0) return 0;
       if (e >= D) return 1;
-      const hoverT = u.landAtEnd ? Math.min(1.5, D * 0.08) : 0;
-      const motionD = D - hoverT;
-      if (e >= motionD) return 1;
+      const heli = isHeli(u);
+      const hoverT = u.landAtEnd ? heliHoverS(D) : 0;
+      // helicopters climb to a hover over the pad before moving off
+      const liftT = heli ? heliHoverS(D) : 0;
+      if (e <= liftT) return 0;
+      const motionD = D - hoverT - liftT;
+      const em = e - liftT;
+      if (em >= motionD) return 1;
       const L = pathMeters(path);
-      if (L <= 0) return clamp01(e / motionD);
+      if (L <= 0) return clamp01(em / motionD);
       const [r, period] = orbitFor(u);
       // landing aircraft slow to a hover; others hand off to orbit speed
       const vOrbit = u.landAtEnd ? 0 : (2 * Math.PI * r) / period;
       const ta = Math.min(motionD * 0.3, 4); // accelerate
       const td = Math.min(motionD * (u.landAtEnd ? 0.4 : 0.3), u.landAtEnd ? 6 : 4); // decelerate
       const cruiseT = Math.max(0, motionD - ta - td);
-      // entry speed is a fraction of cruise; solve cruise speed so distance covers L
-      const k = 0.55;
+      // entry speed is a fraction of cruise (zero from a hover); solve cruise speed so distance covers L
+      const k = heli ? 0 : 0.55;
       const vc = Math.max(
         vOrbit * 0.6,
         (L - (td * vOrbit) / 2) / ((ta * (1 + k)) / 2 + cruiseT + td / 2),
       );
       const v0 = vc * k;
       let dist: number;
-      if (e < ta) {
-        dist = v0 * e + ((vc - v0) / (2 * ta)) * e * e;
-      } else if (e < ta + cruiseT) {
-        dist = (ta * (v0 + vc)) / 2 + vc * (e - ta);
+      if (em < ta) {
+        dist = v0 * em + ((vc - v0) / (2 * ta)) * em * em;
+      } else if (em < ta + cruiseT) {
+        dist = (ta * (v0 + vc)) / 2 + vc * (em - ta);
       } else {
-        const x = e - ta - cruiseT;
+        const x = em - ta - cruiseT;
         dist = (ta * (v0 + vc)) / 2 + vc * cruiseT + vc * x + ((vOrbit - vc) / (2 * td)) * x * x;
       }
       return clamp01(dist / L);
@@ -226,7 +237,13 @@ export default function MapView() {
      * Timed waypoints: position interpolates between the two points bracketing
      * t; while stationary, keeps facing the direction of its last movement.
      */
-    const timedPose = (pts: LngLat[], times: number[], t: number, landing = false): { point: LngLat; bearing: number } => {
+    const timedPose = (
+      pts: LngLat[],
+      times: number[],
+      t: number,
+      landing = false,
+      takeoff = false,
+    ): { point: LngLat; bearing: number } => {
       const n = pts.length;
       let i = 0;
       while (i < n - 2 && t >= times[i + 1]) i++;
@@ -234,7 +251,14 @@ export default function MapView() {
       const raw = span > 0 ? clamp01((t - times[i]) / span) : 1;
       let lastMove = n - 2;
       while (lastMove > 0 && pts[lastMove][0] === pts[lastMove + 1][0] && pts[lastMove][1] === pts[lastMove + 1][1]) lastMove--;
-      const f = landing && i === lastMove ? 1 - (1 - raw) * (1 - raw) : raw;
+      let firstMove = 0;
+      while (firstMove < n - 2 && pts[firstMove][0] === pts[firstMove + 1][0] && pts[firstMove][1] === pts[firstMove + 1][1]) firstMove++;
+      const f =
+        landing && i === lastMove
+          ? 1 - (1 - raw) * (1 - raw)
+          : takeoff && i === firstMove
+            ? raw * raw
+            : raw;
       const a = pts[i];
       const b = pts[Math.min(n - 1, i + 1)];
       const point: LngLat = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
@@ -249,6 +273,9 @@ export default function MapView() {
       }
       return { point, bearing };
     };
+
+    /** Seconds of timeline a unit's name stays up after it appears or is destroyed, before fading. */
+    const NAME_HOLD_S = 3;
 
     /** Gap kept between vehicles queued on, moving along, or halted at the end of a shared route. */
     const FORMATION_GAP_M = 45;
@@ -344,7 +371,7 @@ export default function MapView() {
             return orbitPose(arrive.point, arrive.bearing, t - end, r, period);
           }
           if (arrow.times && arrow.times.length === arrow.points.length) {
-            return timedPose(arrow.points, arrow.times, t, air && !!u.landAtEnd);
+            return timedPose(arrow.points, arrow.times, t, air && !!u.landAtEnd, isHeli(u));
           }
           if (!air) return formationPose(u, arrow, path, t);
           return smoothPoseAlongPath(path, airProgress(u, arrow, path, t));
@@ -355,6 +382,25 @@ export default function MapView() {
         return orbitPose([u.lng, u.lat], u.heading ?? 0, t - u.appearAt, r, period);
       }
       return { point: [u.lng, u.lat], bearing: u.heading ?? 0 };
+    };
+
+    /**
+     * Height of a helicopter 0 (on the ground) .. 1 (in flight): climbs over the
+     * pad before moving off and descends after braking to a hover at the end.
+     */
+    const heliAltitude = (u: Unit, at?: number): number => {
+      if (!isHeli(u)) return u.type === 'air' ? 1 : 0;
+      const st = useStore.getState();
+      const t = at ?? st.time;
+      const arrow = u.arrowId ? st.scenario.arrows.find((a) => a.id === u.arrowId) : undefined;
+      if (!arrow) return 1;
+      const start = arrow.times?.[0] ?? arrow.appearAt;
+      const end = arrow.times?.[arrow.times.length - 1] ?? arrow.appearAt + arrow.duration;
+      const hover = heliHoverS(end - start);
+      const ease = (x: number) => x * x * (3 - 2 * x);
+      const up = ease(clamp01((t - start) / Math.max(0.3, hover)));
+      const down = u.landAtEnd ? ease(clamp01((end - t) / Math.max(0.3, hover))) : 1;
+      return Math.min(up, down);
     };
 
     /** Mercator coords grounded on terrain elevation (+ optional extra meters). */
@@ -380,16 +426,29 @@ export default function MapView() {
       return tpl ? { obj: tpl, sig: `glb:${tpl.uuid}` } : null;
     };
 
+    let strikeScenario: Scenario | undefined;
+    let strikeLibrary: unknown;
+    let resolved: Strike[] = [];
+    let expanded: Strike[] = [];
     /** Strikes with unit targets moved onto that unit's position at impact time. */
     const resolvedStrikes = (): Strike[] => {
       const st = useStore.getState();
-      return st.scenario.strikes.map((x) => {
+      if (strikeScenario === st.scenario && strikeLibrary === st.unitLibrary) return resolved;
+      strikeScenario = st.scenario;
+      strikeLibrary = st.unitLibrary;
+      resolved = st.scenario.strikes.map((x) => {
         if (!x.targetUnitId) return x;
         const u = st.scenario.units.find((v) => v.id === x.targetUnitId);
         if (!u) return x;
         const [lng, lat] = unitPose(u, x.appearAt).point;
         return { ...x, lng, lat };
       });
+      expanded = expandStrikes(resolved);
+      return resolved;
+    };
+    const expandedStrikes = () => {
+      resolvedStrikes();
+      return expanded;
     };
 
     /** Interceptor that kills strike x mid-flight, if any. */
@@ -457,7 +516,10 @@ export default function MapView() {
             let ring: [number, number][] | null | undefined = losCache.get(key);
             if (ring === undefined) {
               ring = viewshed(center, u.sensorKm);
-              if (ring) losCache.set(key, ring);
+              if (ring) {
+                if (losCache.size >= 256) losCache.delete(losCache.keys().next().value!);
+                losCache.set(key, ring);
+              }
             }
             const full = circlePolygon(center, u.sensorKm);
             if (ring) {
@@ -592,7 +654,7 @@ export default function MapView() {
 
       strikeSrc.setData({
         type: 'FeatureCollection',
-        features: expandStrikes(resolvedStrikes()).flatMap((x) => {
+        features: expandedStrikes().flatMap((x) => {
           const feats: GeoJSON.Feature[] = [];
           // scorch only for ground detonations (not interceptors, not kills)
           if (
@@ -601,6 +663,8 @@ export default function MapView() {
             !interceptorFor(st, x) &&
             // small-arms rounds leave no crater
             !(weaponKind(x.name) === 'gun' && x.size < 0.2) &&
+            // arrows and hand-to-hand fighting leave no crater
+            !(weaponKind(x.name) === 'arrow' || weaponKind(x.name) === 'melee') &&
             // a crater on a target that has since been cleared from the scene is gone too
             !st.scenario.units.some(
               (u) => u.id === x.targetUnitId && u.leavesAt !== undefined && st.time >= u.leavesAt,
@@ -905,12 +969,14 @@ export default function MapView() {
         });
       }
       items.sort((a, b) => a.prio - b.prio);
-      for (const it of items) {
+      const measured = items.map((it) => {
         // subtract the offset as currently rendered (mid-transition included)
         const [cx, cy] = (getComputedStyle(it.el).translate || '0px 0px')
           .split(' ')
           .map((v) => parseFloat(v) || 0);
-        const base = shifted(pad(it.el.getBoundingClientRect(), 2), -cx, -(cy ?? 0));
+        return { it, base: shifted(pad(it.el.getBoundingClientRect(), 2), -cx, -(cy ?? 0)) };
+      });
+      for (const { it, base } of measured) {
         const prevX = Number(it.el.dataset.ox ?? 0);
         const prevY = Number(it.el.dataset.oy ?? 0);
         // hysteresis: keep the current slot while it's still free
@@ -939,14 +1005,20 @@ export default function MapView() {
       }
     };
 
-    let layoutQueued = false;
+    let layoutFrame = 0;
+    let lastLayout = -Infinity;
     const scheduleLayout = () => {
-      if (layoutQueued) return;
-      layoutQueued = true;
-      requestAnimationFrame(() => {
-        layoutQueued = false;
+      if (layoutFrame) return;
+      const place = (ts: number) => {
+        if (useStore.getState().playing && ts - lastLayout < 100) {
+          layoutFrame = requestAnimationFrame(place);
+          return;
+        }
+        layoutFrame = 0;
+        lastLayout = ts;
         layoutOverlays();
-      });
+      };
+      layoutFrame = requestAnimationFrame(place);
     };
 
     const syncMarkers = () => {
@@ -957,6 +1029,7 @@ export default function MapView() {
         : undefined;
       const highlightedIds = new Set(activeKeyframe?.highlightUnitIds ?? []);
       const seenU = new Set<string>();
+      const effects = activeEffects(st.scenario, st.time);
       for (const u of st.scenario.units) {
         seenU.add(u.id);
         let mk = unitMarkers.current.get(u.id);
@@ -991,6 +1064,20 @@ export default function MapView() {
             ev.stopPropagation();
             onUnitClick(u.id);
           });
+          // faded names come back while the pointer is over the unit or its tag;
+          // a tap on touch screens shows them for a few seconds
+          let tapTimer = 0;
+          const peek = (on: boolean) => tagEl.classList.toggle('peek', on);
+          for (const target of [el, tagEl]) {
+            target.addEventListener('pointerenter', (ev) => ev.pointerType === 'mouse' && peek(true));
+            target.addEventListener('pointerleave', (ev) => ev.pointerType === 'mouse' && peek(false));
+            target.addEventListener('pointerdown', (ev) => {
+              if (ev.pointerType === 'mouse') return;
+              peek(true);
+              window.clearTimeout(tapTimer);
+              tapTimer = window.setTimeout(() => peek(false), 3000);
+            });
+          }
           tagMarkers.current.set(
             u.id,
             new maplibregl.Marker({ element: tagEl }).setLngLat([u.lng, u.lat]).addTo(map),
@@ -1003,14 +1090,11 @@ export default function MapView() {
         const img = u.rosterId
           ? st.unitLibrary.find((e) => e.id === u.rosterId)?.imageUrl
           : undefined;
-        const rosterName = u.rosterId
-          ? st.unitLibrary.find((e) => e.id === u.rosterId)?.name
-          : undefined;
-        const key = silhouetteFor(u, rosterName);
+        const key = silhouetteFor(u, u.rosterId ? st.unitLibrary.find((e) => e.id === u.rosterId) : undefined);
         const destroyed = u.destroyedAt !== undefined && st.time >= u.destroyedAt;
         const air = u.type === 'air';
-        const symbols = st.iconStyle === 'symbols';
-        const sig = `${key}|${color}|${destroyed}|${u.name}|${img ?? ''}|${st.iconStyle}`;
+        const symbols = st.iconStyle === 'symbols' && st.scenario.era !== 'historical';
+        const sig = `${key}|${color}|${destroyed}|${u.name}|${img ?? ''}|${st.iconStyle}|${st.scenario.era ?? ''}`;
         if (el.dataset.sig !== sig) {
           el.dataset.sig = sig;
           const sz = `${Math.round((air ? 70 : 58) * silhouetteScale(key))}px`;
@@ -1052,6 +1136,7 @@ export default function MapView() {
         tagEl.style.setProperty('--hc', color);
         el.classList.toggle('orbital', !!u.altitudeKm);
         tagEl.classList.toggle('orbital', !!u.altitudeKm);
+        el.style.setProperty('--alt', u.type === 'air' ? heliAltitude(u).toFixed(3) : '1');
         el.style.setProperty(
           '--cool',
           destroyed && u.destroyedAt !== undefined ? clamp01((st.time - u.destroyedAt) / 14).toFixed(3) : '0',
@@ -1064,7 +1149,7 @@ export default function MapView() {
         // status effects: badges, radio waves, panic shake, damage/ammo states
         const fxNow = destroyed
           ? []
-          : activeEffects(st.scenario, st.time).filter((e) => e.fx.unitId === u.id);
+          : effects.filter((e) => e.fx.unitId === u.id);
         const kinds = new Set(fxNow.map((e) => e.fx.kind));
         const fxSig = fxNow.map((e) => `${e.fx.id}:${e.fx.label ?? ''}`).join('|');
         const statusEl = tagEl.querySelector<HTMLElement>('.mk-status');
@@ -1101,17 +1186,31 @@ export default function MapView() {
           const ammoWrap = tagEl.querySelector<HTMLElement>('.mk-bars .ammo');
           if (ammoWrap) {
             // individual people don't get an ammo gauge; it reads as a glitch under their name
-            ammoWrap.hidden = ammo === null || u.type === 'infantry' || st.look === 'documentary';
+            ammoWrap.hidden = ammo === null || u.type === 'infantry' || st.viewer || st.articlePreview || st.scenario.era === 'historical';
             const b = ammoWrap.querySelector<HTMLElement>('b');
             if (b && ammo !== null) b.style.width = `${ammo.toFixed(0)}%`;
           }
         }
-        mk.setLngLat(unitPose(u).point);
+        mk.setLngLat(pose.point);
         el.style.display =
           st.time >= u.appearAt && !(u.leavesAt !== undefined && st.time >= u.leavesAt) ? '' : 'none';
         tagEl.style.display = el.style.display;
         tagEl.classList.toggle('selected', sel?.kind === 'unit' && sel.id === u.id);
         el.classList.toggle('selected', sel?.kind === 'unit' && sel.id === u.id);
+        // During playback (and in articles) names introduce a unit, then fade so
+        // the map stays readable. They return when something happens to the unit.
+        {
+          const presenting = st.playing || st.cameraLock || st.viewer || st.articlePreview;
+          const recent = (t: number | undefined) => t !== undefined && st.time >= t && st.time < t + NAME_HOLD_S;
+          const showName =
+            !presenting ||
+            (sel?.kind === 'unit' && sel.id === u.id) ||
+            highlighted ||
+            fxNow.length > 0 ||
+            recent(u.appearAt) ||
+            recent(u.destroyedAt);
+          tagEl.classList.toggle('name-faded', !showName);
+        }
         el.classList.toggle(
           'mode3d',
           st.use3d && !st.globeMode && !!modelFor(u),
@@ -1130,8 +1229,8 @@ export default function MapView() {
       // target reticles over strike aim points shortly before and during impact
       const seenR = new Set<string>();
       for (const x of resolvedStrikes()) {
-        if (x.targetStrikeId || weaponKind(x.name) === 'gun') continue; // no target marker for gunfire
-        if (st.look === 'documentary') continue; // no targeting graphics in the history-video presentation
+        if (x.targetStrikeId || isQuietWeapon(weaponKind(x.name))) continue; // no target marker for gunfire, arrows or melee
+        if (st.viewer || st.articlePreview) continue; // no targeting graphics in the article presentation
         const from = strikeLaunchAt(st.scenario, x) - 1.2;
         const to = x.appearAt + 1.4;
         const visible = st.time >= from && st.time <= to;
@@ -1230,11 +1329,22 @@ export default function MapView() {
 
     const losCache = new Map<string, [number, number][]>();
 
+    let lastSync: ReturnType<typeof useStore.getState> | undefined;
+    let lastGeo = -Infinity;
     const syncAll = () => {
       if (!map.getSource('arrows')) return;
       const st = useStore.getState();
-      syncGeo();
-      syncDraft();
+      const previous = lastSync;
+      lastSync = st;
+      const now = performance.now();
+      const changed = !previous || st.scenario !== previous.scenario || st.selection !== previous.selection ||
+        st.look !== previous.look || st.viewer !== previous.viewer || st.articlePreview !== previous.articlePreview ||
+        st.unitLibrary !== previous.unitLibrary || st.duration !== previous.duration;
+      if (changed || !st.playing || st.time < previous!.time || now - lastGeo >= 66) {
+        syncGeo();
+        lastGeo = now;
+      }
+      if (!previous || st.draft !== previous.draft || st.tool !== previous.tool || st.activeFactionId !== previous.activeFactionId) syncDraft();
       syncMarkers();
       const draw = st.tool === 'arrow' || st.tool === 'territory';
       if (draw && map.doubleClickZoom.isEnabled()) map.doubleClickZoom.disable();
@@ -1251,10 +1361,14 @@ export default function MapView() {
           /* terrain unsupported */
         }
       }
-      // Presentation mode: camera follows keyframes, map interaction locked
+      // Presentation mode: camera follows keyframes. Viewers may still take the
+      // camera (which pauses the script) except in an article scene they
+      // haven't unlocked, where the page must keep scrolling.
       const lock = st.playing || st.cameraLock;
-      if (lock !== interactionLocked.current) {
-        interactionLocked.current = lock;
+      const article = st.viewer || st.articlePreview;
+      const frozen = article && !st.exploring;
+      if (frozen !== interactionLocked.current) {
+        interactionLocked.current = frozen;
         const handlers = [
           map.dragPan,
           map.scrollZoom,
@@ -1263,21 +1377,21 @@ export default function MapView() {
           map.keyboard,
           map.touchZoomRotate,
         ];
-        handlers.forEach((h) => (lock ? h.disable() : h.enable()));
+        handlers.forEach((h) => (frozen ? h.disable() : h.enable()));
       }
-      if (lock && st.scenario.keyframes.length > 0) {
+      if (lock && !st.cameraOverride && st.scenario.keyframes.length > 0) {
         const pose = interpolateCamera(st.scenario.keyframes, st.time, (id) => {
           const u = st.scenario.units.find((x) => x.id === id);
           return u ? unitPose(u) : null;
         });
         // camera shake from recent heavy detonations near the view center
         let shake = 0;
-        if (st.playing && st.look !== 'documentary') {
+        if (st.playing && !st.viewer && !st.articlePreview) {
           for (const x of st.scenario.strikes) {
             const age = st.time - x.appearAt;
             if (age < 0 || age > 0.7) continue;
             const kind = weaponKind(x.name);
-            if (kind === 'gun') continue;
+            if (isQuietWeapon(kind)) continue;
             const dKm = Math.hypot(
               (x.lng - pose.lng) * 111 * Math.cos((pose.lat * Math.PI) / 180),
               (x.lat - pose.lat) * 111,
@@ -1298,6 +1412,24 @@ export default function MapView() {
           pitch: pose.pitch + jitter(3) * 0.35,
           bearing: pose.bearing + jitter(4) * 0.25,
         });
+      }
+      // historical scenarios: hide modern basemap features and switch to an aged palette
+      {
+        const era = st.scenario.era === 'historical' ? 'historical' : 'modern';
+        if (era !== appliedEra.current && map.isStyleLoaded()) {
+          appliedEra.current = era;
+          const historical = era === 'historical';
+          for (const id of MODERN_LAYERS) {
+            if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', historical ? 'none' : 'visible');
+          }
+          for (const [id, prop, value] of HISTORICAL_PAINT) {
+            if (!map.getLayer(id)) continue;
+            const original = TAN_BLUE_STYLE.layers.find((l) => l.id === id) as { paint?: Record<string, unknown> } | undefined;
+            const back = original?.paint?.[prop];
+            // paint properties absent from the base style reset to MapLibre's default
+            map.setPaintProperty(id, prop as never, (historical ? value : back) as never);
+          }
+        }
       }
       if (map.getLayer('territory-watermark')) {
         const vis = st.look === 'briefing' ? 'none' : 'visible';
@@ -1905,7 +2037,7 @@ export default function MapView() {
           for (const u of st.scenario.units) {
             if (st.time < u.appearAt) continue;
             const model = modelFor(u);
-            if (!model) continue; // no GLB — stays a 2D marker
+            if (!model) continue; // no GLB, stays a 2D marker
             seen.add(u.id);
             let rec = unit3d.get(u.id);
             if (!rec || rec.sig !== model.sig) {
@@ -1921,7 +2053,7 @@ export default function MapView() {
             }
             const pose = unitPose(u);
             const mc = merc(pose.point[0], pose.point[1]);
-            const alt = u.type === 'air' ? s * 0.45 : 0;
+            const alt = u.type === 'air' ? s * 0.45 * heliAltitude(u) : 0;
             rec.obj.matrixAutoUpdate = false;
             rec.obj.matrix
               .makeTranslation(mc.x, mc.y, mc.z + alt)
@@ -2002,7 +2134,7 @@ export default function MapView() {
           }
           particles.begin();
           // Effects are sized in meters but stretched with zoom so a standard
-          // blast stays ~60px — in proportion to the oversized unit stickers.
+          // blast stays ~60px, in proportion to the oversized unit stickers.
           const fxScale = (() => {
             const c = map.getCenter();
             const mRef = maplibregl.MercatorCoordinate.fromLngLat(c).meterInMercatorCoordinateUnits();
@@ -2039,13 +2171,15 @@ export default function MapView() {
             // keep lofted arcs on screen: cap apex height (~1.2 km, stylized)
             const apexCap = maplibregl.MercatorCoordinate.fromLngLat({ lng: x.lng, lat: x.lat }).meterInMercatorCoordinateUnits() * 1200;
             const apex =
-              kind === 'gun'
+              kind === 'gun' || kind === 'melee'
                 ? 0
-                : kind === 'bomb'
-                  ? dist * 0.08
-                  : lofted
-                    ? Math.min(dist * (x.targetStrikeId ? 0.18 : 0.22), apexCap)
-                    : dist * 0.12;
+                : kind === 'arrow'
+                  ? dist * 0.3 // volleys are loosed high and drop onto the target
+                  : kind === 'bomb'
+                    ? dist * 0.08
+                    : lofted
+                      ? Math.min(dist * (x.targetStrikeId ? 0.18 : 0.22), apexCap)
+                      : dist * 0.12;
             return { a, b, apex, kind, launchAt: strikeLaunchAt(st.scenario, x) };
           };
           const arcPos = (
@@ -2066,7 +2200,8 @@ export default function MapView() {
             if (f <= 0 || f >= 1) return null;
             return arcPos(arc, f);
           };
-          for (const x of expandStrikes(resolvedStrikes())) {
+          for (const x of expandedStrikes()) {
+            if (st.time <= strikeLaunchAt(st.scenario, x) || st.time >= x.appearAt) continue;
             const killer = interceptorFor(st, x);
             if (killer && st.time >= killer.appearAt) continue; // shot down
             const arc = arcFor(x);
@@ -2076,7 +2211,7 @@ export default function MapView() {
             const mAt = maplibregl.MercatorCoordinate.fromLngLat({ lng: x.lng, lat: x.lat }).meterInMercatorCoordinateUnits() * fxScale;
             const kindScale = arc.kind === 'gun' ? Math.min(1, x.size * 3) : 1;
             particles.projectile(x.id, arc.kind, (ff) => arcPos(arc, ff), f, mAt * kindScale, x.name);
-            if (arc.kind === 'gun') continue; // tracers are particles only
+            if (isQuietWeapon(arc.kind)) continue; // tracers and arrows are particles only
             flying.add(x.id);
             let fx = missileFx.get(x.id);
             if (!fx) {
@@ -2091,7 +2226,7 @@ export default function MapView() {
                 new THREE.LineBasicMaterial({
                   color: x.targetStrikeId ? 0x9ad4ff : arc.kind === 'shell' ? 0xffb45a : 0xd8d0c0,
                   transparent: true,
-                  opacity: arc.kind === 'bomb' ? 0 : arc.kind === 'shell' ? 0.75 : 0.35,
+                  opacity: arc.kind === 'bomb' ? 0 : arc.kind === 'shell' ? 0.15 : 0.3,
                 }),
               );
               trail.frustumCulled = false;
@@ -2124,15 +2259,17 @@ export default function MapView() {
             fx.trail.geometry.setDrawRange(0, n);
           }
           // ---- fire trails: faint full-arc ribbons tinted by the shooter's faction ----
-          for (const x of expandStrikes(resolvedStrikes())) {
+          for (const x of expandedStrikes()) {
             if (x.id.includes('#')) continue; // one trail per salvo keeps it readable
+            if (st.viewer || st.articlePreview || isQuietWeapon(weaponKind(x.name)) ||
+              st.time <= strikeLaunchAt(st.scenario, x) || st.time > x.appearAt + TRAIL_LINGER) continue;
             const arc = arcFor(x);
             if (!arc) continue;
             const f = (st.time - arc.launchAt) / (x.appearAt - arc.launchAt);
             const after = st.time - x.appearAt;
-            const gun = arc.kind === 'gun';
-            // bullets leave no glowing contrail — the track fades almost at once
-            const linger = gun ? 1.2 : TRAIL_LINGER;
+            // bullets, arrows and melee draw no contrail, and article scenes skip trails entirely
+            if (isQuietWeapon(arc.kind) || st.viewer || st.articlePreview) continue;
+            const linger = TRAIL_LINGER;
             if (f <= 0 || after > linger) continue;
             const killer = interceptorFor(st, x);
             const cut =
@@ -2141,14 +2278,13 @@ export default function MapView() {
                 : 1;
             const shooter = st.scenario.units.find((u) => u.id === x.fromUnitId);
             const c = new THREE.Color(shooter ? factionColor(shooter.factionId) : '#555555');
-            const base = gun ? 0.12 : 0.6;
+            const base = 0.6;
             // hold full strength a few seconds after impact, then fade out
-            const hold = gun ? 0 : 3;
+            const hold = 3;
             const alpha = base * Math.min(1, Math.max(0, 1 - (after - hold) / (linger - hold)));
             const mTrail =
               maplibregl.MercatorCoordinate.fromLngLat({ lng: x.lng, lat: x.lat }).meterInMercatorCoordinateUnits() *
-              fxScale *
-              (arc.kind === 'gun' ? Math.min(1, x.size * 3) : 1);
+              fxScale;
             particles.trail(x.id, (ff) => arcPos(arc, ff), Math.min(1, f, cut), mTrail, c.r, c.g, c.b, alpha);
           }
 
@@ -2157,6 +2293,7 @@ export default function MapView() {
               scene.remove(fx.dart);
               scene.remove(fx.trail);
               fx.trail.geometry.dispose();
+              (fx.trail.material as THREE.Material).dispose();
               missileFx.delete(id);
             }
           }
@@ -2164,7 +2301,7 @@ export default function MapView() {
           // ---- particles: explosions, muzzle blasts, wrecks, dust ----
           const meters = (lng: number, lat: number) =>
             maplibregl.MercatorCoordinate.fromLngLat({ lng, lat }).meterInMercatorCoordinateUnits() * fxScale;
-          const rounds = expandStrikes(resolvedStrikes());
+          const rounds = expandedStrikes();
           const activeRings = new Set<string>();
           for (const x of rounds) {
             const m = meters(x.lng, x.lat);
@@ -2172,10 +2309,12 @@ export default function MapView() {
             const from = x.fromUnitId
               ? st.scenario.units.find((u) => u.id === x.fromUnitId)
               : undefined;
-            if (from && from.type !== 'air') {
+            const launchAge = st.time - strikeLaunchAt(st.scenario, x);
+            if (from && from.type !== 'air' && launchAge >= 0 && launchAge <= 3) {
               const lp = unitPose(from).point;
-              const launchAge = st.time - strikeLaunchAt(st.scenario, x);
-              if (weaponKind(x.name) === 'gun') {
+              if (weaponKind(x.name) === 'arrow' || weaponKind(x.name) === 'melee') {
+                // no muzzle flash for bows or blades
+              } else if (weaponKind(x.name) === 'gun') {
                 particles.gunFlash(x.id, merc(lp[0], lp[1]), m, launchAge, /suppress|silenc|subsonic/i.test(x.name));
               } else {
                 particles.muzzle(x.id, merc(lp[0], lp[1]), m, launchAge);
@@ -2190,9 +2329,9 @@ export default function MapView() {
               const hit = tgt ? interceptPos(tgt, x.appearAt) : null;
               if (hit) bp = hit;
             }
-            particles.explosion(x.id, bp, m, x.size, age, !!x.targetStrikeId, weaponKind(x.name));
+            particles.explosion(x.id, bp, m, x.size, age, !!x.targetStrikeId, weaponKind(x.name), x.name, x.impactStyle);
             // shock ring on the ground
-            if (age > 0.8 || weaponKind(x.name) === 'gun') continue;
+            if (age > 0.8 || isQuietWeapon(weaponKind(x.name))) continue;
             activeRings.add(x.id);
             let ring = strikeFx.get(x.id);
             if (!ring) {
@@ -2209,13 +2348,13 @@ export default function MapView() {
               strikeFx.set(x.id, ring);
             }
             const life = age / 0.8;
-            const rScale = m * x.size * (40 + life * 260);
+            const rScale = m * x.size * (20 + life * 100);
             ring.matrixAutoUpdate = false;
             ring.matrix
               .makeTranslation(bp.x, bp.y, bp.z + m * 2)
               .scale(new THREE.Vector3(rScale, -rScale, rScale))
               .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-            (ring.material as THREE.MeshBasicMaterial).opacity = 0.7 * (1 - life) * (1 - life);
+            (ring.material as THREE.MeshBasicMaterial).opacity = 0.14 * (1 - life) * (1 - life);
           }
           for (const [id, ring] of strikeFx) {
             if (!activeRings.has(id)) {
@@ -2230,7 +2369,7 @@ export default function MapView() {
             const m = meters(pose.point[0], pose.point[1]);
             if (u.destroyedAt !== undefined && st.time >= u.destroyedAt) {
               // only vehicles and equipment burn; fallen personnel are just marked
-              if (u.type !== 'infantry') {
+              if (u.type !== 'infantry' && st.scenario.era !== 'historical') {
                 particles.wreck(u.id, merc(pose.point[0], pose.point[1]), m, st.time - u.destroyedAt, st.time, u.type !== 'air');
               }
               continue;
@@ -2245,8 +2384,7 @@ export default function MapView() {
               // downwash in the last seconds of the approach and briefly after touchdown
               const k = st.time - (end - 4);
               if (ar && k > 0 && st.time < end + 2.5) {
-                const rotorName = st.unitLibrary.find((e) => e.id === u.rosterId)?.name;
-                if (silhouetteFor(u, rotorName) === 'heli') {
+                if (silhouetteFor(u, st.unitLibrary.find((e) => e.id === u.rosterId)) === 'heli') {
                   const strength = Math.min(1, k / 1.5) * (st.time > end ? Math.max(0, 1 - (st.time - end) / 2.5) : 1);
                   particles.downwash(u.id, merc(pose.point[0], pose.point[1]), (m / fxScale), st.time, strength);
                 }
@@ -2436,6 +2574,7 @@ export default function MapView() {
               if (!beamSeen.has(id)) {
                 scene.remove(line);
                 line.geometry.dispose();
+                (line.material as THREE.Material).dispose();
                 beamLines.delete(id);
               }
             }
@@ -2455,6 +2594,18 @@ export default function MapView() {
     });
 
     useStore.getState().setMapApi({
+      // read pixels inside the render event, while the WebGL buffer still holds the frame
+      snapshot: () =>
+        new Promise((resolve) => {
+          map.once('render', () => {
+            try {
+              resolve(map.getCanvas().toDataURL('image/jpeg', 0.82));
+            } catch {
+              resolve('');
+            }
+          });
+          map.triggerRepaint();
+        }),
       project: (lngLat, altitudeM = 0) => {
         const p = map.project({ lng: lngLat[0], lat: lngLat[1] });
         const w = map.getCanvas().clientWidth;
@@ -2474,8 +2625,7 @@ export default function MapView() {
           if (u.type !== 'air' || st.time < u.appearAt) continue;
           if (u.leavesAt !== undefined && st.time >= u.leavesAt) continue;
           if (u.destroyedAt !== undefined && st.time >= u.destroyedAt) continue;
-          const rn = st.unitLibrary.find((e) => e.id === u.rosterId)?.name;
-          if (silhouetteFor(u, rn) !== 'heli') continue;
+          if (silhouetteFor(u, st.unitLibrary.find((e) => e.id === u.rosterId)) !== 'heli') continue;
           const p = unitPose(u).point;
           const km = Math.hypot(
             (p[0] - center.lng) * 111.32 * Math.cos((center.lat * Math.PI) / 180),
@@ -2484,7 +2634,7 @@ export default function MapView() {
           // landed aircraft idle a little quieter than ones in flight
           const ar = u.arrowId ? st.scenario.arrows.find((a) => a.id === u.arrowId) : undefined;
           const end = ar?.times?.[ar.times.length - 1] ?? (ar ? ar.appearAt + ar.duration : 0);
-          const onGround = !!(u.landAtEnd && ar && st.time > end + 1);
+          const onGround = heliAltitude(u) < 0.05 && !!ar && st.time > end;
           const level = Math.pow(clamp01(1 - km / hearKm), 1.6) * zoomFade * (onGround ? 0.55 : 1);
           if (level > best.level) {
             const sx = map.project({ lng: p[0], lat: p[1] }).x;
@@ -2624,10 +2774,36 @@ export default function MapView() {
       }
     });
 
+    // the map is embedded at different sizes (article scenes), not only full-window
+    const resizeObs = new ResizeObserver(() => map.resize());
+    resizeObs.observe(containerRef.current!);
+
+    // a person dragging, zooming or rotating during playback takes over the camera
+    const takeCamera = (e: { originalEvent?: Event }) => {
+      const st = useStore.getState();
+      if (e.originalEvent && (st.playing || st.cameraLock) && !st.cameraOverride) useStore.setState({ cameraOverride: true });
+    };
+    map.on('dragstart', takeCamera);
+    map.on('zoomstart', takeCamera);
+    map.on('rotatestart', takeCamera);
+    map.on('pitchstart', takeCamera);
+
+    // OpenStreetMap and tile credits live behind the (i) button instead of a text strip
+    const collapseAttribution = () =>
+      containerRef.current?.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
+    map.once('load', collapseAttribution);
+    map.once('idle', collapseAttribution);
+
     map.on('move', () => scheduleLayout());
-    const unsubElev = onElevationLoaded(() => syncAll());
+    const unsubElev = onElevationLoaded(() => {
+      strikeScenario = undefined;
+      lastGeo = -Infinity;
+      syncAll();
+    });
     const unsub = useStore.subscribe(syncAll);
     return () => {
+      resizeObs.disconnect();
+      cancelAnimationFrame(layoutFrame);
       unsub();
       unsubElev();
       useStore.getState().setMapApi(null);

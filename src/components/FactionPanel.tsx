@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react';
+import PanelTitle, { useCollapsed } from './PanelTitle';
 import { useStore } from '../store';
 
 /** Quick-pick colors applied to the active faction. */
@@ -21,14 +22,19 @@ export default function FactionPanel() {
   const addFaction = useStore((s) => s.addFaction);
   const removeFaction = useStore((s) => s.removeFaction);
 
+  const fold = useCollapsed();
   return (
-    <div className="panel faction-panel">
-      <div className="panel-title">
-        Factions
-        <button className="icon-btn" onClick={addFaction} title="Add faction">
-          <Plus size={14} />
-        </button>
-      </div>
+    <div className={`panel faction-panel ${fold.collapsed ? 'collapsed' : ''}`}>
+      <PanelTitle
+        label="Factions"
+        collapsed={fold.collapsed}
+        onToggle={fold.toggle}
+        actions={
+          <button className="icon-btn" onClick={addFaction} title="Add faction">
+            <Plus size={14} />
+          </button>
+        }
+      />
       <div className="faction-swatches">
         {SWATCHES.map((c) => (
           <button

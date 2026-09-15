@@ -103,6 +103,7 @@ class Batch {
     this.geo.setAttribute('aSize', new THREE.BufferAttribute(this.size, 1));
     this.geo.setAttribute('aColor', new THREE.BufferAttribute(this.color, 4));
     this.geo.setAttribute('aSeed', new THREE.BufferAttribute(this.seed, 1));
+    for (const attribute of Object.values(this.geo.attributes)) (attribute as THREE.BufferAttribute).setUsage(THREE.DynamicDrawUsage);
     this.mat = new THREE.ShaderMaterial({
       vertexShader: VERT,
       fragmentShader: frag,
@@ -130,7 +131,12 @@ class Batch {
   }
   commit(halfHeight: number) {
     for (const k of ['position', 'aSize', 'aColor', 'aSeed']) {
-      (this.geo.getAttribute(k) as THREE.BufferAttribute).needsUpdate = true;
+      const attribute = this.geo.getAttribute(k) as THREE.BufferAttribute;
+      attribute.clearUpdateRanges();
+      if (this.n > 0) {
+        attribute.addUpdateRange(0, this.n * attribute.itemSize);
+        attribute.needsUpdate = true;
+      }
     }
     this.geo.setDrawRange(0, this.n);
     this.mat.uniforms.uHalfHeight.value = halfHeight;
@@ -146,11 +152,13 @@ export function rnd(seed: string, i: number): number {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
+export const MAX_SALVO_ROUNDS = 256;
+
 /** Expand salvo strikes into individual rounds scattered around the aim point. */
 export function expandStrikes(strikes: Strike[]): Strike[] {
   const out: Strike[] = [];
   for (const x of strikes) {
-    const n = Math.max(1, Math.round(x.salvo ?? 1));
+    const n = Math.min(MAX_SALVO_ROUNDS, Math.max(1, Math.round(x.salvo ?? 1)));
     if (n === 1 || x.targetStrikeId) {
       out.push(x);
       continue;
@@ -165,7 +173,7 @@ export function expandStrikes(strikes: Strike[]): Strike[] {
       const rad = i === 0 ? 0 : Math.sqrt(rnd(x.id, i * 7 + 2)) * spread;
       const dLat = (rad * Math.sin(ang)) / 111320;
       const dLng = (rad * Math.cos(ang)) / (111320 * Math.cos((x.lat * Math.PI) / 180));
-      const dt = i * gap + rnd(x.id, i * 7 + 3) * gap * 0.45;
+      const dt = i === 0 ? 0 : i * gap + rnd(x.id, i * 7 + 3) * gap * 0.45;
       out.push({
         ...x,
         id: i === 0 ? x.id : `${x.id}#${i}`,
@@ -183,11 +191,17 @@ export function expandStrikes(strikes: Strike[]): Strike[] {
 
 type P3 = { x: number; y: number; z: number };
 
-export type WeaponKind = 'missile' | 'bomb' | 'gun' | 'shell';
+export type WeaponKind = 'missile' | 'bomb' | 'gun' | 'shell' | 'arrow' | 'melee';
+
+/** Weapons that leave no blast, crater, shock ring or missile body (bullets, arrows, hand-to-hand). */
+export const isQuietWeapon = (k: WeaponKind) => k === 'gun' || k === 'arrow' || k === 'melee';
 
 /** Classify a strike by its weapon name for in-flight visuals. */
 export function weaponKind(name: string): WeaponKind {
   const n = name.toLowerCase();
+  if (/demolition|satchel|explosive charge|shaped charge/.test(n)) return 'bomb';
+  if (/melee|mêlée|hand-to-hand|clash|sword|poleaxe|mallet|axe|lance|cavalry charge|mounted charge|close combat|mounted raid/.test(n)) return 'melee';
+  if (/longbow|arrow|volley|archer|bowmen|crossbow|\bbow\b/.test(n)) return 'arrow';
   if (/\b(20|23|25|30)\s?mm|chain ?gun|cannon|gun ?run|strafe|gau|minigun|machine ?gun|rifle|carbine|small arms|pistol|gunfire|shots?\b/.test(n)) return 'gun';
   if (/jdam|gbu|mk ?8\d|bomb|glide|kab|fab/.test(n)) return 'bomb';
   if (/howitzer|\d{3}\s?mm|shell|mortar|fire mission|artillery/.test(n)) return 'shell';
@@ -248,11 +262,14 @@ export class ParticleSystem {
    * - missile: tight fireball, sparks, dark plume
    * - bomb: large rolling fireball cooling to black smoke, debris with smoke trails, rising column
    */
-  explosion(id: string, p: P3, m: number, size: number, age: number, airburst = false, kind: WeaponKind = 'missile') {
-    const life = kind === 'bomb' ? 18 : kind === 'gun' ? 3 : 14;
+  explosion(id: string, p: P3, m: number, size: number, age: number, airburst = false, kind: WeaponKind = 'missile', name = '', impactStyle: Strike['impactStyle'] = 'blast') {
+    const life = kind === 'bomb' ? 18 : kind === 'gun' || kind === 'arrow' ? 3 : kind === 'melee' ? 5 : 14;
     if (age < 0 || age > life) return;
-    const S = size * m;
-    if (kind === 'gun') return this.gunImpact(id, p, S, age, size);
+    const fuel = impactStyle === 'fireball';
+    const S = size * m * (isQuietWeapon(kind) || fuel ? 1 : 0.6);
+    if (kind === 'gun') return this.gunImpact(id, p, S, age, name ? !/\b(20|23|25|30|35|40)\s?mm|cannon|chain ?gun|gau/i.test(name) : size < 0.2);
+    if (kind === 'arrow') return this.arrowImpact(id, p, S, age);
+    if (kind === 'melee') return this.meleeClash(id, p, S, age);
 
     const big = kind === 'bomb';
     // white-hot flash + ground glow lighting the terrain
@@ -265,13 +282,12 @@ export class ParticleSystem {
       this.trails.push(p.x, p.y, p.z + 2 * S, (big ? 320 : 200) * S, 1, 0.55, 0.18, 0.2 * k * k, 2);
     }
 
-    if (kind === 'shell') {
-      this.dirtGeyser(id, p, S, age);
-    } else {
+    if (kind === 'shell' || (!fuel && !airburst)) this.dirtGeyser(id, p, S, age);
+    if (kind !== 'shell') {
       // rolling fireball that cools from white through orange to soot
-      const balls = big ? 13 : 7;
+      const balls = fuel ? (big ? 13 : 7) : 3;
       for (let i = 0; i < balls; i++) {
-        const dur = (big ? 1.6 : 1.0) + rnd(id, i) * (big ? 1.2 : 0.6);
+        const dur = fuel ? (big ? 1.6 : 1.0) + rnd(id, i) * (big ? 1.2 : 0.6) : 0.18 + rnd(id, i) * 0.18;
         const lf = age / dur;
         if (lf >= 1.6) continue;
         const a = rnd(id, i + 20) * Math.PI * 2;
@@ -295,7 +311,7 @@ export class ParticleSystem {
     }
 
     // incandescent sparks
-    const sparks = big ? 26 : 16;
+    const sparks = fuel ? (big ? 26 : 16) : 4;
     for (let i = 0; i < sparks; i++) {
       const dur = 0.6 + rnd(id, i + 100) * 1.0;
       if (age >= dur) continue;
@@ -338,7 +354,7 @@ export class ParticleSystem {
     }
 
     // smoke plume / column: puffs released over the first second, rise and drift downwind
-    const puffs = airburst ? 5 : big ? 22 : kind === 'shell' ? 6 : 14;
+    const puffs = airburst ? 5 : fuel ? (big ? 22 : 14) : kind === 'shell' ? 6 : 10;
     for (let i = 0; i < puffs; i++) {
       const delay = rnd(id, i + 200) * (big ? 2 : 1.2);
       const t = age - delay;
@@ -351,7 +367,7 @@ export class ParticleSystem {
       const rise = (40 + (big ? 700 : 420) * ease * (0.6 + 0.6 * rnd(id, i + 280))) * S;
       const drift = (big ? 260 : 180) * ease * S;
       const fadeIn = Math.min(1, t / 0.35);
-      const dark = 0.13 + 0.32 * lf;
+      const dark = fuel ? 0.13 + 0.32 * lf : 0.42 + 0.18 * lf;
       this.smoke.push(
         p.x + Math.cos(a) * r + drift * this.wx,
         p.y + Math.sin(a) * r + drift * this.wy,
@@ -386,10 +402,9 @@ export class ParticleSystem {
   }
 
   /** Cannon round strike: kicked-up dust, a spray of ricochet sparks. */
-  private gunImpact(id: string, p: P3, S: number, age: number, size: number) {
-    // rifle bullets don't flash — just dirt/debris and the odd ricochet fleck;
+  private gunImpact(id: string, p: P3, S: number, age: number, small: boolean) {
+    // rifle bullets don't flash, just dirt/debris and the odd ricochet fleck;
     // cannon rounds get the full pop
-    const small = size < 0.2;
     if (!small) {
       if (age < 0.08) this.fire.push(p.x, p.y, p.z + 6 * S, 60 * S, 1, 0.85, 0.5, 1 - age / 0.08, 1);
       for (let i = 0; i < 6; i++) {
@@ -405,7 +420,7 @@ export class ParticleSystem {
         );
       }
     } else if (rnd(id, 45) < 0.45) {
-      // occasional ricochet spark off masonry — one or two tiny flecks
+      // occasional ricochet spark off masonry: one or two tiny flecks
       for (let i = 0; i < 2; i++) {
         const dur = 0.14 + rnd(id, i + 50) * 0.14;
         if (age >= dur) continue;
@@ -419,7 +434,7 @@ export class ParticleSystem {
         );
       }
     }
-    // dust/debris kick — a wisp for rifle hits, a proper plume for cannon
+    // dust/debris kick: a wisp for rifle hits, a proper plume for cannon
     const k = small ? 0.5 : 1;
     for (let i = 0; i < (small ? 2 : 4); i++) {
       const dur = (small ? 0.9 : 1.8) + rnd(id, i + 80) * 1.2;
@@ -435,6 +450,47 @@ export class ParticleSystem {
         0.6 * (1 - lf) * (small ? 0.8 : 1),
         rnd(id, i + 95),
       );
+    }
+  }
+
+  /** Arrow landing: a small puff of churned mud, no flash. */
+  private arrowImpact(id: string, p: P3, S: number, age: number) {
+    const dur = 0.9 + rnd(id, 300) * 0.6;
+    if (age >= dur) return;
+    const lf = age / dur;
+    this.smoke.push(p.x, p.y, p.z + (4 + 16 * lf) * S, (14 + 26 * lf) * S, 0.42, 0.36, 0.27, 0.45 * (1 - lf), rnd(id, 301));
+  }
+
+  /**
+   * Hand-to-hand fighting: trampled mud and dust hanging over the press of men,
+   * with brief pale glints of steel.
+   */
+  private meleeClash(id: string, p: P3, S: number, age: number) {
+    for (let i = 0; i < 5; i++) {
+      const start = rnd(id, i + 400) * 1.2;
+      const dur = 2.6 + rnd(id, i + 410) * 1.4;
+      const a = age - start;
+      if (a < 0 || a >= dur) continue;
+      const lf = a / dur;
+      const ang = rnd(id, i + 420) * Math.PI * 2;
+      const r = (10 + 40 * rnd(id, i + 430)) * S;
+      this.smoke.push(
+        p.x + Math.cos(ang) * r,
+        p.y + Math.sin(ang) * r,
+        p.z + (6 + 28 * lf) * S,
+        (40 + 60 * lf) * S,
+        0.55, 0.49, 0.38,
+        0.4 * Math.sin(Math.PI * Math.min(1, lf * 1.4)),
+        rnd(id, i + 440),
+      );
+    }
+    for (let i = 0; i < 6; i++) {
+      const t0 = rnd(id, i + 450) * 3;
+      const g = age - t0;
+      if (g < 0 || g > 0.12) continue;
+      const ang = rnd(id, i + 460) * Math.PI * 2;
+      const r = 30 * rnd(id, i + 470) * S;
+      this.fire.push(p.x + Math.cos(ang) * r, p.y + Math.sin(ang) * r, p.z + 8 * S, 8 * S, 0.95, 0.95, 0.9, 1 - g / 0.12, i);
     }
   }
 
@@ -470,8 +526,20 @@ export class ParticleSystem {
    */
   projectile(id: string, kind: WeaponKind, at: (f: number) => P3, f: number, m: number, name = '') {
     const head = at(f);
+    if (kind === 'melee') return; // nothing crosses the gap: the fight happens at the target
+    if (kind === 'arrow') {
+      // a dark shaft with a short streak behind it, too small to glow
+      this.smoke.push(head.x, head.y, head.z, 7 * m, 0.14, 0.12, 0.1, 0.9, 1);
+      for (let k = 1; k <= 3; k++) {
+        const fk = f - k * 0.02;
+        if (fk <= 0) break;
+        const q = at(fk);
+        this.smoke.push(q.x, q.y, q.z, (6 - k) * m, 0.2, 0.17, 0.14, 0.55 * (1 - k / 4), k + 1);
+      }
+      return;
+    }
     if (kind === 'gun') {
-      // A bullet is effectively invisible; only some rounds burn tracer —
+      // A bullet is effectively invisible; only some rounds burn tracer;
       // a hot pinhead with a very short streak, a fast dash not a beam.
       // Suppressed weapons fire no tracers and barely show the shot.
       const sup = /suppress|silenc|subsonic/i.test(name);
@@ -546,11 +614,11 @@ export class ParticleSystem {
 
   /** Small-arms muzzle blast: a brief flash and a wisp of smoke. */
   gunFlash(id: string, p: P3, m: number, age: number, suppressed = false) {
-    const flash = suppressed ? 0.09 : 0.16;
+    const flash = suppressed ? 0.04 : 0.07;
     if (age < 0 || age > 1.6) return;
     if (age < flash) {
       const k = 1 - age / flash;
-      const s = (suppressed ? 5 : 12) * m;
+      const s = (suppressed ? 0.5 : 1.8) * m;
       this.fire.push(p.x, p.y, p.z + 3 * m, s * (0.7 + 0.3 * k), 1, suppressed ? 0.7 : 0.82, 0.4, k, 3);
     }
     const life = age / 1.6;

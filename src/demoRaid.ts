@@ -2,7 +2,7 @@ import type { LngLat } from './geo';
 import type { Arrow, Keyframe, MapLabel, RosterEntry, Scenario, StatusEffect, Strike, Territory, Unit } from './types';
 
 /**
- * Demo: Operation Neptune Spear — the raid on the Abbottabad compound,
+ * Demo: Operation Neptune Spear, the raid on the Abbottabad compound,
  * night of 1–2 May 2011. Built from the widely reported public account.
  * Units are limited to those in the Wikipedia article "Killing of Osama bin
  * Laden". Compound layout, routes and individual positions are approximate;
@@ -98,7 +98,7 @@ function person(m: Mover) {
   units.push(u);
 }
 
-// Chalk 1 — hard-lands inside the compound yard; clears guest house and main house
+// Chalk 1: hard-lands inside the compound yard; clears guest house and main house
 const chalk1: [string, [number, number, number][]][] = [
   // guest-house team
   ['1-1', [[39, 14, -24], [41, 4, -28], [44, -22, -26], [47, -27, -24]]],
@@ -116,7 +116,7 @@ const chalk1: [string, [number, number, number][]][] = [
   ['1-12', [[39, 9, -27], [46, -6, -16], [52, -10, -12]]],
 ];
 
-// Chalk 2 — lands outside the north-east wall: perimeter, then reinforces the main house
+// Chalk 2: lands outside the north-east wall: perimeter, then reinforces the main house
 const chalk2: [string, [number, number, number][]][] = [
   ['2-1', [[41, 60, 50], [46, 38, 38], [52, 22, 26], [58, 16, 20], [64, 14, 18]]],
   ['2-2', [[41, 62, 48], [46, 40, 36], [52, 24, 24], [58, 18, 18]]],
@@ -294,7 +294,7 @@ const effects: StatusEffect[] = [
   { id: 'fx_isr_feed', kind: 'datalink', unitId: 'rq170', targetUnitId: 'helo1', start: 26, duration: 12, label: 'OVERHEAD FEED' },
   { id: 'fx_hard_landing', kind: 'wounded', unitId: 'helo1', start: 38.3, duration: 57.5, label: 'HARD LANDING' },
   { id: 'fx_breach_radio', kind: 'radio', unitId: 'op_1-5', start: 50, duration: 3, label: 'BREACHING' },
-  { id: 'fx_geronimo', kind: 'radio', unitId: 'op_1-5', start: 67, duration: 5, label: 'GERONIMO — EKIA' },
+  { id: 'fx_geronimo', kind: 'radio', unitId: 'op_1-5', start: 67, duration: 5, label: 'GERONIMO, EKIA' },
   { id: 'fx_sse', kind: 'radio', unitId: 'op_1-9', start: 72, duration: 12, label: 'COLLECTING MATERIAL' },
   { id: 'fx_qrf_call', kind: 'radio', unitId: 'op_2-1', start: 74, duration: 4, label: 'REQUESTING BACKUP CHINOOK' },
 ];
@@ -310,7 +310,7 @@ const territories: Territory[] = [
     appearAt: 0, duration: 2,
   },
   {
-    id: 't_mainhouse', factionId: NC, name: 'Main house — 3 floors (approx.)',
+    id: 't_mainhouse', factionId: NC, name: 'Main house, 3 floors (approx.)',
     points: [L(-4, 0), L(22, 0), L(22, 22), L(-4, 22)],
     appearAt: 0, duration: 2,
   },
@@ -389,7 +389,7 @@ const keyframes: Keyframe[] = [
 export function raidScenario(): Scenario {
   // rebuild on every call so state never leaks between loads
   return structuredClone({
-    name: 'Bin Laden raid — Abbottabad, 2 May 2011',
+    name: 'The Bin Laden raid',
     subtitle: 'Abbottabad, Pakistan · 2 May 2011',
     sources: [
       'White House briefing on the operation, 2 May 2011',

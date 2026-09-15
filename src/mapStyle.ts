@@ -6,7 +6,7 @@ import type { StyleSpecification } from 'maplibre-gl';
  */
 export const TAN_BLUE_STYLE: StyleSpecification = {
   version: 8,
-  name: 'Conflict Sandbox Tan',
+  name: 'OpenBrief Tan',
   glyphs:
     'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
   sources: {
@@ -289,3 +289,35 @@ export const TAN_BLUE_STYLE: StyleSpecification = {
     },
   ],
 };
+
+/** Basemap layers that only make sense for the modern world. */
+export const MODERN_LAYERS = [
+  'roads-casing',
+  'roads',
+  'tracks',
+  'boundary-country',
+  'boundary-state',
+  'buildings-3d',
+  'place-country',
+  'place-state',
+  'place-city',
+  'place-capital',
+];
+
+/**
+ * Aged-map palette for historical scenarios: parchment ground, muted grey-green
+ * water, olive woodland, and stronger relief shading in sepia.
+ */
+export const HISTORICAL_PAINT: [layer: string, prop: string, value: unknown][] = [
+  ['background', 'background-color', '#d9c79f'],
+  ['water', 'fill-color', '#98a79c'],
+  ['water-edge', 'line-color', '#5d6b60'],
+  ['waterway', 'line-color', '#7d8f83'],
+  ['landcover-sand', 'fill-color', '#dccb9f'],
+  ['landcover-wood', 'fill-color', '#7e8651'],
+  ['landcover-wood', 'fill-opacity', 0.42],
+  ['park', 'fill-color', '#8b9159'],
+  ['hillshade', 'hillshade-exaggeration', 0.3],
+  ['hillshade', 'hillshade-shadow-color', '#4a3920'],
+  ['hillshade', 'hillshade-highlight-color', '#efe1bf'],
+];

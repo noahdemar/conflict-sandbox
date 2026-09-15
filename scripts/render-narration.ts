@@ -37,7 +37,7 @@ for (const demo of DEMOS) {
     const file = `${k.id}.mp3`;
     const shared = byText.get(k.caption);
     if (shared) {
-      items[k.id] = { text: k.caption, file: shared };
+      items[k.id] = { text: k.caption, spoken: toSpokenText(k.caption), file: shared };
       continue;
     }
     const unchanged = prev?.voice === VOICE && prev.items[k.id]?.text === k.caption &&

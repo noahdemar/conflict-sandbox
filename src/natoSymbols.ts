@@ -2,7 +2,7 @@ import type { Affiliation, Faction, UnitType } from './types';
 
 /**
  * NATO APP-6 inspired unit glyphs drawn as SVG inside a framed box.
- * viewBox is 40x30 — the classic symbol frame aspect ratio.
+ * viewBox is 40x30, the classic symbol frame aspect ratio.
  */
 const GLYPHS: Record<UnitType, string> = {
   // Infantry: crossed diagonals

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "river-crossing",
+    "name": "River crossing (hypothetical, minimal)",
+    "file": "river-crossing.json",
+    "features": [
+      "units",
+      "arrows",
+      "strikes",
+      "keyframes"
+    ]
+  },
+  {
+    "id": "khasham",
+    "name": "Battle of Khasham (2018)",
+    "file": "khasham.json",
+    "features": [
+      "units",
+      "strikes",
+      "article",
+      "order of battle overlay"
+    ]
+  },
+  {
+    "id": "binladen-raid",
+    "name": "Bin Laden raid (2011)",
+    "file": "binladen-raid.json",
+    "features": [
+      "units",
+      "strikes",
+      "order of battle overlay"
+    ]
+  },
+  {
+    "id": "dogfight",
+    "name": "Phantom vs MiG-17 (1967)",
+    "file": "dogfight.json",
+    "features": [
+      "3D aerial scene",
+      "real terrain",
+      "aircraft comparison"
+    ]
+  }
+]

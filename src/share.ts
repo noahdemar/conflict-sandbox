@@ -29,12 +29,18 @@ async function pipe(bytes: Uint8Array, stream: CompressionStream | Decompression
   return new Uint8Array(await res.arrayBuffer());
 }
 
-export async function buildShareLink(fileJson: string, mode: ShareMode): Promise<string> {
+export async function buildShareLink(fileJson: string, mode: ShareMode, embed = false): Promise<string> {
   const packed = await pipe(new TextEncoder().encode(fileJson), new CompressionStream('deflate-raw'));
   const url = new URL(window.location.href);
-  url.search = '';
+  url.search = embed ? '?embed=1' : '';
   url.hash = `${mode}=${toBase64Url(packed)}`;
   return url.toString();
+}
+
+/** iframe snippet that shows the article inside another website. */
+export function embedSnippet(src: string, title: string): string {
+  const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  return `<iframe src="${esc(src)}" title="${esc(title)}" width="100%" height="820" style="border:0;max-width:100%" loading="lazy" allow="fullscreen; autoplay" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
 }
 
 /** Scenario JSON carried by the current URL, if any. */

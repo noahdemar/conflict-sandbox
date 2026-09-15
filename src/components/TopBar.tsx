@@ -1,134 +1,79 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import ShareDialog from './ShareDialog';
-import ImportDialog from './ImportDialog';
+import CreateBrief from './CreateBrief';
 import { DEMOS, type DemoId } from '../demos';
-import {
-  FileText,
-  Film,
-  Share2,
-  Shapes,
-  Box,
-  Download,
-  FilePlus,
-  Globe2,
-  Map as MapIcon,
-  Upload,
-} from 'lucide-react';
+import { FileText, Map as MapIcon, Share2, Sparkles } from 'lucide-react';
 import { useStore } from '../store';
+
+/** Opened automatically once per session when the editor starts on an empty scenario. */
+let welcomed = false;
 
 export default function TopBar() {
   const name = useStore((s) => s.scenario.name);
   const setScenarioName = useStore((s) => s.setScenarioName);
-  const exportScenario = useStore((s) => s.exportScenario);
-  const newScenario = useStore((s) => s.newScenario);
   const loadDemo = useStore((s) => s.loadDemo);
-  const globeMode = useStore((s) => s.globeMode);
-  const setGlobeMode = useStore((s) => s.setGlobeMode);
-  const use3d = useStore((s) => s.use3d);
-  const look = useStore((s) => s.look);
-  const setLook = useStore((s) => s.setLook);
-  const iconStyle = useStore((s) => s.iconStyle);
-  const setIconStyle = useStore((s) => s.setIconStyle);
-  const setUse3d = useStore((s) => s.setUse3d);
+  const viewer = useStore((s) => s.viewer);
+  const empty = useStore((s) => s.scenario.units.length === 0 && s.scenario.keyframes.length === 0);
   const [sharing, setSharing] = useState(false);
-  const [importing, setImporting] = useState(false);
+  const [creating, setCreating] = useState(false);
 
-  const doExport = () => {
-    const blob = new Blob([exportScenario()], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${name.replace(/\s+/g, '-').toLowerCase()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
+  // the home screen leads with the guided flow when there is nothing to edit yet
+  useEffect(() => {
+    if (!welcomed && empty && !viewer && !window.location.hash && !new URLSearchParams(window.location.search).has('scenario')) {
+      welcomed = true;
+      setCreating(true);
+    }
+  }, [empty, viewer]);
 
   return (
     <div className="panel topbar">
       <div className="brand">
         <MapIcon size={16} />
-        <span>Conflict Sandbox</span>
+        <span>OpenBrief</span>
       </div>
       <input
         className="scenario-name"
         value={name}
         onChange={(e) => setScenarioName(e.target.value)}
-        title="Scenario name"
+        title="Brief name"
       />
-      {look === 'documentary' && (
-        <span className="doc-mode-badge">
-          <Film size={13} />
-          Historical cut
-        </span>
-      )}
       <div className="topbar-actions">
-        <button
-          className="top-btn"
-          onClick={() => setIconStyle(iconStyle === 'symbols' ? 'illustrated' : 'symbols')}
-          title="Switch unit icons between illustrations and military symbols"
-        >
-          <Shapes size={14} />
-          {iconStyle === 'symbols' ? 'Symbols' : 'Icons'}
-        </button>
-        <button
-          className="top-btn"
-          onClick={() => setLook(look === 'documentary' ? 'explainer' : look === 'explainer' ? 'briefing' : 'documentary')}
-          title="Presentation style: documentary, explainer or military briefing"
-        >
-          <FileText size={14} />
-          {look === 'documentary' ? 'Documentary' : look === 'briefing' ? 'Briefing' : 'Explainer'}
-        </button>
-        <button
-          className={`top-btn ${use3d ? 'active' : ''}`}
-          onClick={() => setUse3d(!use3d)}
-          title="Toggle 3D unit models (flat mode)"
-        >
-          <Box size={14} />
-          {use3d ? '3D' : '2D'}
-        </button>
-        <button
-          className={`top-btn ${globeMode ? 'active' : ''}`}
-          onClick={() => setGlobeMode(!globeMode)}
-          title="Toggle globe projection"
-        >
-          <Globe2 size={14} />
-          {globeMode ? 'Globe' : 'Flat'}
-        </button>
-        <button className="top-btn" onClick={newScenario} title="New scenario">
-          <FilePlus size={14} />
-          New
+        <button className="top-btn create-btn" onClick={() => setCreating(true)} title="Guided: draft a brief with an AI assistant">
+          <Sparkles size={14} />
+          Create a Brief
         </button>
         <select
           className="demo-select"
           value=""
-          title="Load a demo scenario"
+          title="Open an example brief"
           onChange={(e) => {
             if (e.target.value) loadDemo(e.target.value as DemoId);
           }}
         >
-          <option value="">Demos…</option>
+          <option value="">Examples…</option>
           {DEMOS.map((d) => (
-            <option key={d.id} value={d.id} title="Load the Battle of Khasham demo">
+            <option key={d.id} value={d.id}>
               {d.name}
             </option>
           ))}
         </select>
-        <button className="top-btn" onClick={() => setSharing(true)} title="Create a shareable link">
+        <button
+          className="top-btn"
+          onClick={() => useStore.getState().setArticlePreview(true)}
+          title="Preview the article that view links open: text with embedded map scenes"
+        >
+          <FileText size={14} />
+          Article
+        </button>
+        <button className="top-btn" onClick={() => setSharing(true)} title="View link, edit link or embed code">
           <Share2 size={14} />
           Share
         </button>
-        <button className="top-btn" onClick={doExport} title="Export scenario JSON">
-          <Download size={14} />
-          Export
-        </button>
-        <button className="top-btn" onClick={() => setImporting(true)} title="Import scenario JSON (paste or file)">
-          <Upload size={14} />
-          Import
-        </button>
       </div>
-      {sharing && <ShareDialog onClose={() => setSharing(false)} />}
-      {importing && <ImportDialog onClose={() => setImporting(false)} />}
+      {/* dialogs render at page level so they sit above the toolbar and side panels */}
+      {creating && createPortal(<CreateBrief onClose={() => setCreating(false)} onShare={() => setSharing(true)} />, document.body)}
+      {sharing && createPortal(<ShareDialog onClose={() => setSharing(false)} />, document.body)}
     </div>
   );
 }

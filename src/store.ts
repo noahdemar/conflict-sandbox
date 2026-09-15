@@ -31,6 +31,8 @@ export interface MapApi {
   ) => { x: number; y: number; pxPerMeter: number; width: number; height: number };
   /** Loudest nearby helicopter right now: level 0..1, stereo pan -1..1, load 0..1 */
   rotorMix: () => { level: number; pan: number; load: number };
+  /** JPEG data URL of the next rendered frame (article scene posters) */
+  snapshot: () => Promise<string>;
 }
 
 export interface NarrationPrefs {
@@ -39,6 +41,8 @@ export interface NarrationPrefs {
   consent?: 'voice' | 'text' | null;
   engine: 'webspeech' | 'kokoro';
   voice: string | null;
+  /** Editor opted in to generating voice for lines without a recording (downloads the speech model) */
+  allowGeneration: boolean;
   rate: number;
 }
 
@@ -51,7 +55,7 @@ interface Prefs {
   v?: number;
 }
 
-const DEFAULT_NARRATION: NarrationPrefs = { enabled: true, engine: 'kokoro', voice: 'bm_george', rate: 1, consent: null };
+const DEFAULT_NARRATION: NarrationPrefs = { enabled: true, engine: 'kokoro', voice: 'bm_george', rate: 1, consent: null, allowGeneration: false };
 
 function loadPrefs(): Prefs {
   try {
@@ -68,6 +72,7 @@ function loadPrefs(): Prefs {
           voice: migrate ? DEFAULT_NARRATION.voice : (p.narration?.voice ?? DEFAULT_NARRATION.voice),
           rate: p.narration?.rate ?? 1,
           consent: p.narration?.consent ?? null,
+          allowGeneration: p.narration?.allowGeneration === true,
         },
         v: 2,
       };
@@ -78,15 +83,15 @@ function loadPrefs(): Prefs {
   return { use3d: true, narration: { ...DEFAULT_NARRATION }, v: 2 };
 }
 
-/** documentary: history-video presentation; explainer: bold map graphics; briefing: military briefing */
-export type Look = 'documentary' | 'explainer' | 'briefing';
+/** explainer: bold map graphics; briefing: military briefing */
+export type Look = 'explainer' | 'briefing';
 const LOOK_KEY = 'conflict-sandbox-look';
 const loadLook = (): Look => {
   try {
     const v = localStorage.getItem(LOOK_KEY);
-    return v === 'briefing' || v === 'explainer' ? v : 'documentary';
+    return v === 'briefing' ? 'briefing' : 'explainer';
   } catch {
-    return 'documentary';
+    return 'explainer';
   }
 };
 
@@ -206,6 +211,9 @@ function loadScenario(): Scenario {
       narrationPack: parsed.narrationPack,
       subtitle: parsed.subtitle,
       sources: parsed.sources,
+      article: parsed.article,
+      era: parsed.era,
+      aerial: parsed.aerial,
     };
   } catch {
     return defaultScenario();
@@ -227,7 +235,6 @@ interface StoreState {
   consentPending: boolean;
   resolveConsent: (choice: 'voice' | 'text') => void;
   /** First voice line authored: ask before downloading the local voice model */
-  voicePromptPending: boolean;
   /** Right-hand transcript pane */
   transcriptOpen: boolean;
   setTranscriptOpen: (open: boolean) => void;
@@ -241,6 +248,10 @@ interface StoreState {
   globeMode: boolean;
   /** When true the camera is driven by keyframes (playback / scrub / keyframe jump) */
   cameraLock: boolean;
+  /** Viewer took the camera (drag, zoom, rotate) during playback; the scripted camera pauses */
+  cameraOverride: boolean;
+  /** Reader unlocked the embedded article map to pan and zoom it */
+  exploring: boolean;
   mapApi: MapApi | null;
   /** User-submittable unit roster */
   unitLibrary: RosterEntry[];
@@ -318,6 +329,13 @@ interface StoreState {
   /** Read-only presentation mode (opened from a view link) */
   viewer: boolean;
   setViewer: (viewer: boolean) => void;
+  /** Opened inside another site's iframe (?embed=1): article only, no editor links */
+  embed: boolean;
+  /** Reader turned on recorded narration for article scenes */
+  articleNarration: boolean;
+  /** Editor previewing the article presentation that viewers see */
+  articlePreview: boolean;
+  setArticlePreview: (on: boolean) => void;
   /** Suspend saving during a drag; resuming saves the current scenario once */
   setPersistPaused: (paused: boolean) => void;
 }
@@ -387,6 +405,8 @@ export const useStore = create<StoreState>((set, get) => {
     },
     globeMode: false,
     cameraLock: false,
+    cameraOverride: false,
+    exploring: false,
     mapApi: null,
     unitLibrary: loadLibrary(),
     activeRosterId: null,
@@ -403,14 +423,15 @@ export const useStore = create<StoreState>((set, get) => {
     setPlaying: (playing) => {
       const st = get();
       // first playback of a narrated scenario asks how to present narration
-      if (playing && !st.playing && !st.narration.consent && st.scenario.keyframes.some((k) => k.caption?.trim())) {
+      const canSpeak = !!st.scenario.narrationPack || (!st.viewer && st.narration.allowGeneration);
+      if (playing && !st.playing && canSpeak && !st.narration.consent && st.scenario.keyframes.some((k) => k.caption?.trim())) {
         set({ consentPending: true });
         return;
       }
-      set({ playing });
+      // pressing play hands the camera back to the script
+      set(playing ? { playing, cameraOverride: false } : { playing });
     },
     consentPending: false,
-    voicePromptPending: false,
     resolveConsent: (choice) => {
       const narration = { ...get().narration, consent: choice, enabled: choice === 'voice' };
       set({ narration, consentPending: false });
@@ -892,6 +913,10 @@ export const useStore = create<StoreState>((set, get) => {
     },
     viewer: false,
     setViewer: (viewer) => set({ viewer }),
+    embed: typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('embed'),
+    articleNarration: false,
+    articlePreview: false,
+    setArticlePreview: (articlePreview) => set({ articlePreview, playing: false }),
     setPersistPaused: (paused) => {
       persistPaused = paused;
       if (!paused) persist(get().scenario);
@@ -920,6 +945,9 @@ export const useStore = create<StoreState>((set, get) => {
           narrationPack: parsed.narrationPack,
           subtitle: parsed.subtitle,
           sources: parsed.sources,
+          article: parsed.article,
+          era: parsed.era,
+          aerial: parsed.aerial,
         };
         // merge bundled roster entries (by id) into the local library
         const lib = [...get().unitLibrary];

@@ -1,17 +1,23 @@
-# Conflict Sandbox — scenario authoring guide for LLMs
+# OpenBrief: scenario authoring guide for LLMs
 
-Conflict Sandbox (https://noahdemar.github.io/conflict-sandbox/) is a browser tool
-that plays animated, narrated battle-map scenarios: units moving on real roads,
-strikes with ballistic arcs and explosions, status effects, sensor views, lighting
-by real sun position, and a scripted camera with captions.
+OpenBrief (https://noahdemar.github.io/conflict-sandbox/) is a browser tool
+that turns map scenarios of real events into illustrated articles: prose with
+embedded map scenes (units moving on real roads, strikes, lighting by real sun
+position, a scripted camera) and image callouts. Articles can be embedded in
+other websites.
 
 A scenario is a single JSON document. To make one, produce JSON that validates
 against the schema, then load it in the app (see "Loading" below).
 
 - JSON Schema: https://noahdemar.github.io/conflict-sandbox/schema/scenario.schema.json
-- Complete example: https://noahdemar.github.io/conflict-sandbox/examples/river-crossing.json
+- Complete, valid examples (study the closest one before writing):
+  - https://noahdemar.github.io/conflict-sandbox/examples/river-crossing.json: minimal hypothetical battle
+  - https://noahdemar.github.io/conflict-sandbox/examples/khasham.json: modern battle with air strikes, article, callouts, order of battle
+  - https://noahdemar.github.io/conflict-sandbox/examples/binladen-raid.json: raid with individual people, helicopters, night vision, satellite pass
+  - https://noahdemar.github.io/conflict-sandbox/examples/dogfight.json: 3D aerial scene over real terrain with an aircraft comparison
+  - https://noahdemar.github.io/conflict-sandbox/examples/index.json: machine-readable list of all examples
 
-Output ONLY the JSON document when asked for a scenario — no prose, no comments,
+Output ONLY the JSON document when asked for a scenario: no prose, no comments,
 no trailing commas.
 
 ## Top-level shape
@@ -46,13 +52,23 @@ environment, duration.
 - Keep each camera shot (gap between keyframes) at least as long as its caption
   takes to read aloud: roughly 1 second per 2.5 words, plus half a second.
 - Captions are read aloud by text-to-speech, so write them to be spoken:
-  no dotted acronyms ("US", not "U.S."; "AM", not "a.m."), no bracketed
+  spell initialisms with spaced letters ("U S", "E K I A") or use full names; no bracketed
   asides, no abbreviations like "approx.", "e.g.", "vs.", "km" (spell them
   out), no "~", "/" or "&". Prefer plain words over symbols and write
   numbers the way you'd say them. The app normalizes common cases, but
   clean text sounds best.
 - Be factual for real events and mark anything invented or approximate in the
-  caption or name, e.g. "(approx.)", "Illustrative:", "Hypothetical:".
+  caption or name, e.g. "approximately", "Illustrative:", "Hypothetical:".
+
+## Historical-era scenes
+
+Use era: "historical" for pre-modern reconstructions. This disables automatic
+modern-road routing and uses the historical visual treatment. Name formations
+clearly: "Longbowmen", "Dismounted men-at-arms", "Mounted knights", "Royal
+standard" or "Baggage train". Name strikes "Longbow volley" for arrows and
+"Melee" or "Cavalry charge" for close combat. "Demolition charges" remain
+explosive, not melee. Do not introduce modern communications or weapons into
+these scenes. A group icon represents a formation, not a literal head count.
 
 ## Factions
 
@@ -66,10 +82,23 @@ shape, air-defense targeting and thermal colouring (hostiles glow red).
 Required: id, factionId, type, name, lat, lng, appearAt.
 type: infantry | armor | artillery | air | naval | missile | hq.
 
-The icon silhouette is picked from the unit name (and roster name), so name
-things concretely: "T-72", "BMP-1", "Technical", "D-30 howitzer", "BM-21 Grad",
-"HIMARS", "F-15E", "AH-64", "MQ-9 Reaper", "B-52", "AC-130J", "Chinook",
-"Operator 1-1" (a single person), "K9 team", "Imaging satellite".
+Icons: set "icon" on every unit (or on its roster entry) to a key from the
+shared icon library below. Pick the closest match. If nothing fits, name what
+you wanted anyway: OpenBrief shows a generic icon for the unit type and the
+importer lists every unknown icon so it can be fixed. Common synonyms also work
+("destroyer" draws "ship", "trebuchet" draws "siege", "humvee" draws "jeep").
+
+People: soldier, troops, officer, medic, sniper, civilians, dog
+Ground vehicles: tank, ifv, apc, jeep, truck, motorcycle, ambulance, tanker, engineer, howitzer, spg, mortar, launcher, sam, aagun, radar
+Aircraft: jet, f15, f22, bomber, flyingwing, transport, gunship, airliner, heli, attackheli, drone, cruisemissile, satellite
+Ships: ship, carrier, submarine, patrolboat, landingcraft, cargoship
+Structures: hq, bunker, checkpoint, camp, fort
+Pre-modern: menatarms, spearmen, pikemen, archers, musketeers, cavalry, chariot, cannon, siege, banner, baggage, sailingship, galley
+
+Without "icon", the icon is guessed from the unit name, so still name things
+concretely: "T-72", "BMP-1", "D-30 howitzer", "HIMARS", "F-15E", "AH-64",
+"MQ-9 Reaper", "B-52", "Chinook", "Operator 1-1" (a single person),
+"English longbowmen", "Mounted knights".
 
 Optional:
 - heading (degrees), arrowId (follow a route), destroyedAt, leavesAt (removed
@@ -103,14 +132,26 @@ Required: id, lat, lng, name, size (0.1 small arms … 1.5 large bomb), appearAt
 
 The visual is chosen from `name`:
 - guns: "30mm", "chain gun", "cannon", "rifle", "small arms" → tracers, sparks
-- bombs: "JDAM", "GBU", "Mk 82", "bomb" → dropped, big fireball, smoke column
+- bombs: "JDAM", "GBU", "Mk 82", "bomb" → dropped, brief flash, dirt and dust
 - shells: "howitzer", "105mm", "mortar", "fire mission" → arcing round, dirt
 - anything else → missile/rocket with motor glow and smoke trail
 
 Optional: fromUnitId + launchAt (fly from that unit; without launchAt the
 flight time is derived from weapon type and distance), targetUnitId (impact
-follows that unit's position at impact time — use this for moving targets),
-salvo + spreadM (multiple rounds), targetStrikeId (interceptor).
+follows that unit's position at impact time; use this for moving targets),
+salvo + spreadM (multiple rounds), targetStrikeId (interceptor),
+impactStyle: "blast" (default) or "fireball" (explicit fuel-rich treatment).
+
+Use "blast" for normal high-explosive impacts. A large weapon is not automatically
+a fuel explosion: only choose "fireball" when the target/event supports it.
+Gun, arrow and melee impacts remain non-fireball effects regardless of this option.
+`size` is an illustrative visual scale, NOT explosive yield or casualty radius.
+For rifle shots start around 0.04 to 0.12 with spreadM: 1 to 3; use small bursts,
+not a continuous stream. The editor permits scales down to 0.02 and exposes scatter.
+A salvo must contain 1 to 256 rounds. Prefer several well-timed small bursts over
+hundreds of simultaneous effects; count them as illustrative fire, not a literal
+reconstruction of every round fired. The first round uses the exact authored
+launchAt and appearAt; later rounds follow with deterministic cadence and scatter.
 
 Pair a destroyed unit's destroyedAt with the impact time of the strike that
 hits it.
@@ -146,11 +187,17 @@ base | hq | bridge | hospital | town.
 
 - zoom: ~4 region, ~9 city, ~13 neighbourhood, ~17–19 individual buildings.
 - pitch 0 = top-down; 45–65 for cinematic angles.
-- followUnitId + followMode "track" keeps a unit centred; orbitSpeed rotates.
-- sensor: "nvg" (night vision) or "thermal" for that shot.
+- followUnitId + followMode "track" keeps a unit centred; "chase" aligns with
+  its heading. orbitSpeed rotates in degrees per timeline second; use sparingly.
+- highlightUnitIds: ["u1", "u2"] adds subtle faction-colored highlights. Mention
+  those units clearly in the caption; avoid highlighting every unit at once.
+- overlay: "orbat" shows the hierarchical order of battle; overlayFactionIds
+  optionally limits it to particular factions. Destroyed units gray out live.
+- sensor: "nvg" (night vision) or "thermal" for that shot. Omit by default;
+  these are illustrative filters, not evidence of actual recorded imagery.
 - media: { src, caption, credit, anchor: [lng, lat], anchorRadiusM } shows an
   image beside a site (src must be a URL the site can load).
-- Captions are narrated during playback (viewers choose voice or text only).
+- Captions play as recorded narration when the scenario ships recordings;
   narrate: false makes a line text-only.
 
 ## Environment (optional)
@@ -166,6 +213,116 @@ exceed 24, e.g. a cut to the next morning). Wind steers smoke, rain, snow and
 dust. cloudCover (0..1) flattens the light; precipitation is none | rain |
 snow | dust. Use the real weather for real events when known.
 
+## Article (`article`, optional)
+
+View links and embeds open an article: headline (from `name`), standfirst
+(`subtitle`), prose, map scenes, callouts and `sources`. Without `article`,
+one is generated from the captions. Blocks, in reading order:
+
+{ "kind": "heading", "text": "The column moves" }
+{ "kind": "text", "text": "A paragraph of prose." }
+{ "kind": "scene", "from": "k3", "to": "k4", "caption": "Short figure caption" }
+  plays from keyframe k3 up to the keyframe after k4, then holds
+{ "kind": "callout", "title": "T-72 tank", "text": "One or two sentences.",
+  "wikiTitle": "T-72", "side": "left" }
+  image comes from that Wikipedia article (or give "image": URL + "credit")
+{ "kind": "image", "src": "https://...", "caption": "...", "credit": "..." }
+
+Write the prose like a news explainer: plain, factual, attributed where
+claims are disputed. Keep callouts to a few per article.
+
+## 3D aerial scenes (`aerial`, optional)
+
+For air combat. Keyframes that set `aerial` switch from the map to a 3D view
+with aircraft built into the app (no model files). Everything else (captions,
+article scenes, sources) works as usual.
+
+"aerial": {
+  "origin": [106.262, 21.395],          // [lng, lat] of the local frame
+  "style": "cinematic",                 // or "briefing" (viewers can switch)
+  "terrain": "real",                    // real elevation around origin; or jungle | desert | sea | plain
+  "terrainTexture": "basemap",          // name-free map; "satellite" shows today's landscape
+  "terrainRadiusKm": 30,
+  "aircraft": [
+    { "id": "f4", "name": "F-4C", "factionId": "f_usaf", "airframe": "f4",
+      "track": [[0, 300, -8000, 4200], [1, 300, -7770, 4195], ...],
+      "destroyedAt": 72 }
+  ],
+  "weapons": [
+    { "id": "w1", "kind": "guns", "from": "mig", "target": "f4", "time": 40, "duration": 1.2 },
+    { "id": "w2", "kind": "missile", "from": "f4", "target": "mig", "time": 68, "duration": 2.8 }
+  ],
+  "holds": [{ "at": 21, "seconds": 12 }]
+}
+
+- airframe: f4 | mig17 | jet (generic).
+- track points are [flight seconds, meters east, meters north, meters
+  altitude] from origin. Sample every 0.5 to 1 s through maneuvers; bank and
+  pitch are computed from the curve, so keep speeds realistic and turns smooth
+  (no instant changes of speed or direction). Real terrain uses real ground
+  height, so keep altitudes well above the hills.
+- Aircraft and weapon times are flight seconds. `holds` freeze the aircraft
+  (not the camera) for explanation: at timeline second `at`, flight time stops
+  for `seconds`. Keyframe times stay in timeline seconds.
+- Guns only look and sound right at gun range: put the shooter within about
+  300 to 600 m behind or beside the target when firing.
+- destroyedAt: the aircraft falls trailing smoke from that flight time; pair
+  it with a missile impact (time + duration).
+
+Keyframe camera shots: { "aerial": { "mode": "...", "target": "f4", ... } }
+- chase: behind the target (distanceM default about 4.5 aircraft lengths)
+- side: beside it
+- flyby: a fixed camera the target passes about 3 s into the shot
+- overview: orbits above target (and secondary); set distanceM so both fill
+  the frame (usually 300 to 1500 m; far shots make aircraft hard to see)
+- compare: target and secondary side by side on turntables with a stats
+  panel. Pair it with a hold so the fight waits:
+  "compare": { "rows": [ { "label": "Top speed", "values": ["Mach 2.2", "1,150 km/h"], "bars": [2370, 1150] } ],
+               "note": "Approximate published figures." }
+  Use real, widely published figures and mark them approximate.
+
+Label the scene as an illustrative reconstruction unless the flight paths
+come from real data.
+
+## Narration
+
+Voice is pre-recorded only (the site's demos ship recordings). Captions
+without a recording are shown as text; nothing is synthesized for viewers.
+
+## Quality checklist before delivery
+
+1. Establish geography and chronology first. Cite verifiable sources; distinguish
+   confirmed events from disputed accounts, inferred positions and illustrative
+   weapon-to-target assignments. Never invent radio links, electronic jamming,
+   exact casualties or sensor footage just to make a scene more dramatic.
+2. Compose an establishing view, an approach, the central event, and an aftermath.
+   Keep the subject visible before launch and through impact. Avoid large zoom
+   changes and abrupt switches into/out of a tracking shot during the event.
+   Use one principal subject per shot, with space for captions and the ORBAT card.
+3. For aircraft, put every release inside the authored route window; use explicit
+   launchAt and targetUnitId for moving shooters/targets. Keep helicopter approach
+   speeds decreasing and repeat the landing position at later waypoint times for
+   a hover. Do not duplicate waypoint TIMES or teleport onto the landing point.
+4. Reserve enough time for every salvo's last round and every narration line.
+   Estimate speech at about 2.5 words per second, then measure the actual recording
+   and leave at least 0.5 seconds of slack. Regenerate changed captions with
+   `npm run narration -- <demo-id>`; FFMPEG_PATH may select the local encoder.
+   Do not generate voice live during a performance-sensitive playback or recording.
+5. Article scenes deliberately hold at their end: group continuous action in one
+   scene, and end between events rather than during a volley or spoken sentence.
+   Backgrounding the tab pauses playback to avoid skipping action on return.
+6. Use small particle scales and restrained highlights. Keep only meaningful
+   status effects and avoid overlapping large smoke plumes. Reuse movement routes
+   and aggregate formations when individual people are not essential to the story.
+7. Run `npm run build`, `npm run validate -- scenario.json`, and `npm test` in the
+   repository. Validation checks schema, references, ordered waypoints and event
+   times; plausibility warnings are heuristics, not historical certification.
+   Review all warnings rather than treating a schema-valid result as approval.
+8. Preview at normal and double speed, scrub both directions, pause during audio,
+   switch scenes, and check a narrow viewport. Listen for overlapping narration,
+   delayed effects and excessive loudness. Check browser frame timings on target
+   hardware; automated tests alone cannot establish cinematic quality or frame rate.
+
 ## Loading
 
 1. In the editor: Import → paste JSON (validated with exact error messages)
@@ -173,7 +330,8 @@ snow | dust. Use the real weather for real events when known.
 2. By URL: https://noahdemar.github.io/conflict-sandbox/?scenario=<URL of a
    publicly readable JSON file that allows cross-origin requests>
    (e.g. a GitHub Gist "raw" link).
-3. Share → copy a view or edit link to send the loaded scenario to others.
+3. Share → copy a view link (article), an edit link, or embed code
+   (an <iframe> for another website; add ?embed=1 to any view URL).
 
 If validation fails, fix exactly the paths reported (e.g.
 "/scenario/units/3/lat must be number") and resend the whole document.

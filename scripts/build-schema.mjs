@@ -21,9 +21,9 @@ const { definitions, $schema, ...scenarioBody } = scenario;
 const schema = {
   $schema: 'http://json-schema.org/draft-07/schema#',
   $id: 'https://noahdemar.github.io/conflict-sandbox/schema/scenario.schema.json',
-  title: 'Conflict Sandbox scenario',
+  title: 'OpenBrief scenario',
   description:
-    'A battle-map scenario for Conflict Sandbox. Either a bare Scenario object, or the exported file wrapper {format, version, duration, roster, scenario}. Times are timeline seconds; coordinates are [longitude, latitude] or {lat, lng}.',
+    'A map scenario for OpenBrief. Either a bare Scenario object, or the exported file wrapper {format, version, duration, roster, scenario}. Times are timeline seconds; coordinates are [longitude, latitude] or {lat, lng}.',
   oneOf: [{ $ref: '#/definitions/ScenarioFile' }, { $ref: '#/definitions/Scenario' }],
   definitions: {
     ...definitions,

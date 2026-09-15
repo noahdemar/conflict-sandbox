@@ -2,7 +2,7 @@ import type { RosterEntry, Scenario, Strike, Unit } from './types';
 import type { LngLat } from './geo';
 
 /**
- * Demo scenario: Battle of Khasham, Syria — night of 7–8 Feb 2018.
+ * Demo scenario: Battle of Khasham, Syria, night of 7–8 Feb 2018.
  * A ~500-strong Wagner/SAA column with armor and artillery crossed the
  * Euphrates deconfliction line and advanced on the Conoco gas plant,
  * held by US special operators and SDF fighters. US air power and HIMARS
@@ -102,11 +102,33 @@ const PLANT: LngLat = [40.318, 35.318];
 
 export function demoScenario(): Scenario {
   return {
-    name: 'Battle of Khasham — Feb 7, 2018',
+    name: 'Battle of Khasham',
     subtitle: 'Deir ez-Zor, Syria · 7–8 February 2018',
     sources: [
       'US Department of Defense and Operation Inherent Resolve statements, February 2018',
       'The New York Times, "How a 4-Hour Battle Between Russian Mercenaries and U.S. Commandos Unfolded in Syria", 24 May 2018',
+    ],
+    article: [
+      { kind: 'text', text: 'By early 2018, the war against the Islamic State in eastern Syria had left two rival coalitions facing each other across the Euphrates. American-backed Syrian Democratic Forces held the east bank; Syrian government forces and their allies held the west. American and Russian commanders kept a telephone line open to stop their forces from colliding.' },
+      { kind: 'text', text: 'On the east bank, near the village of Khasham, sat the Conoco gas plant, one of the most valuable facilities in the region. A small team of American special operators was stationed there alongside SDF fighters.' },
+      { kind: 'callout', title: 'The Conoco plant', text: 'A gas processing facility in Deir ez-Zor province, taken from the Islamic State in 2017 and held by the SDF with American support.' },
+      { kind: 'scene', from: 'k1', to: 'k2', caption: 'The Euphrates deconfliction line and the defenders at the Conoco plant.' },
+      { kind: 'heading', text: 'The column moves' },
+      { kind: 'text', text: 'On the evening of 7 February, a pro-government force of roughly 500 men gathered near Khasham with tanks, armored vehicles and artillery. Later reporting identified many of them as Russian contractors working alongside Syrian government troops. The column crossed to the east bank and advanced toward the plant.' },
+      { kind: 'callout', title: 'T-72 tank', text: 'Soviet-designed main battle tanks of this family, along with older T-55s, were reported in the attacking column.', wikiTitle: 'T-72', side: 'left' },
+      { kind: 'text', text: 'As the vehicles closed in, their artillery and rocket launchers opened fire on the defenders. American officials said they used the deconfliction line to contact the Russian military, and were told Russian forces were not involved.' },
+      { kind: 'scene', from: 'k3', to: 'k4', caption: 'The column advances as its artillery opens fire across the river.' },
+      { kind: 'heading', text: 'The American response' },
+      { kind: 'text', text: 'The United States answered with overwhelming firepower. Fighter jets, a Reaper drone, Apache helicopters and B-52 bombers struck the column, while Marine artillery fired from nearby positions.' },
+      { kind: 'callout', title: 'AC-130 gunship', text: 'A heavily armed transport aircraft that circles its target, firing cannon and a 105mm howitzer from the side of the fuselage.', wikiTitle: 'Lockheed AC-130' },
+      { kind: 'text', text: 'Strikes hit the lead vehicles first and worked back along the road. An AC-130 gunship circled overhead, firing on vehicles and troops below.' },
+      { kind: 'scene', from: 'k5', to: 'k7', caption: 'Air strikes break up the column, vehicle by vehicle.' },
+      { kind: 'text', text: 'American rocket artillery then targeted the guns that had been shelling the plant, silencing the attackers’ remaining batteries.' },
+      { kind: 'callout', title: 'HIMARS', text: 'A truck-mounted launcher that fires GPS-guided rockets over long distances, used here against the attackers’ artillery.', wikiTitle: 'M142 HIMARS', side: 'left' },
+      { kind: 'scene', from: 'k8', caption: 'Counter-battery fire against the attacking artillery.' },
+      { kind: 'heading', text: 'Aftermath' },
+      { kind: 'text', text: 'After about four hours the assault had collapsed and the survivors withdrew. No Americans were killed; one SDF fighter was reported wounded. Estimates of the attackers’ dead varied widely, from dozens to a few hundred, and Russia acknowledged only that some of its citizens had been killed or wounded.' },
+      { kind: 'scene', from: 'k9', caption: 'The battlefield once the attack had failed.' },
     ],
     factions: [
       { id: US, name: 'United States', color: '#3a6fc0', affiliation: 'friend' },

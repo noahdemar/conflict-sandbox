@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Circle,
   Diamond,
@@ -84,11 +84,18 @@ export default function Timeline() {
       st.setTime(next);
       raf.current = requestAnimationFrame(tick);
     };
+    const onVisibility = () => {
+      if (document.hidden) useStore.getState().setPlaying(false);
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     raf.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf.current);
+    return () => {
+      cancelAnimationFrame(raf.current);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [playing]);
 
-  const events = [
+  const events = useMemo(() => [
     ...scenario.units.map((u) => ({ t: u.appearAt, c: '#e8c04a' })),
     ...scenario.arrows.map((a) => ({
       t: a.appearAt,
@@ -100,7 +107,7 @@ export default function Timeline() {
     })),
     ...scenario.labels.map((l) => ({ t: l.appearAt, c: '#9a9284' })),
     ...scenario.strikes.map((x) => ({ t: x.appearAt, c: '#ff8c3a' })),
-  ];
+  ], [scenario]);
 
   return (
     <>
@@ -185,6 +192,7 @@ export default function Timeline() {
           step={0.1}
           value={time}
           onChange={(e) => {
+            if (playing) setPlaying(false);
             setCameraLock(true);
             setTime(Number(e.target.value));
           }}
@@ -209,7 +217,7 @@ export default function Timeline() {
                   : ''
               }`}
               style={{ left: `${(k.time / duration) * 100}%` }}
-              title={`Keyframe @ ${k.time}s${k.caption ? ` — ${k.caption}` : ''}`}
+              title={`Keyframe @ ${k.time}s${k.caption ? `: ${k.caption}` : ''}`}
               onClick={() => goToKeyframe(k.id)}
             />
           ))}
