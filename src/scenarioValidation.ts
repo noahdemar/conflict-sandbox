@@ -75,6 +75,31 @@ export function siteForAssistants(): string {
   return local ? PUBLIC_SITE : `${window.location.origin}${import.meta.env.BASE_URL}`;
 }
 
+/**
+ * Exact field names for every object, embedded in the prompt so the output is
+ * still valid when the assistant cannot fetch the schema or examples.
+ * Keep in sync with types.ts.
+ */
+const FIELD_REFERENCE = [
+  'Field reference — use these names exactly (do not invent others; * = required):',
+  'file:      { format*: "conflict-sandbox-scenario", scenario*: {...}, duration?, roster? }',
+  'scenario:  name*, factions*, units*, arrows*, territories*, labels*, strikes*, keyframes*, duration?, subtitle?, sources?, era?("modern"|"historical"), environment?, effects?, aerial?, article?',
+  'faction:   id*, name*, color*, affiliation?("friend"|"hostile"|"neutral"|"unknown")',
+  'unit:      id*, factionId*, type*("infantry"|"armor"|"artillery"|"air"|"naval"|"missile"|"hq"), name*, lat*, lng*, appearAt*, icon?, arrowId?, rosterId?, heading?, rangeKm?, destroyedAt?, sensorKm?, airDefenseKm?, landAtEnd?, leavesAt?, altitudeKm?, orbitRole?("relay"|"imaging"), captureAt?',
+  'arrow:     id*, factionId*, points*([[lng,lat],...]), name*, appearAt*, duration*, followRoads?, hideLine?, hideAt?, times?',
+  'territory: id*, factionId*, points*([[lng,lat] ring]), name*, appearAt*, duration*, label?, labelAt?, labelRotate?',
+  'label:     id*, text*, lat*, lng*, size*, color*, appearAt*, flag?, facility?',
+  'strike:    id*, lat*, lng*, name*, size*, appearAt*, impactStyle?("blast"|"fireball"), fromUnitId?, launchAt?, targetStrikeId?, targetUnitId?, salvo?, spreadM?',
+  'keyframe:  id*, time*, lng*, lat*, zoom*, pitch*, bearing*, caption*, highlightUnitIds?, followUnitId?, followMode?("track"|"chase"), orbitSpeed?, narrate?, sensor?("normal"|"nvg"|"thermal"), aerial?, overlay?("orbat"), overlayFactionIds?, media?',
+  'effect:    id*, kind*("radio"|"datalink"|"jamming"|"panic"|"wounded"|"noammo"), unitId*, start*, duration*, targetUnitId?, radiusM?, label?',
+  'roster:    id*, name*, type*, faction?, icon?, modelUrl?, modelYaw?, rangeKm?, imageUrl?, wikiTitle?',
+  'aerial:    origin*([lng,lat]), style?("cinematic"|"briefing"), aircraft*, weapons?, holds?, terrain?, terrainTexture?, terrainRadiusKm?, terrainExaggeration?',
+  'aircraft:  id*, name*, factionId*, airframe*("f4"|"mig17"|"jet"), track*([[flightSeconds,mEast,mNorth,mAltitude],...]), destroyedAt?',
+  'weapon:    id*, kind*("guns"|"missile"), from*, target*, time*, duration?, hit?, label?',
+  'shot:      mode*("chase"|"side"|"flyby"|"overview"|"compare"), target*, secondary?, distanceM?, orbitDegPerS?, compare?',
+  'Common mistakes to avoid: keep the wrapper and scenario separate — "format" sits at the top level while "name", "subtitle", "sources" and "article" go INSIDE "scenario", never at the top level; arrows and territories use "name" (never "label"); every event uses "appearAt" in timeline seconds (never "time"); a strike\'s shooter is "fromUnitId" (never "attackerUnitId"); labels require "size" and "color"; strikes have no "type" or "description" — put detail in "name" and the keyframe "caption".',
+].join('\n');
+
 export function llmPrompt(description?: string): string {
   const site = siteForAssistants();
   return [
@@ -83,6 +108,8 @@ export function llmPrompt(description?: string): string {
     `The output must validate against this JSON Schema: ${site}schema/scenario.schema.json`,
     'Study these complete, valid examples before writing (open the ones closest to your scenario):',
     ...EXAMPLE_FILES.map((e) => `- ${site}examples/${e.file} (${e.shows})`),
+    '',
+    FIELD_REFERENCE,
     '',
     'Output only the JSON document (the {"format": "conflict-sandbox-scenario", ...} wrapper), no prose.',
     'Use [longitude, latitude] order in "points" arrays, unique ids, and times within "duration".',
