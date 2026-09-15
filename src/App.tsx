@@ -8,37 +8,110 @@ import Timeline from './components/Timeline';
 import TopBar from './components/TopBar';
 import { useStore } from './store';
 import { kokoroState, loadNarrationPack, narrate, narrateRecorded, preloadKokoro, preloadNarrationPack, stopNarration } from './narration';
-import { boom, setRotor } from './audio';
-import { expandStrikes } from './particles';
+import { boom, gunshot, setRotor } from './audio';
+import { expandStrikes, weaponKind } from './particles';
+import { strikeLaunchAt } from './realism';
 import { startRouting } from './routing';
 import { clearShareHash, readShareLink } from './share';
 import { demoFromUrl } from './demos';
 import { validateScenarioJson } from './scenarioValidation';
 import { lossesByFaction } from './combat';
-import { hourAt } from './environment';
+import { hourAt, utcInstant } from './environment';
+import OrbatOverlay from './components/OrbatOverlay';
+import type { ShotOverlay, Unit, UnitType } from './types';
 import EnvironmentPanel from './components/EnvironmentPanel';
 import TranscriptPane from './components/TranscriptPane';
 import ConsentModal from './components/ConsentModal';
 import VoiceModelDialog from './components/VoiceModelDialog';
 
+/** Seconds the documentary opening title card stays on screen. */
+const DOC_TITLE_S = 4.5;
+
+const TYPE_TERMS: Record<UnitType, string[]> = {
+  infantry: ['Syrian Democratic Forces', 'women and children', 'special operators', 'operators', 'assault team', 'troops', 'fighters', 'infantry', 'teams', 'team', 'Cairo'],
+  armor: ['fighting vehicles', 'armored vehicles', 'vehicles', 'tanks', 'tank', 'column'],
+  artillery: ['remaining batteries', 'batteries', 'howitzers', 'artillery', 'guns'],
+  air: ['Apache helicopters', 'Strike Eagles', 'A C 130', 'Raptors', 'modified Black Hawk helicopters', 'Black Hawk helicopters', 'helicopters', 'helicopter', 'Chinooks', 'Sentinel surveillance drone', 'Reaper drone', 'Black Hawk', 'aircraft', 'gunship', 'bomber', 'satellites', 'satellite', 'drone'],
+  naval: ['warships', 'ships', 'fleet'],
+  missile: ['rocket artillery', 'Grad rockets', 'rockets', 'missiles'],
+  hq: ['command team', 'headquarters', 'command post'],
+};
+
+function highlightedCaption(text: string, units: Unit[], factions: { id: string; name: string; color: string }[]) {
+  const terms = new Map<string, string>();
+  const colorFor = (u: Unit) => factions.find((f) => f.id === u.factionId)?.color ?? '#888';
+  for (const u of units) if (u.name.trim().length > 2) terms.set(u.name.toLowerCase(), colorFor(u));
+  for (const type of Object.keys(TYPE_TERMS) as UnitType[]) {
+    const typed = units.filter((u) => u.type === type);
+    const colors = new Set(typed.map(colorFor));
+    if (colors.size === 1) for (const term of TYPE_TERMS[type]) terms.set(term.toLowerCase(), [...colors][0]);
+  }
+  for (const faction of factions.filter((f) => units.some((u) => u.factionId === f.id))) {
+    const name = faction.name.toLowerCase();
+    terms.set(name, faction.color);
+    if (name === 'united states') {
+      terms.set('american special operators', faction.color);
+      terms.set('special operators', faction.color);
+      terms.set('assault team', faction.color);
+      terms.set('american', faction.color);
+    }
+    if (name === 'sdf') terms.set('syrian democratic forces', faction.color);
+    if (name === 'pro-government force') {
+      terms.set('pro-government', faction.color);
+      terms.set('wagner', faction.color);
+    }
+    if (name === 'non-combatants') terms.set('women and children', faction.color);
+  }
+  const matches = [...terms.keys()].filter((term) => text.toLowerCase().includes(term)).sort((a, b) => b.length - a.length);
+  if (!matches.length) return text;
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${matches.map(escape).join('|')})`, 'gi'));
+  return parts.map((part, i) => {
+    const color = terms.get(part.toLowerCase());
+    return color ? (
+      <span
+        className="unit-mention"
+        style={{ '--hc': color } as React.CSSProperties}
+        key={`${part}-${i}`}
+      >
+        {part}
+      </span>
+    ) : part;
+  });
+}
+
 /** Slide-style caption of the most recent keyframe at the current time. */
 function CaptionOverlay() {
   const time = useStore((s) => s.time);
   const keyframes = useStore((s) => s.scenario.keyframes);
+  const units = useStore((s) => s.scenario.units);
+  const factions = useStore((s) => s.scenario.factions);
   const playing = useStore((s) => s.playing);
   const cameraLock = useStore((s) => s.cameraLock);
+  const look = useStore((s) => s.look);
   if (!playing && !cameraLock) return null;
   const sorted = [...keyframes].sort((a, b) => a.time - b.time);
   const active = sorted.filter((k) => k.time <= time).pop();
   if (!active?.caption) return null;
   const phase = sorted.indexOf(active) + 1;
+  const ids = new Set(active.highlightUnitIds ?? []);
+  const caption = highlightedCaption(active.caption, units.filter((u) => ids.has(u.id)), factions);
+  if (look === 'documentary') {
+    // lower-third subtitle, like a narrated history programme; held back while the title card is up
+    if (time < DOC_TITLE_S) return null;
+    return (
+      <div className="doc-subtitle" key={active.id}>
+        {caption}
+      </div>
+    );
+  }
   return (
     <div className="caption-overlay" key={active.id}>
       <div className="caption-kicker">
         <span className="caption-dot" />
         PHASE {phase} / {sorted.length}
       </div>
-      <div className="caption-text">{active.caption}</div>
+      <div className="caption-text">{caption}</div>
     </div>
   );
 }
@@ -51,6 +124,62 @@ const dms = (v: number, pos: string, neg: string) => {
   const sec = Math.floor(((a - d) * 60 - m) * 60);
   return `${d}°${pad(m)}'${pad(sec)}"${v >= 0 ? pos : neg}`;
 };
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** Local calendar date and clock at timeline time t, e.g. "7 February 2018" and "10:40 PM". */
+function localDateTime(env: NonNullable<ReturnType<typeof useStore.getState>['scenario']['environment']>, t: number, duration: number) {
+  const local = new Date(utcInstant(env, t, duration) + (env.utcOffset ?? 0) * 3600_000);
+  const h = local.getUTCHours();
+  // round to five minutes: a history programme doesn't tick like a mission clock
+  const m = Math.floor(local.getUTCMinutes() / 5) * 5;
+  return {
+    date: `${local.getUTCDate()} ${MONTHS[local.getUTCMonth()]} ${local.getUTCFullYear()}`,
+    time: `${((h + 11) % 12) + 1}:${pad(m)} ${h < 12 ? 'AM' : 'PM'}`,
+  };
+}
+
+/** Opening title card, quiet date and local-time stamp, and closing sources card. */
+function DocumentaryChrome() {
+  const time = useStore((s) => s.time);
+  const scenario = useStore((s) => s.scenario);
+  const duration = useStore((s) => s.duration);
+  const playing = useStore((s) => s.playing);
+  const cameraLock = useStore((s) => s.cameraLock);
+  if (!playing && !cameraLock) return null;
+  const env = scenario.environment;
+  const stamp = env?.date ? localDateTime(env, time, duration) : null;
+  const sources = scenario.sources ?? [];
+  const atEnd = sources.length > 0 && time >= duration - 0.05;
+  return (
+    <>
+      {time < DOC_TITLE_S && (
+        <div className="doc-title" style={{ '--p': (time / DOC_TITLE_S).toFixed(3) } as React.CSSProperties}>
+          <div className="doc-title-rule" />
+          <h1>{scenario.name.split(/\s+[—–-]\s+/)[0]}</h1>
+          {(scenario.subtitle || stamp) && <p>{scenario.subtitle ?? stamp?.date}</p>}
+        </div>
+      )}
+      {stamp && time >= DOC_TITLE_S && !atEnd && (
+        <div className="doc-stamp" key={stamp.date}>
+          <span>{stamp.date}</span>
+          <b>{stamp.time} local time</b>
+        </div>
+      )}
+      {atEnd && (
+        <div className="doc-sources">
+          <h2>Sources</h2>
+          <ul>
+            {sources.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+          <p>Positions, timings, unit counts, and individual weapon-to-target pairings are simplified for illustration.</p>
+        </div>
+      )}
+    </>
+  );
+}
 
 /** Ops-style HUD: mission clock, scenario tag and view-center coordinates. */
 function TacticalHud() {
@@ -197,6 +326,15 @@ function useSensorView(): 'normal' | 'nvg' | 'thermal' {
   });
 }
 
+/** On-screen graphic the active camera keyframe flashes up, during playback or preview. */
+function useActiveOverlay(): ShotOverlay | null {
+  return useStore((s) => {
+    if (!s.playing && !s.cameraLock) return null;
+    const active = [...s.scenario.keyframes].sort((a, b) => a.time - b.time).filter((k) => k.time <= s.time).pop();
+    return active?.overlay ?? null;
+  });
+}
+
 function SensorOverlay({ view }: { view: 'nvg' | 'thermal' }) {
   const time = useStore((s) => s.time);
   return (
@@ -226,6 +364,7 @@ export default function App() {
   const hasVoiceLines = useStore((s) =>
     s.scenario.keyframes.some((k) => !!k.caption?.trim() && k.narrate !== false),
   );
+  const overlay = useActiveOverlay();
   const spokenRef = useRef<string | null>(null);
   const spokenCaptionRef = useRef<string | null>(null);
   const prevTimeRef = useRef(0);
@@ -245,7 +384,13 @@ export default function App() {
       const prev = prevTimeRef.current;
       prevTimeRef.current = st.time;
       for (const x of expandStrikes(st.scenario.strikes)) {
-        if (x.appearAt > prev && x.appearAt <= st.time) boom(x.size);
+        const gun = weaponKind(x.name) === 'gun';
+        // gunshots crack when the round leaves the muzzle; blasts land on impact
+        const t0 = gun ? strikeLaunchAt(st.scenario, x) : x.appearAt;
+        if (t0 > prev && t0 <= st.time) {
+          if (gun) gunshot(/suppress|silenc|subsonic/i.test(x.name), 0.5 + x.size * 5);
+          else boom(x.size);
+        }
       }
       if (!st.narration.enabled) return;
       const active = [...st.scenario.keyframes]
@@ -428,13 +573,15 @@ export default function App() {
       </div>
       <Timeline />
       {sensor !== 'normal' && <SensorOverlay view={sensor} />}
+      {overlay === 'orbat' && <OrbatOverlay />}
       <MediaOverlay />
       <CaptionOverlay />
       <TranscriptPane />
       <ConsentModal />
       <VoiceModelDialog />
       {viewer && <ViewerBar />}
-      <TacticalHud />
+      {look === 'documentary' ? <DocumentaryChrome /> : <TacticalHud />}
+      {look === 'documentary' && <div className="film-grain" />}
     </div>
   );
 }

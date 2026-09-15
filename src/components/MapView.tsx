@@ -9,6 +9,7 @@ import { FACILITY_META, facilityIconSvg } from '../facilities';
 import { STATUS_META, activeEffects, statusIconSvg } from '../statusEffects';
 import { onElevationLoaded, viewshed } from '../elevation';
 import { unitAmmo } from '../combat';
+import { groundProgress, strikeLaunchAt } from '../realism';
 import { lightingFromSun, nightPolygon, sunElevation, utcInstant, windVector } from '../environment';
 import { APP6_FILL, factionAffiliation, unitSymbolSvg } from '../natoSymbols';
 import { TAN_BLUE_STYLE } from '../mapStyle';
@@ -24,7 +25,7 @@ import {
   type LngLat,
 } from '../geo';
 import { shadowSvg, silhouetteFor, silhouetteScale, silhouetteSvg } from '../silhouettes';
-import type { Arrow, Strike, Unit } from '../types';
+import type { Arrow, Scenario, Strike, Unit } from '../types';
 
 /** Area-weighted centroid of a [lng, lat] ring. */
 function polygonCentroid(pts: [number, number][]): [number, number] {
@@ -191,14 +192,17 @@ export default function MapView() {
       const e = t - arrow.appearAt;
       if (e <= 0) return 0;
       if (e >= D) return 1;
+      const hoverT = u.landAtEnd ? Math.min(1.5, D * 0.08) : 0;
+      const motionD = D - hoverT;
+      if (e >= motionD) return 1;
       const L = pathMeters(path);
-      if (L <= 0) return clamp01(e / D);
+      if (L <= 0) return clamp01(e / motionD);
       const [r, period] = orbitFor(u);
       // landing aircraft slow to a hover; others hand off to orbit speed
       const vOrbit = u.landAtEnd ? 0 : (2 * Math.PI * r) / period;
-      const ta = Math.min(D * 0.3, 4); // accelerate
-      const td = Math.min(D * 0.3, 4); // decelerate into orbit
-      const cruiseT = Math.max(0, D - ta - td);
+      const ta = Math.min(motionD * 0.3, 4); // accelerate
+      const td = Math.min(motionD * (u.landAtEnd ? 0.4 : 0.3), u.landAtEnd ? 6 : 4); // decelerate
+      const cruiseT = Math.max(0, motionD - ta - td);
       // entry speed is a fraction of cruise; solve cruise speed so distance covers L
       const k = 0.55;
       const vc = Math.max(
@@ -222,12 +226,15 @@ export default function MapView() {
      * Timed waypoints: position interpolates between the two points bracketing
      * t; while stationary, keeps facing the direction of its last movement.
      */
-    const timedPose = (pts: LngLat[], times: number[], t: number): { point: LngLat; bearing: number } => {
+    const timedPose = (pts: LngLat[], times: number[], t: number, landing = false): { point: LngLat; bearing: number } => {
       const n = pts.length;
       let i = 0;
       while (i < n - 2 && t >= times[i + 1]) i++;
       const span = times[i + 1] - times[i];
-      const f = span > 0 ? clamp01((t - times[i]) / span) : 1;
+      const raw = span > 0 ? clamp01((t - times[i]) / span) : 1;
+      let lastMove = n - 2;
+      while (lastMove > 0 && pts[lastMove][0] === pts[lastMove + 1][0] && pts[lastMove][1] === pts[lastMove + 1][1]) lastMove--;
+      const f = landing && i === lastMove ? 1 - (1 - raw) * (1 - raw) : raw;
       const a = pts[i];
       const b = pts[Math.min(n - 1, i + 1)];
       const point: LngLat = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
@@ -243,53 +250,77 @@ export default function MapView() {
       return { point, bearing };
     };
 
-    /** Gap kept between vehicles queued on or halted at the end of a shared route. */
+    /** Gap kept between vehicles queued on, moving along, or halted at the end of a shared route. */
     const FORMATION_GAP_M = 45;
 
+    /** Ground progress along a route with acceleration, braking and slope-aware pacing. */
+    const groundProg = (u: Unit, arrow: Arrow, path: LngLat[], t: number) =>
+      groundProgress(path, u.type, t - arrow.appearAt, arrow.duration);
+
     /**
-     * Vehicles sharing a route wait in line behind the start before departing
-     * and halt in line behind the end on arrival, instead of stacking up.
-     * Returns null while the unit is simply moving along the route.
+     * Place in line among same-faction ground units sharing a route: `depart`
+     * counts those leaving ahead of this unit, `arrive` those parked ahead of it
+     * on arrival (wrecks drop out of the line).
      */
-    const formationPose = (
-      u: Unit,
-      arrow: Arrow,
-      path: LngLat[],
-      t: number,
-    ): { point: LngLat; bearing: number } | null => {
-      const end = arrow.appearAt + arrow.duration;
-      const waiting = t < arrow.appearAt;
-      const arrived = t >= end;
-      if (!waiting && !arrived) return null;
+    const queueRank = (u: Unit, arrow: Arrow, mode: 'depart' | 'arrive', t: number) => {
       const st = useStore.getState();
       const key = routeKey(arrow.points);
+      const end = arrow.appearAt + arrow.duration;
       let rank = 0;
       for (const v of st.scenario.units) {
         if (v.id === u.id || v.type === 'air' || v.factionId !== u.factionId || !v.arrowId) continue;
         const va = st.scenario.arrows.find((a) => a.id === v.arrowId);
         if (!va || routeKey(va.points) !== key) continue;
         const vEnd = va.appearAt + va.duration;
-        if (waiting) {
-          // everyone still waiting who leaves before me is ahead in the queue
-          if (t < va.appearAt && (va.appearAt < arrow.appearAt || (va.appearAt === arrow.appearAt && v.id < u.id))) rank++;
+        if (mode === 'depart') {
+          if (t <= va.appearAt && (va.appearAt < arrow.appearAt || (va.appearAt === arrow.appearAt && v.id < u.id))) rank++;
         } else {
-          // everyone who arrived (intact) before me is parked ahead
-          const vDead = v.destroyedAt !== undefined && v.destroyedAt < vEnd;
+          const vDead = v.destroyedAt !== undefined && v.destroyedAt < Math.min(vEnd, t);
           if (!vDead && t >= vEnd && (vEnd < end || (vEnd === end && v.id < u.id))) rank++;
         }
       }
-      const gapDeg = (rank * FORMATION_GAP_M) / 111320;
-      if (waiting) {
-        const start = smoothPoseAlongPath(path, 0);
-        const b = (start.bearing * Math.PI) / 180;
-        const cosLat = Math.cos((start.point[1] * Math.PI) / 180);
-        return {
-          point: [start.point[0] - (Math.sin(b) * gapDeg) / cosLat, start.point[1] - Math.cos(b) * gapDeg],
-          bearing: start.bearing,
-        };
-      }
+      return rank;
+    };
+
+    /**
+     * Vehicles sharing a route queue behind the start, keep their spacing while
+     * driving, and halt in line behind the end, instead of stacking up.
+     */
+    const formationPose = (
+      u: Unit,
+      arrow: Arrow,
+      path: LngLat[],
+      t: number,
+    ): { point: LngLat; bearing: number } => {
+      const end = arrow.appearAt + arrow.duration;
       const len = pathLength(path);
-      return smoothPoseAlongPath(path, len > 0 ? Math.max(0, 1 - gapDeg / len) : 1);
+      let gapM: number;
+      let prog: number;
+      if (t < arrow.appearAt) {
+        gapM = queueRank(u, arrow, 'depart', t) * FORMATION_GAP_M;
+        prog = 0;
+      } else if (t >= end) {
+        gapM = queueRank(u, arrow, 'arrive', t) * FORMATION_GAP_M;
+        prog = 1;
+      } else {
+        // ease the spacing from the departure queue to the arrival line over the trip
+        prog = groundProg(u, arrow, path, t);
+        const d0 = queueRank(u, arrow, 'depart', arrow.appearAt);
+        const d1 = queueRank(u, arrow, 'arrive', end);
+        gapM = (d0 + (d1 - d0) * prog) * FORMATION_GAP_M;
+      }
+      const gapDeg = gapM / 111320;
+      const along = prog * len - gapDeg;
+      if (along >= 0 || len <= 0) return smoothPoseAlongPath(path, len > 0 ? along / len : 1);
+      // behind the start: line up along the first leg's heading
+      const start = smoothPoseAlongPath(path, 0);
+      const b = (start.bearing * Math.PI) / 180;
+      const cosLat = Math.cos((start.point[1] * Math.PI) / 180);
+      const back = -along;
+      return {
+        point: [start.point[0] - (Math.sin(b) * back) / cosLat, start.point[1] - Math.cos(b) * back],
+        bearing: start.bearing,
+      };
     };
 
     const unitPose = (u: Unit, at?: number): { point: LngLat; bearing: number } => {
@@ -313,16 +344,10 @@ export default function MapView() {
             return orbitPose(arrive.point, arrive.bearing, t - end, r, period);
           }
           if (arrow.times && arrow.times.length === arrow.points.length) {
-            return timedPose(arrow.points, arrow.times, t);
+            return timedPose(arrow.points, arrow.times, t, air && !!u.landAtEnd);
           }
-          if (!air) {
-            const spaced = formationPose(u, arrow, path, t);
-            if (spaced) return spaced;
-          }
-          return smoothPoseAlongPath(
-            path,
-            air ? airProgress(u, arrow, path, t) : clamp01((t - arrow.appearAt) / arrow.duration),
-          );
+          if (!air) return formationPose(u, arrow, path, t);
+          return smoothPoseAlongPath(path, airProgress(u, arrow, path, t));
         }
       }
       if (air) {
@@ -369,13 +394,13 @@ export default function MapView() {
 
     /** Interceptor that kills strike x mid-flight, if any. */
     const interceptorFor = (
-      st: { scenario: { strikes: Strike[] } },
+      st: { scenario: Scenario },
       x: Strike,
     ): Strike | undefined =>
       st.scenario.strikes.find(
         (s2) =>
           s2.targetStrikeId === x.id &&
-          s2.appearAt > (x.launchAt ?? x.appearAt - 3) &&
+          s2.appearAt > strikeLaunchAt(st.scenario, x) &&
           s2.appearAt < x.appearAt,
       );
 
@@ -689,8 +714,12 @@ export default function MapView() {
           });
           continue;
         }
-        const flyer = st.scenario.units.find((u) => u.arrowId === a.id && u.type === 'air');
-        const prog = flyer ? airProgress(flyer, a, path, st.time) : clamp01((st.time - a.appearAt) / a.duration);
+        const mover = st.scenario.units.find((u) => u.arrowId === a.id);
+        const prog = !mover
+          ? clamp01((st.time - a.appearAt) / a.duration)
+          : mover.type === 'air'
+            ? airProgress(mover, a, path, st.time)
+            : groundProg(mover, a, path, st.time);
         if (prog <= 0) continue;
         const drawn = partialPath(path, Math.max(prog, 0.02));
         lineFeats.push({
@@ -769,6 +798,10 @@ export default function MapView() {
     const layoutOverlays = () => {
       const st = useStore.getState();
       const sel = st.selection;
+      const activeKeyframe = st.playing || st.cameraLock
+        ? [...st.scenario.keyframes].sort((a, b) => a.time - b.time).filter((k) => k.time <= st.time).pop()
+        : undefined;
+      const highlightedIds = new Set(activeKeyframe?.highlightUnitIds ?? []);
       const zs = zoomScale();
       const container = map.getContainer();
       container.style.setProperty('--zs', zs.toFixed(3));
@@ -784,6 +817,7 @@ export default function MapView() {
         const pt = map.project(tag.getLngLat());
         const dead = u.destroyedAt !== undefined && st.time >= u.destroyedAt;
         const selected = sel?.kind === 'unit' && sel.id === u.id;
+        const highlighted = highlightedIds.has(u.id);
         const hasFx = (st.scenario.effects ?? []).some(
           (fx) => fx.unitId === u.id && st.time >= fx.start && st.time <= fx.start + fx.duration,
         );
@@ -795,7 +829,7 @@ export default function MapView() {
           y: pt.y,
           // air, wrecks and each side stack separately
           group: `${u.factionId}|${u.type === 'air' ? 'air' : 'gnd'}|${dead ? 'dead' : 'live'}`,
-          prio: (selected ? 0 : 10) + (hasFx ? 0 : 1) + (dead ? 2 : 0),
+          prio: selected ? 0 : highlighted ? 1 : 10 + (hasFx ? 0 : 1) + (dead ? 2 : 0),
         });
       }
       entries.sort((a, b) => a.prio - b.prio);
@@ -918,6 +952,10 @@ export default function MapView() {
     const syncMarkers = () => {
       const st = useStore.getState();
       const sel = st.selection;
+      const activeKeyframe = st.playing || st.cameraLock
+        ? [...st.scenario.keyframes].sort((a, b) => a.time - b.time).filter((k) => k.time <= st.time).pop()
+        : undefined;
+      const highlightedIds = new Set(activeKeyframe?.highlightUnitIds ?? []);
       const seenU = new Set<string>();
       for (const u of st.scenario.units) {
         seenU.add(u.id);
@@ -1005,8 +1043,13 @@ export default function MapView() {
         const pose = unitPose(u);
         mk.setRotation(symbols ? 0 : pose.bearing);
         tagMk.setLngLat(pose.point);
+        const highlighted = highlightedIds.has(u.id);
         el.classList.toggle('destroyed', destroyed);
         tagEl.classList.toggle('destroyed', destroyed);
+        el.classList.toggle('highlighted', highlighted);
+        tagEl.classList.toggle('highlighted', highlighted);
+        el.style.setProperty('--hc', color);
+        tagEl.style.setProperty('--hc', color);
         el.classList.toggle('orbital', !!u.altitudeKm);
         tagEl.classList.toggle('orbital', !!u.altitudeKm);
         el.style.setProperty(
@@ -1058,7 +1101,7 @@ export default function MapView() {
           const ammoWrap = tagEl.querySelector<HTMLElement>('.mk-bars .ammo');
           if (ammoWrap) {
             // individual people don't get an ammo gauge; it reads as a glitch under their name
-            ammoWrap.hidden = ammo === null || u.type === 'infantry';
+            ammoWrap.hidden = ammo === null || u.type === 'infantry' || st.look === 'documentary';
             const b = ammoWrap.querySelector<HTMLElement>('b');
             if (b && ammo !== null) b.style.width = `${ammo.toFixed(0)}%`;
           }
@@ -1088,7 +1131,8 @@ export default function MapView() {
       const seenR = new Set<string>();
       for (const x of resolvedStrikes()) {
         if (x.targetStrikeId || weaponKind(x.name) === 'gun') continue; // no target marker for gunfire
-        const from = (x.launchAt ?? x.appearAt - 3) - 1.2;
+        if (st.look === 'documentary') continue; // no targeting graphics in the history-video presentation
+        const from = strikeLaunchAt(st.scenario, x) - 1.2;
         const to = x.appearAt + 1.4;
         const visible = st.time >= from && st.time <= to;
         if (!visible) continue;
@@ -1228,7 +1272,7 @@ export default function MapView() {
         });
         // camera shake from recent heavy detonations near the view center
         let shake = 0;
-        if (st.playing) {
+        if (st.playing && st.look !== 'documentary') {
           for (const x of st.scenario.strikes) {
             const age = st.time - x.appearAt;
             if (age < 0 || age > 0.7) continue;
@@ -1755,6 +1799,54 @@ export default function MapView() {
       hazeQuad.frustumCulled = false;
       hazeQuad.renderOrder = -9;
       scene.add(hazeQuad);
+      // procedural rain/snow/blowing dust, driven by timeline time so recordings are repeatable
+      const precipMat = new THREE.ShaderMaterial({
+        vertexShader: 'void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }',
+        fragmentShader: `
+          uniform float uTime; uniform float uKind; uniform float uAmount; uniform vec2 uWind;
+          uniform vec2 uRes; uniform vec3 uColor;
+          float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float layer(vec2 frag, float scale, float speed, float seed){
+            vec2 uv = frag / uRes.y * scale;
+            float fall = uKind < 1.5 ? speed : (uKind < 2.5 ? speed * 0.12 : speed * 0.05);
+            uv += vec2(-uWind.x * (uKind > 2.5 ? 0.9 : 0.25), fall) * uTime;
+            vec2 cell = floor(uv);
+            vec2 f = fract(uv) - 0.5;
+            float h = hash(cell + seed);
+            if (h > uAmount) return 0.0;
+            vec2 o = vec2(hash(cell + seed + 3.1), hash(cell + seed + 7.7)) - 0.5;
+            f -= o * 0.6;
+            if (uKind < 1.5) {
+              // rain: thin slanted streak
+              f.x += f.y * uWind.x * 0.25;
+              return smoothstep(0.07, 0.0, abs(f.x)) * smoothstep(0.5, 0.0, abs(f.y));
+            }
+            if (uKind < 2.5) return smoothstep(0.09, 0.02, length(f)); // snow flake
+            return smoothstep(0.35, 0.0, length(f * vec2(0.4, 1.4))) * 0.5; // dust wisp
+          }
+          void main(){
+            vec2 frag = gl_FragCoord.xy;
+            float a = layer(frag, 14.0, 9.0, 0.0) + layer(frag, 24.0, 12.0, 11.0) * 0.7 + layer(frag, 40.0, 16.0, 23.0) * 0.45;
+            float veil = uKind > 2.5 ? 0.22 * uAmount : 0.08 * uAmount;
+            gl_FragColor = vec4(uColor, clamp(a * (uKind < 1.5 ? 0.55 : 0.9) + veil, 0.0, 0.85));
+          }`,
+        uniforms: {
+          uTime: { value: 0 },
+          uKind: { value: 1 },
+          uAmount: { value: 0 },
+          uWind: { value: new THREE.Vector2(0, 0) },
+          uRes: { value: new THREE.Vector2(1, 1) },
+          uColor: { value: new THREE.Color(1, 1, 1) },
+        },
+        depthTest: false,
+        depthWrite: false,
+        transparent: true,
+      });
+      const precipQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), precipMat);
+      precipQuad.frustumCulled = false;
+      precipQuad.renderOrder = 50;
+      precipQuad.visible = false;
+      scene.add(precipQuad);
       const missileFx = new Map<
         string,
         { dart: THREE.Group; trail: THREE.Line; trailPts: number }
@@ -1865,15 +1957,36 @@ export default function MapView() {
               : { dark: 0, warm: 0 };
             // zoomed out, the geographic terminator layer shows day/night instead
             const localWeight = clamp01((map.getZoom() - 4) / 3);
-            light.warm *= localWeight;
-            const dark = light.dark * 0.52 * localWeight;
+            const clouds = clamp01(env?.cloudCover ?? 0);
+            light.warm *= localWeight * (1 - clouds * 0.85);
+            const dark = Math.min(1, light.dark + clouds * 0.25 * (1 - light.dark)) * 0.52 * localWeight;
             // multiply tint: neutral by day, warm at golden hour, deep blue at night
             const tint = new THREE.Color(1, 1, 1)
               .lerp(new THREE.Color(1, 0.86, 0.68), light.warm * (1 - light.dark))
               .lerp(new THREE.Color(0.28, 0.36, 0.58), dark);
+            // overcast skies desaturate toward flat grey
+            tint.lerp(new THREE.Color(0.8, 0.82, 0.85), clouds * 0.35 * localWeight);
             gradeMat.uniforms.uTint.value.copy(tint);
-            gradeQuad.visible = dark > 0.01 || light.warm > 0.01;
-            const haze = env?.haze ?? 0;
+            gradeQuad.visible = dark > 0.01 || light.warm > 0.01 || clouds > 0.01;
+            const precip = env?.precipitation ?? 'none';
+            const precipAmt = precip === 'none' ? 0 : clamp01(env?.precipIntensity ?? 0.5);
+            const haze = Math.min(1, (env?.haze ?? 0) + precipAmt * (precip === 'dust' ? 0.6 : precip === 'snow' ? 0.35 : 0.2));
+            {
+              const kind = precip === 'rain' ? 1 : precip === 'snow' ? 2 : 3;
+              const zoomFade = clamp01((map.getZoom() - 8) / 3);
+              precipQuad.visible = precipAmt > 0.01 && zoomFade > 0;
+              const cv = map.getCanvas();
+              precipMat.uniforms.uTime.value = st.time;
+              precipMat.uniforms.uKind.value = kind;
+              precipMat.uniforms.uAmount.value = precipAmt * zoomFade * (kind === 1 ? 0.9 : 0.6);
+              const wv = windVector(env);
+              precipMat.uniforms.uWind.value.set(wv.x, wv.y);
+              precipMat.uniforms.uRes.value.set(cv.width, cv.height);
+              // pale basemap by day: rain reads as darker blue-grey streaks, lightening at night
+              if (kind === 3) precipMat.uniforms.uColor.value.setRGB(0.62, 0.5, 0.34);
+              else if (kind === 2) precipMat.uniforms.uColor.value.setRGB(0.98, 0.99, 1);
+              else precipMat.uniforms.uColor.value.setRGB(0.38 + dark * 0.4, 0.44 + dark * 0.38, 0.54 + dark * 0.32);
+            }
             hazeMat.uniforms.uHaze.value.set(0.82 - dark * 0.5, 0.76 - dark * 0.45, 0.64 - dark * 0.3, haze * 0.32);
             hazeQuad.visible = haze > 0.01;
             // flames glow additively once it's dark enough to read
@@ -1904,7 +2017,7 @@ export default function MapView() {
               ? st.scenario.units.find((u) => u.id === x.fromUnitId)
               : undefined;
             if (!from) return null;
-            const src = unitPose(from, x.launchAt ?? x.appearAt - 3).point;
+            const src = unitPose(from, strikeLaunchAt(st.scenario, x)).point;
             const kind = weaponKind(x.name);
             // aircraft release from altitude
             // aircraft icons sit on the ground plane, so release just above them
@@ -1933,7 +2046,7 @@ export default function MapView() {
                   : lofted
                     ? Math.min(dist * (x.targetStrikeId ? 0.18 : 0.22), apexCap)
                     : dist * 0.12;
-            return { a, b, apex, kind, launchAt: x.launchAt ?? x.appearAt - 3 };
+            return { a, b, apex, kind, launchAt: strikeLaunchAt(st.scenario, x) };
           };
           const arcPos = (
             arc: NonNullable<ReturnType<typeof arcFor>>,
@@ -1962,7 +2075,7 @@ export default function MapView() {
             if (f <= 0 || f >= 1) continue;
             const mAt = maplibregl.MercatorCoordinate.fromLngLat({ lng: x.lng, lat: x.lat }).meterInMercatorCoordinateUnits() * fxScale;
             const kindScale = arc.kind === 'gun' ? Math.min(1, x.size * 3) : 1;
-            particles.projectile(x.id, arc.kind, (ff) => arcPos(arc, ff), f, mAt * kindScale);
+            particles.projectile(x.id, arc.kind, (ff) => arcPos(arc, ff), f, mAt * kindScale, x.name);
             if (arc.kind === 'gun') continue; // tracers are particles only
             flying.add(x.id);
             let fx = missileFx.get(x.id);
@@ -2017,7 +2130,10 @@ export default function MapView() {
             if (!arc) continue;
             const f = (st.time - arc.launchAt) / (x.appearAt - arc.launchAt);
             const after = st.time - x.appearAt;
-            if (f <= 0 || after > TRAIL_LINGER) continue;
+            const gun = arc.kind === 'gun';
+            // bullets leave no glowing contrail — the track fades almost at once
+            const linger = gun ? 1.2 : TRAIL_LINGER;
+            if (f <= 0 || after > linger) continue;
             const killer = interceptorFor(st, x);
             const cut =
               killer && st.time >= killer.appearAt
@@ -2025,10 +2141,10 @@ export default function MapView() {
                 : 1;
             const shooter = st.scenario.units.find((u) => u.id === x.fromUnitId);
             const c = new THREE.Color(shooter ? factionColor(shooter.factionId) : '#555555');
-            const base = arc.kind === 'gun' ? 0.45 : 0.6;
+            const base = gun ? 0.12 : 0.6;
             // hold full strength a few seconds after impact, then fade out
-            const hold = 3;
-            const alpha = base * Math.min(1, Math.max(0, 1 - (after - hold) / (TRAIL_LINGER - hold)));
+            const hold = gun ? 0 : 3;
+            const alpha = base * Math.min(1, Math.max(0, 1 - (after - hold) / (linger - hold)));
             const mTrail =
               maplibregl.MercatorCoordinate.fromLngLat({ lng: x.lng, lat: x.lat }).meterInMercatorCoordinateUnits() *
               fxScale *
@@ -2056,9 +2172,14 @@ export default function MapView() {
             const from = x.fromUnitId
               ? st.scenario.units.find((u) => u.id === x.fromUnitId)
               : undefined;
-            if (from && from.type !== 'air' && x.launchAt !== undefined && weaponKind(x.name) !== 'gun') {
+            if (from && from.type !== 'air') {
               const lp = unitPose(from).point;
-              particles.muzzle(x.id, merc(lp[0], lp[1]), m, st.time - x.launchAt);
+              const launchAge = st.time - strikeLaunchAt(st.scenario, x);
+              if (weaponKind(x.name) === 'gun') {
+                particles.gunFlash(x.id, merc(lp[0], lp[1]), m, launchAge, /suppress|silenc|subsonic/i.test(x.name));
+              } else {
+                particles.muzzle(x.id, merc(lp[0], lp[1]), m, launchAge);
+              }
             }
             if (interceptorFor(st, x)) continue; // killed mid-air, no ground blast
             const age = st.time - x.appearAt;
@@ -2117,7 +2238,7 @@ export default function MapView() {
             const hurt = (st.scenario.effects ?? []).find(
               (fx) => fx.unitId === u.id && fx.kind === 'wounded' && st.time >= fx.start && st.time <= fx.start + fx.duration,
             );
-            if (hurt) particles.smolder(u.id, merc(pose.point[0], pose.point[1]), m, st.time - hurt.start, st.time);
+            if (hurt && u.type !== 'infantry') particles.smolder(u.id, merc(pose.point[0], pose.point[1]), m, st.time - hurt.start, st.time);
             if (u.type === 'air' && u.landAtEnd && u.arrowId) {
               const ar = st.scenario.arrows.find((x) => x.id === u.arrowId);
               const end = ar?.times?.[ar.times.length - 1] ?? (ar ? ar.appearAt + ar.duration : 0);
@@ -2136,10 +2257,9 @@ export default function MapView() {
             if (!arrow) continue;
             const prog = (st.time - arrow.appearAt) / arrow.duration;
             if (prog <= 0 || prog >= 1) continue;
-            const path = arrowPath(arrow);
             const trail = [];
             for (let k = 1; k <= 7; k++) {
-              const pt = pointAlongPath(path, clamp01((st.time - k * 0.35 - arrow.appearAt) / arrow.duration)).point;
+              const pt = unitPose(u, Math.max(arrow.appearAt, st.time - k * 0.35)).point;
               trail.push(merc(pt[0], pt[1]));
             }
             // dust stays subtle: only mildly exaggerated

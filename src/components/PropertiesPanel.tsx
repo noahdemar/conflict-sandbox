@@ -1,7 +1,8 @@
 import { Trash2 } from 'lucide-react';
+import { strikeLaunchAt } from '../realism';
 import { useStore } from '../store';
 import { UNIT_TYPE_LABELS } from '../natoSymbols';
-import type { SensorView, StatusKind, UnitType } from '../types';
+import type { SensorView, ShotOverlay, StatusKind, UnitType } from '../types';
 import { STATUS_META } from '../statusEffects';
 import { FACILITY_META, type FacilityKind } from '../facilities';
 
@@ -342,7 +343,7 @@ export default function PropertiesPanel() {
           </select>
         </label>
         {x.fromUnitId &&
-          numField('Launch at (s)', x.launchAt ?? x.appearAt - 3, (v) =>
+          numField('Launch at (s)', strikeLaunchAt(useStore.getState().scenario, x), (v) =>
             updateStrike(x.id, { launchAt: Math.max(0, v) }),
             0,
             0.5,
@@ -409,6 +410,44 @@ export default function PropertiesPanel() {
             <option value="thermal">Thermal (white-hot)</option>
           </select>
         </label>
+        <label className="field">
+          <span>Overlay</span>
+          <select
+            value={k.overlay ?? ''}
+            onChange={(e) =>
+              updateKeyframe(k.id, { overlay: (e.target.value || undefined) as ShotOverlay | undefined })
+            }
+          >
+            <option value="">None</option>
+            <option value="orbat">Order of battle</option>
+          </select>
+        </label>
+        {k.overlay === 'orbat' && (
+          <div className="field">
+            <span>Order of battle factions</span>
+            <div className="key-unit-list">
+              {scenario.factions.map((f) => {
+                const checked = k.overlayFactionIds?.includes(f.id) ?? false;
+                return (
+                  <label key={f.id}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        const ids = new Set(k.overlayFactionIds ?? []);
+                        if (checked) ids.delete(f.id);
+                        else ids.add(f.id);
+                        updateKeyframe(k.id, { overlayFactionIds: ids.size ? [...ids] : undefined });
+                      }}
+                    />
+                    <i style={{ background: f.color }} />
+                    {f.name}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {numField('Zoom', k.zoom, (v) =>
           updateKeyframe(k.id, { zoom: Math.min(20, Math.max(0, v)) }),
           0,
@@ -424,6 +463,39 @@ export default function PropertiesPanel() {
           -180,
           15,
         )}
+        <div className="field">
+          <span>Highlight units</span>
+          <div className="key-unit-list">
+            {scenario.factions.map((f) => {
+              const units = scenario.units.filter((u) => u.factionId === f.id);
+              if (!units.length) return null;
+              return (
+                <div className="key-unit-group" key={f.id}>
+                  <b>{f.name}</b>
+                  {units.map((u) => {
+                    const checked = k.highlightUnitIds?.includes(u.id) ?? false;
+                    return (
+                      <label key={u.id}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const ids = new Set(k.highlightUnitIds ?? []);
+                            if (checked) ids.delete(u.id);
+                            else ids.add(u.id);
+                            updateKeyframe(k.id, { highlightUnitIds: ids.size ? [...ids] : undefined });
+                          }}
+                        />
+                        <i style={{ background: scenario.factions.find((f) => f.id === u.factionId)?.color ?? '#888' }} />
+                        {u.name || UNIT_TYPE_LABELS[u.type]}
+                      </label>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
         <label className="field">
           <span>Follow unit</span>
           <select

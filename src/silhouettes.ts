@@ -7,6 +7,8 @@ import type { Unit, UnitType } from './types';
  */
 export type SilhouetteKey =
   | 'jet'
+  | 'f15'
+  | 'f22'
   | 'gunship'
   | 'heli'
   | 'drone'
@@ -30,6 +32,25 @@ const SHAPES: Record<SilhouetteKey, { body: string; detail: string; scale: numbe
     body: 'M50 3 L54 22 L56 40 L93 60 L93 68 L57 62 L56 78 L69 88 L69 94 L50 90 L31 94 L31 88 L44 78 L43 62 L7 68 L7 60 L44 40 L46 22 Z',
     detail:
       '<path d="M50 12 Q53 18 52.5 30 L47.5 30 Q47 18 50 12 Z" fill="#2c3a44"/><path d="M47 44 L53 44 L53 74 L47 74 Z" opacity=".25"/><path d="M20 62 L44 52 L44 55 L20 65 Z M80 62 L56 52 L56 55 L80 65 Z" opacity=".2"/>',
+  },
+  f15: {
+    scale: 1.18,
+    body: 'M50 2 Q54 8 55 22 L56 35 L64 42 L93 61 L88 72 L61 65 L61 78 L73 88 L67 97 L57 90 L53 98 L47 98 L43 90 L33 97 L27 88 L39 78 L39 65 L12 72 L7 61 L36 42 L44 35 L45 22 Q46 8 50 2 Z',
+    detail:
+      '<path d="M47 10 Q50 6 53 10 L54 27 Q50 31 46 27 Z" fill="#2c3a44"/>' +
+      '<path d="M38 39 L47 34 L47 77 L40 80 Z M62 39 L53 34 L53 77 L60 80 Z" opacity=".32"/>' +
+      '<ellipse cx="44" cy="87" rx="4" ry="8"/><ellipse cx="56" cy="87" rx="4" ry="8"/>' +
+      '<path d="M34 75 L43 67 L42 91 L32 94 Z M66 75 L57 67 L58 91 L68 94 Z" opacity=".42"/>' +
+      '<path d="M15 64 L39 51 L39 55 L17 68 Z M85 64 L61 51 L61 55 L83 68 Z" opacity=".18"/>',
+  },
+  f22: {
+    scale: 1.2,
+    body: 'M50 2 L55 14 L57 36 L66 43 L66 50 L96 67 L96 77 L66 72 L58 79 L72 90 L67 97 L56 89 L53 98 L47 98 L44 89 L33 97 L28 90 L42 79 L34 72 L4 77 L4 67 L34 50 L34 43 L43 36 L45 14 Z',
+    detail:
+      '<path d="M47 10 L50 6 L53 10 L54 29 L46 29 Z" fill="#2c3a44"/>' +
+      '<path d="M35 44 L46 35 L46 76 L38 72 Z M65 44 L54 35 L54 76 L62 72 Z" opacity=".24"/>' +
+      '<path d="M39 73 L46 69 L45 91 L32 94 Z M61 73 L54 69 L55 91 L68 94 Z" opacity=".38"/>' +
+      '<path d="M44 84 L48 84 L48 97 L44 94 Z M52 84 L56 84 L56 94 L52 97 Z" opacity=".55"/>',
   },
   gunship: {
     scale: 1.3,
@@ -150,7 +171,9 @@ export function silhouetteFor(u: Unit, rosterName?: string): SilhouetteKey {
   const n = `${u.name} ${rosterName ?? ''}`.toLowerCase();
   if (u.type === 'air') {
     if (/satellite|sat\b|satcom/.test(n)) return 'satellite';
-    if (/flying ?wing|stealth uav/.test(n)) return 'flyingwing';
+    if (/f-?15|strike eagle/.test(n)) return 'f15';
+    if (/f-?22|raptor/.test(n)) return 'f22';
+    if (/rq-?170|sentinel|flying ?wing|stealth uav/.test(n)) return 'flyingwing';
     if (/mh-?47|ch-?47|chinook/.test(n)) return 'heli';
     if (/ac-?130|c-?130|gunship|transport|awacs/.test(n)) return 'gunship';
     if (/ah-?64|apache|heli|mi-?\d|ka-?52|black ?hawk|[um]h-?60/.test(n)) return 'heli';

@@ -4,6 +4,7 @@ import ImportDialog from './ImportDialog';
 import { DEMOS, type DemoId } from '../demos';
 import {
   FileText,
+  Film,
   Share2,
   Shapes,
   Box,
@@ -55,6 +56,12 @@ export default function TopBar() {
         onChange={(e) => setScenarioName(e.target.value)}
         title="Scenario name"
       />
+      {look === 'documentary' && (
+        <span className="doc-mode-badge">
+          <Film size={13} />
+          Historical cut
+        </span>
+      )}
       <div className="topbar-actions">
         <button
           className="top-btn"
@@ -65,12 +72,12 @@ export default function TopBar() {
           {iconStyle === 'symbols' ? 'Symbols' : 'Icons'}
         </button>
         <button
-          className={`top-btn ${look === 'briefing' ? 'active' : ''}`}
-          onClick={() => setLook(look === 'briefing' ? 'explainer' : 'briefing')}
-          title="Switch between explainer and military briefing presentation"
+          className="top-btn"
+          onClick={() => setLook(look === 'documentary' ? 'explainer' : look === 'explainer' ? 'briefing' : 'documentary')}
+          title="Presentation style: documentary, explainer or military briefing"
         >
           <FileText size={14} />
-          {look === 'briefing' ? 'Briefing' : 'Explainer'}
+          {look === 'documentary' ? 'Documentary' : look === 'briefing' ? 'Briefing' : 'Explainer'}
         </button>
         <button
           className={`top-btn ${use3d ? 'active' : ''}`}

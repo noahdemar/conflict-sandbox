@@ -371,7 +371,7 @@
         },
         "launchAt": {
           "type": "number",
-          "description": "Launch time (s); defaults to appearAt - 3"
+          "description": "Launch time (s); defaults to a flight time derived from weapon type and distance"
         },
         "targetStrikeId": {
           "type": "string",
@@ -431,6 +431,13 @@
           "type": "string",
           "description": "Slide-style caption shown while this keyframe is active"
         },
+        "highlightUnitIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Units emphasized on the map and in the caption while this keyframe is active"
+        },
         "followUnitId": {
           "type": "string",
           "description": "Camera tracks this unit while the keyframe is active"
@@ -454,6 +461,17 @@
         "sensor": {
           "$ref": "#/definitions/SensorView",
           "description": "Sensor view applied while this keyframe is active"
+        },
+        "overlay": {
+          "$ref": "#/definitions/ShotOverlay",
+          "description": "On-screen graphic flashed up while this keyframe is active"
+        },
+        "overlayFactionIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Factions included when the order-of-battle overlay is active"
         },
         "media": {
           "type": "object",
@@ -507,6 +525,11 @@
         "nvg",
         "thermal"
       ]
+    },
+    "ShotOverlay": {
+      "type": "string",
+      "const": "orbat",
+      "description": "On-screen graphics a keyframe can flash up over the map."
     },
     "StatusEffect": {
       "type": "object",
@@ -603,6 +626,24 @@
         "haze": {
           "type": "number",
           "description": "Dust/haze density 0..1"
+        },
+        "cloudCover": {
+          "type": "number",
+          "description": "Cloud cover 0..1: flattens and greys the light, mutes golden hour"
+        },
+        "precipitation": {
+          "type": "string",
+          "enum": [
+            "none",
+            "rain",
+            "snow",
+            "dust"
+          ],
+          "description": "Falling weather drawn over the scene"
+        },
+        "precipIntensity": {
+          "type": "number",
+          "description": "Precipitation strength 0..1 (default 0.5)"
         }
       },
       "required": [
@@ -681,6 +722,17 @@
         "narrationPack": {
           "type": "string",
           "description": "Folder of pre-recorded caption narration (with manifest.json), relative to the site base"
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "One-line subtitle for the opening title card, e.g. \"Deir ez-Zor, Syria\""
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "References shown on the closing card, e.g. \"US Department of Defense briefing, 13 February 2018\""
         }
       },
       "required": [

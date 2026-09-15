@@ -1,4 +1,5 @@
 import type { LngLat } from './geo';
+import { strikeLaunchAt } from './realism';
 import { expandStrikes } from './particles';
 import type { Scenario, Strike, Unit } from './types';
 
@@ -50,7 +51,7 @@ export function unitAmmo(s: Scenario, u: Unit, t: number): number | null {
   if (!rounds.length && !dry) return null;
   if (dry && t >= dry.start) return 0;
   if (!rounds.length) return 100;
-  const fired = rounds.filter((x) => (x.launchAt ?? x.appearAt - 3) <= t).length;
+  const fired = rounds.filter((x) => strikeLaunchAt(s, x) <= t).length;
   // units that run dry end empty; others finish with a reserve
   const floor = dry ? 0 : 25;
   return 100 - ((100 - floor) * fired) / rounds.length;

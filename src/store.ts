@@ -78,13 +78,15 @@ function loadPrefs(): Prefs {
   return { use3d: true, narration: { ...DEFAULT_NARRATION }, v: 2 };
 }
 
-export type Look = 'explainer' | 'briefing';
+/** documentary: history-video presentation; explainer: bold map graphics; briefing: military briefing */
+export type Look = 'documentary' | 'explainer' | 'briefing';
 const LOOK_KEY = 'conflict-sandbox-look';
 const loadLook = (): Look => {
   try {
-    return localStorage.getItem(LOOK_KEY) === 'briefing' ? 'briefing' : 'explainer';
+    const v = localStorage.getItem(LOOK_KEY);
+    return v === 'briefing' || v === 'explainer' ? v : 'documentary';
   } catch {
-    return 'explainer';
+    return 'documentary';
   }
 };
 
@@ -202,6 +204,8 @@ function loadScenario(): Scenario {
       environment: parsed.environment,
       duration: parsed.duration,
       narrationPack: parsed.narrationPack,
+      subtitle: parsed.subtitle,
+      sources: parsed.sources,
     };
   } catch {
     return defaultScenario();
@@ -914,6 +918,8 @@ export const useStore = create<StoreState>((set, get) => {
               ? raw.duration
               : parsed.duration,
           narrationPack: parsed.narrationPack,
+          subtitle: parsed.subtitle,
+          sources: parsed.sources,
         };
         // merge bundled roster entries (by id) into the local library
         const lib = [...get().unitLibrary];

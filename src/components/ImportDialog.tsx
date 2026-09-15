@@ -2,12 +2,15 @@ import { useRef, useState } from 'react';
 import { Check, Copy, FileUp, X } from 'lucide-react';
 import { useStore } from '../store';
 import { llmPrompt, validateScenarioJson } from '../scenarioValidation';
+import { realismWarnings } from '../realism';
+import type { Scenario } from '../types';
 
 /** Paste or pick scenario JSON, validate it against the schema, and load it. */
 export default function ImportDialog({ onClose }: { onClose: () => void }) {
   const importScenario = useStore((s) => s.importScenario);
   const [text, setText] = useState('');
   const [errors, setErrors] = useState<string[]>([]);
+  const [warnings, setWarnings] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<'prompt' | 'errors' | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -20,6 +23,15 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
     if (!result.ok) {
       setErrors(result.errors);
       return;
+    }
+    // plausibility issues don't block loading, but are shown once first
+    if (warnings === null) {
+      const doc = JSON.parse(json) as { scenario?: Scenario } & Scenario;
+      const found = realismWarnings(doc.scenario ?? doc);
+      if (found.length) {
+        setWarnings(found);
+        return;
+      }
     }
     if (importScenario(json)) onClose();
     else setErrors(['The document validated but could not be loaded (it needs at least one faction).']);
@@ -72,6 +84,7 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
           onChange={(e) => {
             setText(e.target.value);
             setErrors([]);
+            setWarnings(null);
           }}
         />
 
@@ -92,6 +105,23 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        {errors.length === 0 && warnings && warnings.length > 0 && (
+          <div className="import-errors" role="status">
+            <div className="import-errors-head">
+              <strong>{warnings.length} realism issue{warnings.length === 1 ? '' : 's'}</strong>
+              <button className="top-btn" onClick={() => copy('errors')}>
+                {copied === 'errors' ? <Check size={14} /> : <Copy size={14} />}
+                {copied === 'errors' ? 'Copied' : 'Copy for LLM'}
+              </button>
+            </div>
+            <ul>
+              {warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="import-actions">
           <button className="top-btn" onClick={() => fileRef.current?.click()}>
             <FileUp size={14} />
@@ -107,12 +137,13 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
               e.target.value = '';
               if (f) f.text().then((t) => {
                 setText(t);
+                setWarnings(null);
                 void load(t);
               });
             }}
           />
           <button className="top-btn active" disabled={!text.trim() || busy} onClick={() => load(text)}>
-            {busy ? 'Validating…' : 'Validate & load'}
+            {busy ? 'Validating…' : warnings?.length && !errors.length ? 'Load anyway' : 'Validate & load'}
           </button>
         </div>
       </div>

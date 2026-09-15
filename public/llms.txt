@@ -28,7 +28,8 @@ Use the exported file wrapper (recommended):
 
 A bare Scenario object is also accepted.
 
-Scenario keys: name, factions, units, arrows, territories, labels, strikes,
+Scenario keys: name, subtitle (place and date line for the opening title
+card), sources (list of references for the closing card), factions, units, arrows, territories, labels, strikes,
 keyframes (all required arrays except name), plus optional effects,
 environment, duration.
 
@@ -44,6 +45,12 @@ environment, duration.
   must point at existing ids.
 - Keep each camera shot (gap between keyframes) at least as long as its caption
   takes to read aloud: roughly 1 second per 2.5 words, plus half a second.
+- Captions are read aloud by text-to-speech, so write them to be spoken:
+  no dotted acronyms ("US", not "U.S."; "AM", not "a.m."), no bracketed
+  asides, no abbreviations like "approx.", "e.g.", "vs.", "km" (spell them
+  out), no "~", "/" or "&". Prefer plain words over symbols and write
+  numbers the way you'd say them. The app normalizes common cases, but
+  clean text sounds best.
 - Be factual for real events and mark anything invented or approximate in the
   caption or name, e.g. "(approx.)", "Illustrative:", "Hypothetical:".
 
@@ -74,7 +81,8 @@ Optional:
   in 3D at that altitude above its ground track
 
 Aircraft without landAtEnd circle over the end of their route. Ground vehicles
-sharing one route queue and halt in line automatically.
+sharing one route queue, drive in column and halt in line automatically; they
+pull away and brake smoothly and slow down on uphill stretches.
 
 ## Arrows (routes)
 
@@ -99,12 +107,21 @@ The visual is chosen from `name`:
 - shells: "howitzer", "105mm", "mortar", "fire mission" → arcing round, dirt
 - anything else → missile/rocket with motor glow and smoke trail
 
-Optional: fromUnitId + launchAt (fly from that unit), targetUnitId (impact
+Optional: fromUnitId + launchAt (fly from that unit; without launchAt the
+flight time is derived from weapon type and distance), targetUnitId (impact
 follows that unit's position at impact time — use this for moving targets),
 salvo + spreadM (multiple rounds), targetStrikeId (interceptor).
 
 Pair a destroyed unit's destroyedAt with the impact time of the strike that
 hits it.
+
+Realism: keep shooters within real weapon reach (e.g. Grad about 20 km,
+122mm/155mm howitzers 15 to 30 km, GMLRS about 85 km, Hellfire about 11 km,
+30mm cannon about 4 km, small arms under 1 km). Give munitions flight time
+that grows with distance, and don't fire from units before they appear or
+after they are destroyed. Timelines may compress time, but keep ground moves
+within a couple hundred times real vehicle speed. The importer lists any
+violations.
 
 ## Status effects (`effects`)
 
@@ -139,12 +156,15 @@ base | hq | bridge | hospital | town.
 ## Environment (optional)
 
 { "startHour": 21.5, "endHour": 5.9, "date": "2018-02-07", "utcOffset": 3,
-  "windDirDeg": 65, "windKph": 14, "haze": 0.15 }
+  "windDirDeg": 65, "windKph": 14, "haze": 0.15,
+  "cloudCover": 0.3, "precipitation": "none", "precipIntensity": 0.5 }
 
 Lighting follows the real sun for that date, time and place (night, dawn,
 twilight bands at world scale). endHour may be less than startHour to cross
 midnight. hourKeys: [[seconds, localHours], …] makes the clock jump (hours may
-exceed 24, e.g. a cut to the next morning). Wind steers smoke.
+exceed 24, e.g. a cut to the next morning). Wind steers smoke, rain, snow and
+dust. cloudCover (0..1) flattens the light; precipitation is none | rain |
+snow | dust. Use the real weather for real events when known.
 
 ## Loading
 

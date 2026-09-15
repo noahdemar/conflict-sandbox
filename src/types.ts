@@ -86,7 +86,7 @@ export interface Strike {
   appearAt: number;
   /** Unit the missile launches from; ballistic arc is rendered in flight */
   fromUnitId?: string;
-  /** Launch time (s); defaults to appearAt - 3 */
+  /** Launch time (s); defaults to a flight time derived from weapon type and distance */
   launchAt?: number;
   /** Target strike id for interceptor strikes */
   targetStrikeId?: string;
@@ -183,6 +183,8 @@ export interface Keyframe {
   bearing: number;
   /** Slide-style caption shown while this keyframe is active */
   caption: string;
+  /** Units emphasized on the map and in the caption while this keyframe is active */
+  highlightUnitIds?: string[];
   /** Camera tracks this unit while the keyframe is active */
   followUnitId?: string;
   /** 'track' keeps unit centered; 'chase' also turns camera to unit heading */
@@ -193,6 +195,10 @@ export interface Keyframe {
   narrate?: boolean;
   /** Sensor view applied while this keyframe is active */
   sensor?: SensorView;
+  /** On-screen graphic flashed up while this keyframe is active */
+  overlay?: ShotOverlay;
+  /** Factions included when the order-of-battle overlay is active */
+  overlayFactionIds?: string[];
   /** Full-screen image card shown while this keyframe is active */
   media?: {
     src: string;
@@ -206,6 +212,9 @@ export interface Keyframe {
 }
 
 export type SensorView = 'normal' | 'nvg' | 'thermal';
+
+/** On-screen graphics a keyframe can flash up over the map. */
+export type ShotOverlay = 'orbat';
 
 export type StatusKind =
   | 'radio'
@@ -253,6 +262,12 @@ export interface Environment {
   windKph: number;
   /** Dust/haze density 0..1 */
   haze: number;
+  /** Cloud cover 0..1: flattens and greys the light, mutes golden hour */
+  cloudCover?: number;
+  /** Falling weather drawn over the scene */
+  precipitation?: 'none' | 'rain' | 'snow' | 'dust';
+  /** Precipitation strength 0..1 (default 0.5) */
+  precipIntensity?: number;
 }
 
 export interface Scenario {
@@ -272,4 +287,8 @@ export interface Scenario {
   duration?: number;
   /** Folder of pre-recorded caption narration (with manifest.json), relative to the site base */
   narrationPack?: string;
+  /** One-line subtitle for the opening title card, e.g. "Deir ez-Zor, Syria" */
+  subtitle?: string;
+  /** References shown on the closing card, e.g. "US Department of Defense briefing, 13 February 2018" */
+  sources?: string[];
 }

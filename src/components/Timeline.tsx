@@ -7,18 +7,8 @@ import {
   Pause,
   Play,
   SkipBack,
-  Volume2,
-  VolumeX,
 } from 'lucide-react';
 import { useStore } from '../store';
-import {
-  KOKORO_VOICES,
-  narrate,
-  onKokoroStatus,
-  type KokoroProgress,
-  preloadKokoro,
-  webSpeechVoices,
-} from '../narration';
 import { startRecording, stopRecording } from '../recorder';
 import TimelineTracks from './TimelineTracks';
 
@@ -34,19 +24,12 @@ export default function Timeline() {
   const goToKeyframe = useStore((s) => s.goToKeyframe);
   const setCameraLock = useStore((s) => s.setCameraLock);
   const selection = useStore((s) => s.selection);
-  const narration = useStore((s) => s.narration);
-  const setNarration = useStore((s) => s.setNarration);
   const speed = useStore((s) => s.speed);
   const setSpeed = useStore((s) => s.setSpeed);
   const recording = useStore((s) => s.recording);
   const setRecording = useStore((s) => s.setRecording);
   const raf = useRef<number>(0);
   const lastTs = useRef<number>(0);
-  const [voices, setVoices] = useState(webSpeechVoices());
-  const [kokoro, setKokoro] = useState<KokoroProgress | null>(null);
-  // keep a short "ready" confirmation after a download completes
-  const [readyFlash, setReadyFlash] = useState(false);
-  const sawLoading = useRef(false);
   const [preparing, setPreparing] = useState(false);
   const [tracksOpen, setTracksOpen] = useState(false);
   const transcriptOpen = useStore((s) => s.transcriptOpen);
@@ -83,27 +66,6 @@ export default function Timeline() {
     startRecording(canvas, scenario.name);
     setPlaying(true);
   };
-
-  useEffect(() => {
-    let flashTimer = 0;
-    const offKokoro = onKokoroStatus((p) => {
-      setKokoro(p);
-      if (p.state === 'loading') sawLoading.current = true;
-      if (p.state === 'ready' && sawLoading.current) {
-        sawLoading.current = false;
-        setReadyFlash(true);
-        window.clearTimeout(flashTimer);
-        flashTimer = window.setTimeout(() => setReadyFlash(false), 2500);
-      }
-    });
-    if (!('speechSynthesis' in window)) return offKokoro;
-    const refresh = () => setVoices(webSpeechVoices());
-    window.speechSynthesis.addEventListener('voiceschanged', refresh);
-    return () => {
-      offKokoro();
-      window.speechSynthesis.removeEventListener('voiceschanged', refresh);
-    };
-  }, []);
 
   useEffect(() => {
     if (!playing) return;
@@ -264,79 +226,6 @@ export default function Timeline() {
         />
         s
       </label>
-      <div className="tl-narration">
-        <button
-          className={`icon-btn ${narration.enabled ? 'narr-on' : ''}`}
-          title={narration.enabled ? 'Narration on' : 'Narration off'}
-          onClick={() => setNarration({ enabled: !narration.enabled })}
-        >
-          {narration.enabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-        </button>
-        {narration.enabled && (
-          <>
-            <select
-              className="tl-engine"
-              value={narration.engine}
-              title="Voice engine"
-              onChange={(e) => {
-                const engine = e.target.value as 'webspeech' | 'kokoro';
-                setNarration({ engine, voice: null });
-                if (engine === 'kokoro') preloadKokoro();
-              }}
-            >
-              <option value="webspeech">Browser voice</option>
-              <option value="kokoro">Local model (Kokoro)</option>
-            </select>
-            <select
-              className="tl-voice"
-              value={narration.voice ?? ''}
-              title="Voice"
-              onChange={(e) => setNarration({ voice: e.target.value || null })}
-            >
-              <option value="">Most natural available</option>
-              {(narration.engine === 'kokoro' ? KOKORO_VOICES : voices).map(
-                (v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.label}
-                  </option>
-                ),
-              )}
-            </select>
-            <button
-              className="icon-btn"
-              title="Preview voice"
-              onClick={() =>
-                narrate(
-                  'Armored columns advance toward the capital.',
-                  narration.engine,
-                  narration.voice,
-                  narration.rate,
-                  true,
-                )
-              }
-            >
-              <Play size={12} />
-            </button>
-          </>
-        )}
-      </div>
-      {kokoro && narration.engine === 'kokoro' && (kokoro.state === 'loading' || kokoro.state === 'error' || readyFlash) && (
-        <div className={`tl-kokoro-status ${kokoro.state}`} role="status">
-          <div className="kokoro-line">
-            <span>{kokoro.state === 'error' ? 'Voice model failed to load — using browser voice' : kokoro.state === 'ready' ? 'Voice model ready' : kokoro.message}</span>
-            {kokoro.pct !== null && (
-              <span className="kokoro-num">
-                {kokoro.pct.toFixed(0)}% · {kokoro.loadedMB.toFixed(0)} / {kokoro.totalMB.toFixed(0)} MB
-              </span>
-            )}
-          </div>
-          {kokoro.state === 'loading' && (
-            <div className="kokoro-bar">
-              <i style={{ width: `${kokoro.pct ?? 0}%` }} className={kokoro.pct === null ? 'indeterminate' : ''} />
-            </div>
-          )}
-        </div>
-      )}
     </div>
     </>
   );

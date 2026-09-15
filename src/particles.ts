@@ -156,12 +156,16 @@ export function expandStrikes(strikes: Strike[]): Strike[] {
       continue;
     }
     const spread = x.spreadM ?? 120;
+    // small-arms salvos are bursts: aimed pairs/triples ~0.2s apart,
+    // automatic fire ~0.09s; heavy salvos keep the slow ripple
+    const gun = weaponKind(x.name) === 'gun';
+    const gap = !gun ? 0.32 : n <= 4 ? 0.2 : 0.09;
     for (let i = 0; i < n; i++) {
       const ang = rnd(x.id, i * 7 + 1) * Math.PI * 2;
       const rad = i === 0 ? 0 : Math.sqrt(rnd(x.id, i * 7 + 2)) * spread;
       const dLat = (rad * Math.sin(ang)) / 111320;
       const dLng = (rad * Math.cos(ang)) / (111320 * Math.cos((x.lat * Math.PI) / 180));
-      const dt = i * 0.32 + rnd(x.id, i * 7 + 3) * 0.15;
+      const dt = i * gap + rnd(x.id, i * 7 + 3) * gap * 0.45;
       out.push({
         ...x,
         id: i === 0 ? x.id : `${x.id}#${i}`,
@@ -383,33 +387,52 @@ export class ParticleSystem {
 
   /** Cannon round strike: kicked-up dust, a spray of ricochet sparks. */
   private gunImpact(id: string, p: P3, S: number, age: number, size: number) {
-    if (age < 0.08) this.fire.push(p.x, p.y, p.z + 6 * S, 60 * S, 1, 0.85, 0.5, 1 - age / 0.08, 1);
-    for (let i = 0; i < 6; i++) {
-      const dur = 0.25 + rnd(id, i + 50) * 0.35;
-      if (age >= dur) continue;
-      const a = rnd(id, i + 60) * Math.PI * 2;
-      const v = (80 + rnd(id, i + 70) * 120) * S;
-      this.fire.push(
-        p.x + Math.cos(a) * v * age,
-        p.y + Math.sin(a) * v * age,
-        p.z + (10 + 120 * age - 200 * age * age) * S,
-        9 * S, 1, 0.8, 0.4, 1 - age / dur, i,
-      );
+    // rifle bullets don't flash — just dirt/debris and the odd ricochet fleck;
+    // cannon rounds get the full pop
+    const small = size < 0.2;
+    if (!small) {
+      if (age < 0.08) this.fire.push(p.x, p.y, p.z + 6 * S, 60 * S, 1, 0.85, 0.5, 1 - age / 0.08, 1);
+      for (let i = 0; i < 6; i++) {
+        const dur = 0.25 + rnd(id, i + 50) * 0.35;
+        if (age >= dur) continue;
+        const a = rnd(id, i + 60) * Math.PI * 2;
+        const v = (80 + rnd(id, i + 70) * 120) * S;
+        this.fire.push(
+          p.x + Math.cos(a) * v * age,
+          p.y + Math.sin(a) * v * age,
+          p.z + (10 + 120 * age - 200 * age * age) * S,
+          9 * S, 1, 0.8, 0.4, 1 - age / dur, i,
+        );
+      }
+    } else if (rnd(id, 45) < 0.45) {
+      // occasional ricochet spark off masonry — one or two tiny flecks
+      for (let i = 0; i < 2; i++) {
+        const dur = 0.14 + rnd(id, i + 50) * 0.14;
+        if (age >= dur) continue;
+        const a = rnd(id, i + 60) * Math.PI * 2;
+        const v = (25 + rnd(id, i + 70) * 45) * S;
+        this.fire.push(
+          p.x + Math.cos(a) * v * age,
+          p.y + Math.sin(a) * v * age,
+          p.z + (5 + 55 * age - 140 * age * age) * S,
+          7 * S, 1, 0.8, 0.45, 1 - age / dur, i,
+        );
+      }
     }
-    // cannon rounds kick up dust; rifle rounds are just a spark
-    if (size < 0.2) return;
-    for (let i = 0; i < 4; i++) {
-      const dur = 1.8 + rnd(id, i + 80) * 1.2;
+    // dust/debris kick — a wisp for rifle hits, a proper plume for cannon
+    const k = small ? 0.5 : 1;
+    for (let i = 0; i < (small ? 2 : 4); i++) {
+      const dur = (small ? 0.9 : 1.8) + rnd(id, i + 80) * 1.2;
       if (age >= dur) continue;
       const lf = age / dur;
       const a = rnd(id, i + 90) * Math.PI * 2;
       this.smoke.push(
         p.x + Math.cos(a) * 20 * S * lf,
         p.y + Math.sin(a) * 20 * S * lf,
-        p.z + (8 + 50 * lf) * S,
-        (30 + 70 * lf) * S,
+        p.z + (8 + 50 * lf) * S * k,
+        (30 + 70 * lf) * S * k,
         0.66, 0.58, 0.45,
-        0.6 * (1 - lf),
+        0.6 * (1 - lf) * (small ? 0.8 : 1),
         rnd(id, i + 95),
       );
     }
@@ -445,29 +468,23 @@ export class ParticleSystem {
    * Weapon in flight. `at(f)` gives the position along its trajectory for
    * flight fraction f in [0,1]; `f` is the current fraction.
    */
-  projectile(id: string, kind: WeaponKind, at: (f: number) => P3, f: number, m: number) {
+  projectile(id: string, kind: WeaponKind, at: (f: number) => P3, f: number, m: number, name = '') {
     const head = at(f);
     if (kind === 'gun') {
-      // tracer stream: a few glowing slugs strung along the line of fire
-      for (let k = 0; k < 4; k++) {
-        const fk = f - k * 0.14;
-        if (fk <= 0) break;
-        const p0 = at(fk);
-        const p1 = at(Math.max(0, fk - 0.05));
-        for (let j = 0; j < 4; j++) {
-          const t = j / 3;
-          this.fire.push(
-            p0.x + (p1.x - p0.x) * t,
-            p0.y + (p1.y - p0.y) * t,
-            p0.z + (p1.z - p0.z) * t,
-            (16 - j * 3) * m,
-            1,
-            0.62 - t * 0.2,
-            0.25,
-            1 - t * 0.6,
-            k + j,
-          );
+      // A bullet is effectively invisible; only some rounds burn tracer —
+      // a hot pinhead with a very short streak, a fast dash not a beam.
+      // Suppressed weapons fire no tracers and barely show the shot.
+      const sup = /suppress|silenc|subsonic/i.test(name);
+      if (!sup && rnd(id, 40) < 0.3) {
+        this.fire.push(head.x, head.y, head.z, 14 * m, 1, 0.8, 0.4, 1, 1);
+        for (let k = 1; k <= 3; k++) {
+          const fk = f - k * 0.012;
+          if (fk <= 0) break;
+          const p = at(fk);
+          this.fire.push(p.x, p.y, p.z, (13 - k * 3) * m, 1, 0.65, 0.32, 0.8 * (1 - k / 4), k + 1);
         }
+      } else {
+        this.fire.push(head.x, head.y, head.z, 6 * m, 0.85, 0.75, 0.6, sup ? 0.08 : 0.18, 1);
       }
       return;
     }
@@ -525,6 +542,27 @@ export class ParticleSystem {
       const p = at(k * reach);
       this.trails.push(p.x, p.y, p.z, (10 + 12 * k) * m, r, g, b, alpha * (0.35 + 0.65 * k), rnd(id, i));
     }
+  }
+
+  /** Small-arms muzzle blast: a brief flash and a wisp of smoke. */
+  gunFlash(id: string, p: P3, m: number, age: number, suppressed = false) {
+    const flash = suppressed ? 0.09 : 0.16;
+    if (age < 0 || age > 1.6) return;
+    if (age < flash) {
+      const k = 1 - age / flash;
+      const s = (suppressed ? 5 : 12) * m;
+      this.fire.push(p.x, p.y, p.z + 3 * m, s * (0.7 + 0.3 * k), 1, suppressed ? 0.7 : 0.82, 0.4, k, 3);
+    }
+    const life = age / 1.6;
+    this.smoke.push(
+      p.x + 6 * m * life * this.wx,
+      p.y + 6 * m * life * this.wy,
+      p.z + (3 + 10 * life) * m,
+      (5 + 12 * life) * m,
+      0.72, 0.68, 0.6,
+      0.16 * (1 - life) * (suppressed ? 0.7 : 1),
+      rnd(id, 530),
+    );
   }
 
   /** Muzzle blast at a launcher. */

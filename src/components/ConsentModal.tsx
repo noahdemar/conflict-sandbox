@@ -16,7 +16,7 @@ export default function ConsentModal() {
         <p>
           Captions can be read aloud by a synthesized voice as the scenario plays.
           {needsModel && ' The first line downloads a local voice model once (~90MB, cached afterwards).'} You can
-          change this later with the speaker button, or per line in the transcript.
+          change this later in the transcript pane, globally or per line.
         </p>
         <div className="consent-actions">
           <button className="top-btn active" onClick={() => resolve('voice')} autoFocus>

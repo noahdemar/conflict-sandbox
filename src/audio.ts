@@ -122,6 +122,29 @@ export function boom(intensity = 1) {
   osc.stop(t + dur);
 }
 
+/** Short synthesized gunshot: a sharp noise crack; suppressed = muffled thud. */
+export function gunshot(suppressed = false, intensity = 1) {
+  const c = audioContext();
+  const t = c.currentTime;
+  const dur = suppressed ? 0.08 : 0.15;
+  const len = Math.floor(c.sampleRate * dur);
+  const buf = c.createBuffer(1, len, c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, suppressed ? 4 : 2.8);
+  }
+  const noise = c.createBufferSource();
+  noise.buffer = buf;
+  const bp = c.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = suppressed ? 800 : 2400;
+  bp.Q.value = 0.7;
+  const ng = c.createGain();
+  ng.gain.setValueAtTime((suppressed ? 0.14 : 0.38) * Math.min(1.5, intensity), t);
+  noise.connect(bp).connect(ng).connect(sfxBus());
+  noise.start(t);
+}
+
 /**
  * Continuous helicopter rotor sound: just the blade beats — band-passed noise
  * chopped at the blade-passage rate. Driven every frame with a 0..1 level and

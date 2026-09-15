@@ -33,9 +33,9 @@ export const RAID_ROSTER: RosterEntry[] = [
   { id: 'r_operator', name: 'SEAL operator (DEVGRU Red Squadron)', type: 'infantry', faction: 'United States', wikiTitle: 'United States Naval Special Warfare Development Group' },
   { id: 'r_interpreter', name: 'Interpreter', type: 'infantry', faction: 'United States' },
   { id: 'r_k9', name: 'Cairo, military working dog (K9)', type: 'infantry', faction: 'United States', wikiTitle: 'Cairo (dog)' },
-  { id: 'r_stealth_hawk', name: 'Ghosthawk (modified stealth helicopter, 160th SOAR)', type: 'air', faction: 'United States', wikiTitle: 'Stealth helicopter' },
+  { id: 'r_stealth_hawk', name: 'Modified Black Hawk (stealth-configured, 160th SOAR)', type: 'air', faction: 'United States', wikiTitle: 'Stealth helicopter' },
   { id: 'r_mh47', name: 'Chinook (backup)', type: 'air', faction: 'United States', wikiTitle: 'Boeing CH-47 Chinook' },
-  { id: 'r_mq9', name: 'MQ-9 Reaper', type: 'air', faction: 'United States', wikiTitle: 'General Atomics MQ-9 Reaper' },
+  { id: 'r_rq170', name: 'Reported RQ-170 Sentinel', type: 'air', faction: 'United States', wikiTitle: 'Lockheed Martin RQ-170 Sentinel' },
   { id: 'r_satellite', name: 'Imaging satellite', type: 'air', faction: 'United States' },
   { id: 'r_occupant', name: 'Compound occupant', type: 'infantry', faction: 'Compound occupants' },
   { id: 'r_noncombatants', name: 'Non-combatants (women and children)', type: 'infantry', faction: 'Non-combatants' },
@@ -182,7 +182,7 @@ person({ id: 'occ_courier', leavesAt: 109, name: 'Abu Ahmed al-Kuwaiti', roster:
 person({ id: 'occ_ground', leavesAt: 109, name: 'Abrar al-Kuwaiti', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 6, 6]], destroyedAt: 55.8 });
 person({ id: 'occ_ground2', leavesAt: 109, name: 'Bushra', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 9, 4]], destroyedAt: 56 });
 person({ id: 'occ_stairs', leavesAt: 109, name: 'Khalid bin Laden', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 12, 12]], destroyedAt: 60.5 });
-person({ id: 'occ_hvt', leavesAt: 109, name: 'Osama bin Laden (unarmed)', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 12, 18]], destroyedAt: 66.6 });
+person({ id: 'occ_hvt', leavesAt: 109, name: 'Osama bin Laden', roster: 'r_occupant', faction: OCC, appear: 0, path: [[0, 12, 18]], destroyedAt: 66.6 });
 person({
   id: 'noncombatants',
   name: 'Women and children',
@@ -199,15 +199,15 @@ person({
 
 units.push(
   {
-    id: 'helo1', factionId: US, type: 'air', name: 'Ghosthawk 1', rosterId: 'r_stealth_hawk',
+    id: 'helo1', factionId: US, type: 'air', name: 'Modified Black Hawk 1', rosterId: 'r_stealth_hawk',
     lat: JALALABAD[1], lng: JALALABAD[0], arrowId: 'a_helo1', appearAt: 8, landAtEnd: true, destroyedAt: 96, leavesAt: 109,
   },
   {
-    id: 'helo2', factionId: US, type: 'air', name: 'Ghosthawk 2', rosterId: 'r_stealth_hawk',
+    id: 'helo2', factionId: US, type: 'air', name: 'Modified Black Hawk 2', rosterId: 'r_stealth_hawk',
     lat: JALALABAD[1], lng: JALALABAD[0], arrowId: 'a_helo2', appearAt: 8.6, landAtEnd: true, leavesAt: 98,
   },
   {
-    id: 'helo2_exfil', factionId: US, type: 'air', name: 'Ghosthawk 2', rosterId: 'r_stealth_hawk',
+    id: 'helo2_exfil', factionId: US, type: 'air', name: 'Modified Black Hawk 2', rosterId: 'r_stealth_hawk',
     lat: HELO2_LZ[1], lng: HELO2_LZ[0], arrowId: 'a_helo2_exfil', appearAt: 98, landAtEnd: true,
   },
   {
@@ -225,8 +225,8 @@ units.push(
     orbitRole: 'imaging', captureAt: 118.5,
   },
   {
-    id: 'mq9', factionId: US, type: 'air', name: 'MQ-9 Reaper', rosterId: 'r_mq9',
-    lat: JALALABAD[1], lng: JALALABAD[0], arrowId: 'a_mq9', appearAt: 2,
+    id: 'rq170', factionId: US, type: 'air', name: 'Reported RQ-170 Sentinel', rosterId: 'r_rq170',
+    lat: JALALABAD[1], lng: JALALABAD[0], arrowId: 'a_rq170', appearAt: 2,
   },
   {
     id: 'chinook_2', factionId: US, type: 'air', name: 'Chinook 2 (backup)', rosterId: 'r_mh47',
@@ -240,17 +240,17 @@ units.push(
 
 arrows.push(
   {
-    id: 'a_helo1', factionId: US, name: 'Ghosthawk 1 ingress', appearAt: 8, duration: 30.3, followRoads: false, hideAt: 109,
+    id: 'a_helo1', factionId: US, name: 'Modified Black Hawk 1 ingress', appearAt: 8, duration: 30.3, followRoads: false, hideAt: 109,
     // arrive over the yard, hover and drift in the downwash, then settle hard
-    points: [JALALABAD, BORDER_WP, [72.6, 34.12], L(-70, -90), L(10, -16), L(17, -21), L(11, -23), HELO1_LZ],
-    times: [8, 14, 27, 33, 35, 36.4, 37.6, 38.3],
+    points: [JALALABAD, BORDER_WP, [72.6, 34.12], L(-70, -90), L(10, -16), L(17, -21), L(11, -23), HELO1_LZ, HELO1_LZ],
+    times: [8, 14, 27, 33, 35, 36, 37.1, 37.6, 38.3],
   },
-  { id: 'a_helo2', factionId: US, points: [JALALABAD, [71.36, 34.22], [72.62, 34.15], L(120, 110), HELO2_LZ], name: 'Ghosthawk 2 ingress', appearAt: 8.6, duration: 32, followRoads: false, hideAt: 109 },
+  { id: 'a_helo2', factionId: US, points: [JALALABAD, [71.36, 34.22], [72.62, 34.15], L(120, 110), HELO2_LZ], name: 'Modified Black Hawk 2 ingress', appearAt: 8.6, duration: 32, followRoads: false, hideAt: 109 },
   { id: 'a_helo2_exfil', factionId: US, points: [HELO2_LZ, L(-400, 600), [72.6, 34.2], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false, hideAt: 109 },
   { id: 'a_chinook_in', factionId: US, points: [HOLDING, [72.8, 34.22], L(300, 400), CHINOOK_LZ], name: 'Backup Chinook called in', appearAt: 76, duration: 10, followRoads: false, hideAt: 109 },
   { id: 'a_chinook_exfil', factionId: US, points: [CHINOOK_LZ, L(600, 900), [72.9, 34.3], BORDER_WP, JALALABAD], name: 'Exfil to Jalalabad', appearAt: 98, duration: 12, followRoads: false, hideAt: 109 },
   { id: 'a_imager', factionId: US, points: [[66.5, 26.4], [C[0], C[1]], [79.8, 41.8]], times: [111, 118.5, 126], name: 'Imaging pass ground track', appearAt: 111, duration: 15, followRoads: false, hideLine: true },
-  { id: 'a_mq9', factionId: US, points: [JALALABAD, [71.9, 34.3], L(0, 2500)], name: 'MQ-9 to station', appearAt: 2, duration: 22, followRoads: false, hideLine: true },
+  { id: 'a_rq170', factionId: US, points: [JALALABAD, [71.9, 34.3], L(0, 2500)], name: 'RQ-170 to station', appearAt: 2, duration: 22, followRoads: false, hideLine: true },
   { id: 'a_chinook2', factionId: US, points: [JALALABAD, [71.4, 34.3], HOLDING], name: 'Backup Chinooks to staging area', appearAt: 11, duration: 9, followRoads: false, hideAt: 109 },
   { id: 'a_chinook2_exfil', factionId: US, points: [HOLDING, BORDER_WP, JALALABAD], name: 'Return to Jalalabad', appearAt: 99, duration: 9, followRoads: false, hideLine: true },
 );
@@ -291,7 +291,7 @@ const strikes: Strike[] = [
 ];
 
 const effects: StatusEffect[] = [
-  { id: 'fx_isr_feed', kind: 'datalink', unitId: 'mq9', targetUnitId: 'helo1', start: 26, duration: 12, label: 'LIVE VIDEO' },
+  { id: 'fx_isr_feed', kind: 'datalink', unitId: 'rq170', targetUnitId: 'helo1', start: 26, duration: 12, label: 'OVERHEAD FEED' },
   { id: 'fx_hard_landing', kind: 'wounded', unitId: 'helo1', start: 38.3, duration: 57.5, label: 'HARD LANDING' },
   { id: 'fx_breach_radio', kind: 'radio', unitId: 'op_1-5', start: 50, duration: 3, label: 'BREACHING' },
   { id: 'fx_geronimo', kind: 'radio', unitId: 'op_1-5', start: 67, duration: 5, label: 'GERONIMO — EKIA' },
@@ -346,37 +346,42 @@ const cam = (
 ): Keyframe => ({ id, time, lng: at[0], lat: at[1], zoom, pitch, bearing, caption, ...extra });
 
 const keyframes: Keyframe[] = [
-  cam('k1', 0, [71.8, 34.1], 6.4, 0, 0, 'Night of 1–2 May 2011 — Jalalabad, Afghanistan to Abbottabad, Pakistan'),
-  cam('k2', 7, [70.62, 34.38], 9.5, 45, 70, 'Two Ghosthawks — modified stealth helicopters — lift off from Jalalabad with about two dozen SEALs, an interpreter and a dog, Cairo', {
-    followUnitId: 'helo1', followMode: 'track',
+  cam('k1', 0, [71.8, 34.1], 6.4, 0, 0, 'On the night of 1 May 2011, a secret American force prepared to fly from Jalalabad into Pakistan.'),
+  cam('k2', 7, [70.62, 34.38], 9.5, 48, 70, 'Two modified Black Hawk helicopters lifted off with about two dozen special operators, an interpreter, and a dog named Cairo.', {
+    followUnitId: 'helo1', followMode: 'chase', highlightUnitIds: ['helo1', 'helo2', 'op_1-1', 'interpreter', 'k9'],
   }),
-  cam('k3', 22, [71.9, 34.25], 7.4, 0, 0, 'Backup Chinooks carrying a quick-reaction force wait about two-thirds of the way to Abbottabad'),
-  cam('k4', 26.5, [73.1, 34.2], 9.2, 40, -20, 'An MQ-9 Reaper circles above Abbottabad, streaming live video'),
-  cam('k5', 31, C, 16.4, 55, 35, 'The flight from Jalalabad takes about 90 minutes', { sensor: 'nvg' }),
-  cam('k6', 34, L(10, -12), 18.4, 55, 20, 'Ghosthawk 1 hovers over the high-walled yard, loses lift and hard-lands', { sensor: 'nvg' }),
-  cam('k7', 43, L(-24, -22), 19.1, 50, -10, 'At the guest house, the courier Abu Ahmed al-Kuwaiti opens fire and is killed', { sensor: 'nvg' }),
-  cam('k8', 49, L(10, 0), 18.9, 55, 25, 'Teams breach the inner gate while Chalk 2 sets a cordon on the street outside', { sensor: 'nvg' }),
-  cam('k9', 54, L(8, 6), 19.4, 45, 0, 'Ground floor of the main house: Abrar al-Kuwaiti and his wife Bushra are killed', { sensor: 'thermal' }),
-  cam('k10', 59, L(12, 12), 19.5, 45, 40, 'On the stairs, bin Laden\'s son Khalid is killed', { sensor: 'thermal' }),
-  cam('k11', 65, L(12, 17), 19.5, 50, 60, 'Third floor: Osama bin Laden, unarmed, is killed — "Geronimo, EKIA" is relayed back', { sensor: 'thermal' }),
-  cam('k12', 72, L(4, 8), 18.2, 40, 10, 'Operators collect computers, drives and documents; women and children are moved to safety in the yard'),
-  cam('k13', 80, L(40, 30), 17.4, 50, -30, 'A backup Chinook is called in to replace the damaged Ghosthawk', { sensor: 'nvg' }),
-  cam('k14', 92, HELO1_LZ, 17.8, 50, 15, 'Before leaving, the team destroys the damaged Ghosthawk to protect its technology', { sensor: 'nvg' }),
-  cam('k14b', 101, HELO1_LZ, 17.6, 50, 18, 'Before leaving, the team destroys the damaged Ghosthawk to protect its technology', { sensor: 'nvg' }),
-  cam('k15', 104, [72.2, 34.2], 7.2, 20, 0, 'Roughly 38 minutes on target. The force returns to Jalalabad with no American casualties'),
-  cam('k16', 108, [71.9, 34.2], 6.2, 0, 0, 'Operation Neptune Spear'),
-  cam('k17', 111, [72.2, 31.2], 4.4, 62, 16, 'The morning after, a satellite captures the aftermath on Google Earth'),
-  cam('k17b', 116, [72.9, 32.6], 4.9, 58, 20, 'The morning after, a satellite captures the aftermath on Google Earth'),
-  cam('k18', 118, C, 9.5, 0, 0, 'The satellite images the compound in daylight'),
+  cam('k3', 22, [71.9, 34.25], 7.6, 28, 0, 'Far behind them, backup Chinooks waited in case the assault force needed help or another aircraft.', {
+    highlightUnitIds: ['chinook_qrf', 'chinook_2'],
+  }),
+  cam('k4', 26.5, [73.1, 34.2], 9.4, 44, -20, 'Over Abbottabad, a surveillance drone circled in darkness and relayed the approaching helicopters to commanders.', {
+    followUnitId: 'rq170', followMode: 'track', orbitSpeed: 2, highlightUnitIds: ['rq170'],
+  }),
+  cam('k5', 31, C, 16.6, 58, 35, 'After about 90 minutes in the air, the helicopters reached the compound without warning the city below.', { sensor: 'nvg', highlightUnitIds: ['helo1', 'helo2'] }),
+  cam('k6', 34, L(10, -12), 18.6, 58, 20, 'As Modified Black Hawk 1 settled over the high walls, it lost lift and came down hard inside the yard.', { sensor: 'nvg', followUnitId: 'helo1', followMode: 'track', highlightUnitIds: ['helo1'] }),
+  cam('k7', 43, L(-24, -22), 19.3, 52, -10, 'At the guest house, courier Abu Ahmed al-Kuwaiti opened fire. The assault team returned fire and killed him.', { sensor: 'nvg', overlay: 'orbat', highlightUnitIds: ['occ_courier', 'op_1-1', 'op_1-2'] }),
+  cam('k8', 49, L(10, 0), 19.1, 58, 25, 'The teams pressed through the inner gate while a second group sealed the streets outside the compound.', { sensor: 'nvg', highlightUnitIds: ['op_1-5', 'op_2-1'] }),
+  cam('k9', 54, L(8, 6), 19.5, 48, 0, 'Inside the main house, Abrar al-Kuwaiti and his wife Bushra were killed during the clearing of the ground floor.', { sensor: 'thermal', highlightUnitIds: ['occ_ground', 'occ_ground2', 'op_1-5', 'op_1-6'] }),
+  cam('k10', 59, L(12, 12), 19.6, 48, 40, 'Moving up the narrow stairs, the operators encountered and killed Khalid bin Laden.', { sensor: 'thermal', highlightUnitIds: ['occ_stairs', 'op_1-5'] }),
+  cam('k11', 65, L(12, 17), 19.6, 52, 60, 'On the third floor, the operators found and killed Osama bin Laden. The message Geronimo, E K I A, was sent back.', { sensor: 'thermal', highlightUnitIds: ['occ_hvt', 'op_1-5', 'op_1-6'] }),
+  cam('k12', 72, L(4, 8), 18.4, 42, 10, 'With the fighting over, the team gathered computers and documents while women and children were moved into the yard.', { highlightUnitIds: ['op_1-9', 'noncombatants'] }),
+  cam('k13', 80, L(40, 30), 17.6, 52, -30, 'The damaged Modified Black Hawk could not fly out, so one of the waiting Chinooks was called forward.', { sensor: 'nvg', highlightUnitIds: ['helo1', 'chinook_qrf'] }),
+  cam('k14', 92, HELO1_LZ, 18, 52, 15, 'Before leaving, the team destroyed the crippled helicopter to keep its secret technology from being recovered.', { sensor: 'nvg', highlightUnitIds: ['helo1', 'op_1-5'] }),
+  cam('k14b', 101, HELO1_LZ, 17.8, 52, 18, 'Before leaving, the team destroyed the crippled helicopter to keep its secret technology from being recovered.', { sensor: 'nvg', highlightUnitIds: ['helo1'] }),
+  cam('k15', 104, [72.2, 34.2], 7.4, 32, 0, 'After about 38 minutes on the ground, the force left Abbottabad without suffering an American casualty.', { followUnitId: 'helo2_exfil', followMode: 'chase', highlightUnitIds: ['helo2_exfil', 'chinook_exfil'] }),
+  cam('k16', 108, [71.9, 34.2], 6.2, 10, 0, 'The mission was over. Its name was Operation Neptune Spear.'),
+  cam('k17', 111, [72.2, 31.2], 4.6, 62, 16, 'By morning, the compound had become the focus of the world and satellites were recording the aftermath.', { highlightUnitIds: ['imager'] }),
+  cam('k17b', 116, [72.9, 32.6], 5.1, 60, 20, 'By morning, the compound had become the focus of the world and satellites were recording the aftermath.', { highlightUnitIds: ['imager'] }),
+  cam('k18', 118, C, 10, 0, 0, 'In daylight, the damaged compound and the remains of the helicopter could be seen from above.', { highlightUnitIds: ['imager', 'helo1'] }),
   // top-down, north up, compound offset left so the image pane sits beside it
   // Google Earth capture is north-up within ~3° (measured from road/field lines); match it
-  cam('k19', 120, L(-70, 0), 17.4, 0, -3, 'The compound the morning after the raid, from satellite imagery', {
+  cam('k19', 120, L(-70, 0), 17.4, 0, -3, 'The morning after the raid, satellite images preserved the first clear record of what had happened here.', {
+    highlightUnitIds: ['imager'],
     media: {
       anchor: C,
       anchorRadiusM: 55,
       src: 'media/abbottabad-aftermath.webp',
       caption: 'Aftermath imagery of the site',
-      credit: 'Imagery © Google Earth / its data providers',
+      credit: 'GeoEye IKONOS imagery, 2 May 2011',
     },
   }),
 ];
@@ -385,6 +390,14 @@ export function raidScenario(): Scenario {
   // rebuild on every call so state never leaks between loads
   return structuredClone({
     name: 'Bin Laden raid — Abbottabad, 2 May 2011',
+    subtitle: 'Abbottabad, Pakistan · 2 May 2011',
+    sources: [
+      'White House briefing on the operation, 2 May 2011',
+      'CIA, "Minutes and Years: The Bin Ladin Operation"',
+      'National September 11 Memorial and Museum, "Operation Neptune Spear"',
+      'Abbottabad Commission report, Government of Pakistan, 2013',
+      'GeoEye IKONOS post-raid imagery, collected 2 May 2011',
+    ],
     factions: [
       { id: US, name: 'United States', color: '#3a6fc0', affiliation: 'friend' as const },
       { id: OCC, name: 'Compound occupants', color: '#b0413e', affiliation: 'hostile' as const },

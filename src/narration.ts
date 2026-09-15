@@ -7,6 +7,7 @@
  */
 
 import { routeElement, setVoiceActive } from './audio';
+import { toSpokenText } from './speechText';
 
 export type NarrationEngine = 'webspeech' | 'kokoro';
 
@@ -295,7 +296,8 @@ export function loadNarrationPack(pack: string): Promise<Manifest | null> {
   return p;
 }
 
-function speak(text: string, engine: NarrationEngine, voiceId: string | null, rate: number) {
+function speak(caption: string, engine: NarrationEngine, voiceId: string | null, rate: number) {
+  const text = toSpokenText(caption);
   if (engine === 'kokoro') {
     speakKokoro(text, voiceId ?? 'bm_george', rate).catch(() => speakWeb(text, null, rate));
   } else {

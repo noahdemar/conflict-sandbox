@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { strikeLaunchAt } from '../realism';
 import { X } from 'lucide-react';
 import { useStore } from '../store';
 import { STATUS_META } from '../statusEffects';
@@ -149,7 +150,7 @@ export default function TimelineTracks({ onClose }: { onClose: () => void }) {
 
   const dragStrike = (x: Strike, mode: DragMode) => (e: React.PointerEvent) => {
     const imp0 = x.appearAt;
-    const l0 = x.launchAt ?? x.appearAt - 3;
+    const l0 = strikeLaunchAt(useStore.getState().scenario, x);
     beginDrag(
       e,
       mode,
@@ -280,7 +281,7 @@ export default function TimelineTracks({ onClose }: { onClose: () => void }) {
                         />
                       )}
                       {fired.map((x) => {
-                        const launch = x.launchAt ?? x.appearAt - 3;
+                        const launch = strikeLaunchAt(useStore.getState().scenario, x);
                         return (
                           <Bar
                           duration={duration}
@@ -338,7 +339,7 @@ export default function TimelineTracks({ onClose }: { onClose: () => void }) {
                           onHover={setHover}
                     key={x.id}
                     id={`strike-${x.id}`}
-                    from={x.launchAt ?? x.appearAt - 3}
+                    from={strikeLaunchAt(useStore.getState().scenario, x)}
                     to={x.appearAt}
                     lane={0}
                     className="strike"
