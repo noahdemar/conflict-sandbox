@@ -89,9 +89,9 @@ importer lists every unknown icon so it can be fixed. Common synonyms also work
 ("destroyer" draws "ship", "trebuchet" draws "siege", "humvee" draws "jeep").
 
 People: soldier, troops, officer, medic, sniper, civilians, dog
-Ground vehicles: tank, ifv, apc, jeep, truck, motorcycle, ambulance, tanker, engineer, howitzer, spg, mortar, launcher, sam, aagun, radar
-Aircraft: jet, f15, f22, bomber, flyingwing, transport, gunship, airliner, heli, attackheli, drone, cruisemissile, satellite
-Ships: ship, carrier, submarine, patrolboat, landingcraft, cargoship
+Ground vehicles: tank, abrams, bradley, halftrack, ifv, apc, jeep, truck, motorcycle, ambulance, tanker, engineer, howitzer, spg, mortar, launcher, sam, aagun, radar
+Aircraft: jet, f15, f22, bomber, flyingwing, transport, gunship, airliner, heli, attackheli, mi8, drone, cruisemissile, satellite, propfighter, propbomber, proptransport
+Ships: ship, carrier, submarine, uboat, patrolboat, landingcraft, higgins, lcac, cargoship
 Structures: hq, bunker, checkpoint, camp, fort
 Pre-modern: menatarms, spearmen, pikemen, archers, musketeers, cavalry, chariot, cannon, siege, banner, baggage, sailingship, galley
 
@@ -133,6 +133,8 @@ Required: id, lat, lng, name, size (0.1 small arms … 1.5 large bomb), appearAt
 The visual is chosen from `name`:
 - guns: "30mm", "chain gun", "cannon", "rifle", "small arms" → tracers, sparks
 - bombs: "JDAM", "GBU", "Mk 82", "bomb" → dropped, brief flash, dirt and dust
+  (from an air unit the bomb falls below the release point in an accelerating
+  drop, not a rising missile arc; give it a fromUnitId and a short flight time)
 - shells: "howitzer", "105mm", "mortar", "fire mission" → arcing round, dirt
 - anything else → missile/rocket with motor glow and smoke trail
 

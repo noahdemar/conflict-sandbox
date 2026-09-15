@@ -77,6 +77,22 @@ const SHAPES = {
     detail:
       '<path d="M46.5 16 Q50 11 53.5 16 L53.5 26 L46.5 26 Z" fill="#2c3a44"/><circle cx="50" cy="40" r="38" fill="none" stroke="#1d2226" stroke-width="1.2" stroke-dasharray="3 5" opacity=".45"/><path d="M14 36 L86 44 M86 36 L14 44" stroke="#1d2226" stroke-width="2" opacity=".55"/>',
   },
+  // Mi-8/17 class transport helicopter: bulky cabin with engine hump,
+  // stub wings, long tail boom with offset tail rotor
+  mi8: {
+    scale: 1.15,
+    body:
+      'M40 14 Q50 4 60 14 L61 50 Q58 62 50 63 Q42 62 39 50 Z M47 61 L53 61 L52 90 L48 90 Z M42 84 L58 84 L58 90 L42 90 Z M22 42 L39 40 L39 48 L22 50 Z M78 42 L61 40 L61 48 L78 50 Z',
+    detail:
+      // rotor disk and blades
+      '<circle cx="50" cy="40" r="40" fill="none" stroke="#1d2226" stroke-width="1.2" stroke-dasharray="3 5" opacity=".45"/>' +
+      '<path d="M14 36 L86 44 M86 36 L14 44" stroke="#1d2226" stroke-width="2" opacity=".55"/>' +
+      // cockpit glazing and twin-engine hump
+      '<path d="M44 12 Q50 7 56 12 L56 18 L44 18 Z" fill="#2c3a44"/><rect x="44" y="24" width="12" height="10" rx="3"/>' +
+      // offset tail rotor and stub-wing pylons
+      '<path d="M43 95 L57 89" stroke="#1d2226" stroke-width="2.2" opacity=".6"/>' +
+      '<rect x="26" y="44" width="5" height="4"/><rect x="69" y="44" width="5" height="4"/>',
+  },
   drone: {
     scale: 1.15,
     body: 'M47.5 12 Q50 5 52.5 12 L53.5 42 L97 45 L97 50 L53.5 52 L52.5 76 L66 90 L63 93 L50 84 L37 93 L34 90 L47.5 76 L46.5 52 L3 50 L3 45 L46.5 42 Z',
@@ -105,6 +121,50 @@ const SHAPES = {
     body: 'M33 26 Q33 22 37 22 L63 22 Q67 22 67 26 L67 84 Q67 88 63 88 L37 88 Q33 88 33 84 Z M48.2 2 L51.8 2 L51.8 48 L48.2 48 Z',
     detail:
       '<path d="M33 24 L38 24 L38 86 L33 86 Z M62 24 L67 24 L67 86 L62 86 Z" opacity=".35"/><circle cx="50" cy="56" r="12.5"/><circle cx="54" cy="60" r="3.5" fill="#fff" opacity=".25"/><rect x="48.2" y="10" width="3.6" height="36" fill="currentColor"/>',
+  },
+  // M1 Abrams class Western MBT: wide hull with side skirts, large turret with
+  // angled cheeks, long smoothbore gun with a thermal sleeve bulge
+  abrams: {
+    scale: 1.05,
+    body:
+      'M47 1 L53 1 L52.5 36 L47.5 36 Z M36 34 L44 28 L56 28 L64 34 L66 58 L34 58 Z M28 20 L72 20 L74 92 L26 92 Z',
+    detail:
+      // track skirts
+      '<path d="M28 22 L34 22 L34 90 L28 90 Z M66 22 L72 22 L72 90 L66 90 Z" opacity=".35"/>' +
+      // thermal sleeve bulge near the muzzle
+      '<rect x="46" y="8" width="8" height="10" rx="2"/>' +
+      // turret cheek seams and rear stowage basket
+      '<path d="M44 28 L36 34 M56 28 L64 34" stroke="rgba(20,24,28,.4)" stroke-width="1.2" fill="none"/>' +
+      '<rect x="36" y="52" width="28" height="6" opacity=".3"/>' +
+      // rear deck grills
+      '<rect x="34" y="74" width="32" height="12" opacity=".22"/>',
+  },
+  // Bradley class tracked IFV: boxy hull, small turret, thin 25mm gun,
+  // boxy missile launcher bolted to the turret's right
+  bradley: {
+    scale: 0.9,
+    body:
+      'M48 8 L51.5 8 L51.5 34 L48 34 Z M38 30 L60 30 L62 54 L36 54 Z M62 34 L68 34 L68 46 L62 46 Z M32 16 L68 16 L70 94 L30 94 Z',
+    detail:
+      // tracks
+      '<path d="M32 18 L37 18 L37 92 L32 92 Z M63 18 L68 18 L68 92 L63 92 Z" opacity=".35"/>' +
+      // trim vane across the bow
+      '<rect x="32" y="16" width="36" height="5" opacity=".3"/>' +
+      // turret hatch
+      '<circle cx="46" cy="42" r="4" opacity=".3"/>',
+  },
+  // WW2 half-track: wheeled front axle, tracked rear, open troop compartment
+  halftrack: {
+    scale: 0.85,
+    body: 'M38 12 L62 12 L64 88 L36 88 Z',
+    detail:
+      // front tires and rear track blocks
+      '<g fill="#2c3a44"><rect x="28" y="20" width="9" height="14" rx="3"/><rect x="63" y="20" width="9" height="14" rx="3"/>' +
+      '<rect x="28" y="46" width="9" height="38" rx="2"/><rect x="63" y="46" width="9" height="38" rx="2"/></g>' +
+      // hood louvers
+      '<path d="M40 16 H60 M40 22 H60 M40 28 H60" stroke="rgba(20,24,28,.4)" stroke-width="2"/>' +
+      // open compartment
+      '<rect x="40" y="52" width="20" height="28" opacity=".22"/>',
   },
   ifv: {
     scale: 0.95,
@@ -322,6 +382,49 @@ const SHAPES = {
     body: 'M47 6 Q50 0 53 6 L54 34 L94 58 L94 64 L54 54 L53 82 L66 90 L66 95 L50 92 L34 95 L34 90 L47 82 L46 54 L6 64 L6 58 L46 34 Z',
     detail: '<ellipse cx="30" cy="52" rx="3" ry="6" fill="#2c3a44"/><ellipse cx="70" cy="52" rx="3" ry="6" fill="#2c3a44"/><path d="M50 12 V78" stroke="#fff" stroke-width="1.5" stroke-dasharray="2 3" opacity=".7"/>',
   },
+  // single-seat propeller fighter (P-51/Spitfire class): slim fuselage,
+  // elliptical wings, small tailplane, prop disk over the nose
+  propfighter: {
+    scale: 1.05,
+    body:
+      'M50 3 Q54 8 54 16 L54.5 32 L90 44 Q95 46 95 51 Q95 55 90 55 L55 54 L54 74 L68 80 L68 86 L54 84 L53 90 L51.5 94 L48.5 94 L47 90 L46 84 L32 86 L32 80 L46 74 L45 54 L10 55 Q5 55 5 51 Q5 46 10 44 L45.5 32 L46 16 Q46 8 50 3 Z',
+    detail:
+      // spinning prop disk and blades over the nose
+      '<ellipse cx="50" cy="11" rx="7.5" ry="8" fill="none" stroke="#1d2226" stroke-width="1.3" stroke-dasharray="2.5 2.5" opacity=".6"/>' +
+      '<path d="M50 4 V18 M43.5 11 H56.5" stroke="#2c3a44" stroke-width="2.2" opacity=".8"/>' +
+      // canopy
+      '<path d="M47 20 Q50 17 53 20 L53 30 Q50 33 47 30 Z" fill="#2c3a44"/>' +
+      // wing panel lines
+      '<path d="M14 50 L45 44 M86 50 L55 44" stroke="rgba(20,24,28,.4)" stroke-width="1" fill="none"/>',
+  },
+  // four-engine propeller bomber (B-17/Lancaster class): broad tapered wing,
+  // four nacelles each with a prop disk, glazed nose
+  propbomber: {
+    scale: 1.5,
+    body:
+      'M50 3 Q55 8 55 14 L55.5 26 L94 34 Q97 35.5 97 40 L97 45 Q97 49 93 49 L56 53 L55 76 L73 82 L73 88 L55 86 L54 93 L46 93 L45 86 L27 88 L27 82 L45 76 L44 53 L7 49 Q3 49 3 45 L3 40 Q3 35.5 6 34 L44.5 26 L45 14 Q45 8 50 3 Z',
+    detail:
+      // four engine nacelles on the wing
+      '<g><ellipse cx="17" cy="38" rx="4" ry="8"/><ellipse cx="33" cy="36" rx="4" ry="8"/><ellipse cx="67" cy="36" rx="4" ry="8"/><ellipse cx="83" cy="38" rx="4" ry="8"/></g>' +
+      // prop disks ahead of each nacelle
+      '<g fill="none" stroke="#1d2226" stroke-width="1.1" stroke-dasharray="2 2.4" opacity=".55"><circle cx="17" cy="30.5" r="4.8"/><circle cx="33" cy="28.5" r="4.8"/><circle cx="67" cy="28.5" r="4.8"/><circle cx="83" cy="30.5" r="4.8"/></g>' +
+      // glazed nose
+      '<path d="M46.5 7 Q50 4.5 53.5 7 L53.5 13 L46.5 13 Z" fill="#2c3a44"/>',
+  },
+  // twin-engine propeller transport (C-47/Ju-52 class): fuller fuselage,
+  // straight tapered wing, two radial nacelles with prop disks
+  proptransport: {
+    scale: 1.3,
+    body:
+      'M50 4 Q55 8 55 16 L55 30 L92 42 Q96 44 96 48.5 Q96 53 92 53 L55 54 L54 78 L70 84 L70 90 L54 88 L53 94 L47 94 L46 88 L30 90 L30 84 L46 78 L45 54 L8 53 Q4 53 4 48.5 Q4 44 8 42 L45 30 L45 16 Q45 8 50 4 Z',
+    detail:
+      // two radial engine nacelles
+      '<ellipse cx="25" cy="44" rx="5" ry="10"/><ellipse cx="75" cy="44" rx="5" ry="10"/>' +
+      // prop disks ahead of them
+      '<g fill="none" stroke="#1d2226" stroke-width="1.2" stroke-dasharray="2 2.4" opacity=".55"><circle cx="25" cy="33.5" r="5.4"/><circle cx="75" cy="33.5" r="5.4"/></g>' +
+      // cockpit glazing
+      '<path d="M45.5 9 L54.5 9 L53.5 15 L46.5 15 Z" fill="#2c3a44"/>',
+  },
   attackheli: {
     scale: 1,
     body: 'M47 8 Q50 2 53 8 L55 40 L70 44 L70 50 L55 52 L53 88 L60 92 L60 96 L40 96 L40 92 L47 88 L45 52 L30 50 L30 44 L45 40 Z',
@@ -344,6 +447,20 @@ const SHAPES = {
     body: 'M50 2 Q60 10 60 30 L60 80 Q60 96 50 98 Q40 96 40 80 L40 30 Q40 10 50 2 Z',
     detail: '<ellipse cx="50" cy="36" rx="5" ry="9" fill="#2c3a44"/><path d="M42 88 L58 88" stroke="rgba(20,24,28,.6)" stroke-width="3"/>',
   },
+  // WW2-era submarine: long slim hull, prominent conning tower with masts,
+  // deck gun forward of the tower
+  uboat: {
+    scale: 1,
+    body: 'M50 2 Q57 10 57 22 L57 78 Q57 90 50 96 Q43 90 43 78 L43 22 Q43 10 50 2 Z',
+    detail:
+      // conning tower and periscope masts
+      '<rect x="43.5" y="36" width="13" height="16" rx="4" fill="#2c3a44"/>' +
+      '<rect x="49" y="28" width="2" height="8"/><rect x="46" y="32" width="1.5" height="5" opacity=".7"/>' +
+      // deck gun forward of the tower
+      '<rect x="48" y="16" width="4" height="10" rx="1.5"/>' +
+      // deck casing lines
+      '<path d="M45 24 V80 M55 24 V80" stroke="rgba(20,24,28,.3)" stroke-width="1" fill="none"/>',
+  },
   patrolboat: {
     scale: 0.75,
     body: 'M50 8 Q62 24 62 44 L61 90 L39 90 L38 44 Q38 24 50 8 Z',
@@ -353,6 +470,31 @@ const SHAPES = {
     scale: 0.95,
     body: 'M30 10 L70 10 L70 92 L30 92 Z',
     detail: '<path d="M32 14 H68 M32 20 H68" stroke="rgba(20,24,28,.45)" stroke-width="2"/><rect x="36" y="26" width="28" height="44" opacity=".2"/><rect x="38" y="76" width="24" height="12" fill="#2c3a44"/>',
+  },
+  // WW2 landing craft (LCVP/Higgins boat): small open boat tapering to a
+  // bow ramp, engine housing aft
+  higgins: {
+    scale: 0.75,
+    body: 'M34 6 L66 6 L70 88 L30 88 Z',
+    detail:
+      // bow ramp seam and side walls
+      '<path d="M36 8 L50 22 L64 8 M36 8 L34 88 M64 8 L66 88" stroke="rgba(20,24,28,.45)" stroke-width="2" fill="none"/>' +
+      // troop well
+      '<rect x="38" y="26" width="24" height="34" opacity=".2"/>' +
+      // engine housing and helm
+      '<rect x="42" y="72" width="16" height="12" rx="2"/><circle cx="50" cy="62" r="3" opacity=".5"/>',
+  },
+  // LCAC hovercraft: rounded skirt outline, cargo deck, two lift fans aft
+  lcac: {
+    scale: 1.15,
+    body: 'M22 14 Q22 6 30 6 L70 6 Q78 6 78 14 L78 88 Q78 96 70 96 L30 96 Q22 96 22 88 Z',
+    detail:
+      // skirt inner seam
+      '<rect x="27" y="11" width="46" height="80" rx="8" fill="none" stroke="rgba(20,24,28,.35)" stroke-width="2"/>' +
+      // cargo deck and bow ramp
+      '<rect x="34" y="24" width="32" height="40" opacity=".2"/><rect x="30" y="8" width="40" height="4" opacity=".4"/>' +
+      // two lift fans aft
+      '<g fill="#2c3a44"><circle cx="40" cy="76" r="8" opacity=".7"/><circle cx="60" cy="76" r="8" opacity=".7"/><circle cx="40" cy="76" r="2.5"/><circle cx="60" cy="76" r="2.5"/></g>',
   },
   cargoship: {
     scale: 1.35,
@@ -454,6 +596,19 @@ export const isIconKey = (k: string): k is SilhouetteKey => Object.prototype.has
 export const ICON_ALIASES: Record<string, SilhouetteKey> = {
   fighter: 'jet', aircraft: 'jet', plane: 'jet', helicopter: 'heli', uav: 'drone', ucav: 'drone',
   cargoplane: 'transport', c130: 'gunship', awacs: 'transport', missile: 'cruisemissile',
+  spitfire: 'propfighter', mustang: 'propfighter', p51: 'propfighter', p47: 'propfighter', p38: 'propfighter',
+  p40: 'propfighter', bf109: 'propfighter', me109: 'propfighter', messerschmitt: 'propfighter', fw190: 'propfighter',
+  zero: 'propfighter', hurricane: 'propfighter', corsair: 'propfighter', hellcat: 'propfighter', warhawk: 'propfighter',
+  b17: 'propbomber', b24: 'propbomber', b25: 'propbomber', b26: 'propbomber', b29: 'propbomber', lancaster: 'propbomber',
+  halifax: 'propbomber', wellington: 'propbomber', he111: 'propbomber', ju88: 'propbomber', stuka: 'propbomber',
+  ju87: 'propbomber', dauntless: 'propbomber', sbd: 'propbomber', il2: 'propbomber', avenger: 'propbomber',
+  c47: 'proptransport', dakota: 'proptransport', dc3: 'proptransport', ju52: 'proptransport', skytrain: 'proptransport',
+  mi8: 'mi8', mi17: 'mi8', mi171: 'mi8', mi38: 'mi8', hip: 'mi8', mi24: 'attackheli', mi35: 'attackheli', hind: 'attackheli',
+  m1: 'abrams', m1a1: 'abrams', m1a2: 'abrams', abrams: 'abrams', leopard: 'abrams', leopard2: 'abrams',
+  challenger: 'abrams', leclerc: 'abrams', bradley: 'bradley', bfv: 'bradley', warrior: 'bradley', cv90: 'bradley',
+  halftrack: 'halftrack', sdkfz: 'halftrack', hanomag: 'halftrack',
+  uboat: 'uboat', typevii: 'uboat', gato: 'uboat', lcvp: 'higgins', higginsboat: 'higgins',
+  lca: 'higgins', lcm: 'higgins', lcac: 'lcac', hovercraft: 'lcac', zubr: 'lcac',
   infantry: 'troops', squad: 'troops', platoon: 'troops', person: 'soldier', rifleman: 'soldier',
   commander: 'officer', leader: 'officer', doctor: 'medic', refugees: 'civilians', crowd: 'civilians',
   mbt: 'tank', armor: 'tank', armour: 'tank', bmp: 'ifv', btr: 'apc', humvee: 'jeep', car: 'jeep', pickup: 'truck',
@@ -487,20 +642,28 @@ function iconFromName(u: Unit, n: string): SilhouetteKey {
     if (/rq-?170|sentinel|flying ?wing|stealth uav/.test(n)) return 'flyingwing';
     if (/cruise missile|tomahawk|kalibr|storm shadow/.test(n)) return 'cruisemissile';
     if (/mh-?47|ch-?47|chinook/.test(n)) return 'heli';
-    if (/ah-?64|apache|ka-?52|mi-?28|cobra|tiger/.test(n)) return 'attackheli';
+    if (/ah-?64|apache|ka-?52|mi-?28|mi-?24|mi-?35|hind|cobra|tiger/.test(n)) return 'attackheli';
     if (/ac-?130|gunship/.test(n)) return 'gunship';
+    if (/mi-?8\b|mi-?17|mi-?38|\bhip\b/.test(n)) return 'mi8';
+    if (/c-?47|dc-?3|dakota|ju-?52|skytrain/.test(n)) return 'proptransport';
     if (/c-?130|c-?17|a400|il-?76|transport|awacs|cargo/.test(n)) return 'transport';
     if (/airliner|boeing 7|airbus|passenger/.test(n)) return 'airliner';
     if (/heli|mi-?\d|black ?hawk|[um]h-?60/.test(n)) return 'heli';
     if (/mq-?\d|reaper|predator|drone|uav|shahed|bayraktar/.test(n)) return 'drone';
+    // WW2 propeller types before the generic modern bomber/fighter fallbacks
+    if (/spitfire|mustang|p[- ]?38|p[- ]?40|p[- ]?47|p[- ]?51|bf[- ]?109|me[- ]?109|messerschmitt|fw[- ]?190|focke|a6m|\bzero\b|hurricane|corsair|hellcat|warhawk|wildcat|yak[- ]?\d|la[- ]?\d|prop(eller)? fighter/.test(n)) return 'propfighter';
+    if (/b[- ]?17|b[- ]?24|b[- ]?25|b[- ]?26|b[- ]?29|lancaster|halifax|stirling|wellington|he[- ]?111|ju[- ]?87|ju[- ]?88|stuka|il[- ]?2\b|il[- ]?4|dauntless|sbd|avenger|tbf|betty|g4m|dornier|do[- ]?17|prop(eller)? bomber|medium bomber|heavy bomber/.test(n)) return 'propbomber';
     if (/b-?52|b-?2\b|b-?21|bomber|tu-?\d/.test(n)) return 'bomber';
     return 'jet';
   }
   if (u.type === 'naval') {
     if (/carrier/.test(n)) return 'carrier';
-    if (/submarine|\bsub\b|u-?boat/.test(n)) return 'submarine';
+    if (/u-?boat|type vii|das boot|gato|balao/.test(n)) return 'uboat';
+    if (/submarine|\bsub\b|ssn\b|ssbn|nuclear sub/.test(n)) return 'submarine';
     if (/patrol|fast attack|speedboat|rib\b/.test(n)) return 'patrolboat';
-    if (/landing craft|lcac|lcu|amphibious/.test(n)) return 'landingcraft';
+    if (/lcvp|higgins|lca\b|lcm\b|lct\b/.test(n)) return 'higgins';
+    if (/lcac|hovercraft|zubr|air cushion/.test(n)) return 'lcac';
+    if (/landing craft|lcu|lst|amphibious|amtrac|aav\b/.test(n)) return 'landingcraft';
     if (/cargo|freighter|tanker ship|merchant/.test(n)) return 'cargoship';
     if (/galleon|ship of the line|man-of-war|frigate \(sail|sailing/.test(n)) return 'sailingship';
     if (/galley|trireme|longship/.test(n)) return 'galley';
@@ -531,6 +694,9 @@ function iconFromName(u: Unit, n: string): SilhouetteKey {
   if (/s-?300|s-?400|patriot|sam\b|air defen[cs]e|pantsir|tor\b|buk/.test(n)) return 'sam';
   if (/zu-?23|shilka|gepard|anti-?aircraft|aa gun/.test(n)) return 'aagun';
   if (/mortar/.test(n)) return 'mortar';
+  if (/half-?track|sdkfz|hanomag|m[235] half/.test(n)) return 'halftrack';
+  if (/bradley|bfv|warrior|cv-?90|puma|ajax/.test(n)) return 'bradley';
+  if (/abrams|m1a?\d|leopard|challenger|leclerc/.test(n)) return 'abrams';
   if (/btr|stryker|boxer|lav\b|8x8|wheeled apc/.test(n)) return 'apc';
   if (/bmp|ifv|apc|bradley|m113|warrior/.test(n)) return 'ifv';
   if (/humvee|jeep|light vehicle|gaz|uaz|jltv/.test(n)) return 'jeep';

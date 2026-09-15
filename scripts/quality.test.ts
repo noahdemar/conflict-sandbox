@@ -131,6 +131,48 @@ test('dismounted troops do not receive cavalry silhouettes', () => {
   assert.equal(silhouetteFor({ ...unit, name: 'Mounted knights' }), 'cavalry');
 });
 
+test('WW2 propeller aircraft resolve to prop silhouettes', () => {
+  const unit = { id: 'a', name: '', factionId: 'f', type: 'air' as const, appearAt: 0, lat: 0, lng: 0 };
+  assert.equal(silhouetteFor({ ...unit, name: 'Spitfire patrol' }), 'propfighter');
+  assert.equal(silhouetteFor({ ...unit, name: 'P-51 Mustangs' }), 'propfighter');
+  assert.equal(silhouetteFor({ ...unit, name: 'Bf 109 flight' }), 'propfighter');
+  assert.equal(silhouetteFor({ ...unit, name: 'B-17 formation' }), 'propbomber');
+  assert.equal(silhouetteFor({ ...unit, name: 'Lancaster bombers' }), 'propbomber');
+  assert.equal(silhouetteFor({ ...unit, name: 'Ju 87 Stuka' }), 'propbomber');
+  assert.equal(silhouetteFor({ ...unit, name: 'C-47 Skytrain' }), 'proptransport');
+  assert.equal(silhouetteFor({ ...unit, name: 'Dakota transport' }), 'proptransport');
+  // modern types still take precedence
+  assert.equal(silhouetteFor({ ...unit, name: 'B-52 bombers' }), 'bomber');
+  assert.equal(silhouetteFor({ ...unit, name: 'C-130 transport' }), 'transport');
+  // explicit icon keys and aliases resolve too
+  assert.equal(silhouetteFor({ ...unit, name: 'anything', icon: 'propfighter' }), 'propfighter');
+  assert.equal(silhouetteFor({ ...unit, name: 'anything', icon: 'spitfire' }), 'propfighter');
+});
+
+test('Western vehicles, naval and helicopter silhouettes resolve by name', () => {
+  const armor = { id: 'v', name: '', factionId: 'f', type: 'armor' as const, appearAt: 0, lat: 0, lng: 0 };
+  assert.equal(silhouetteFor({ ...armor, name: 'M1 Abrams platoon' }), 'abrams');
+  assert.equal(silhouetteFor({ ...armor, name: 'Leopard 2 tanks' }), 'abrams');
+  assert.equal(silhouetteFor({ ...armor, name: 'M2 Bradley section' }), 'bradley');
+  assert.equal(silhouetteFor({ ...armor, name: 'German half-tracks' }), 'halftrack');
+  assert.equal(silhouetteFor({ ...armor, name: 'T-72 tank' }), 'tank');
+  assert.equal(silhouetteFor({ ...armor, name: 'BMP-2 IFV' }), 'ifv');
+
+  const naval = { ...armor, type: 'naval' as const };
+  assert.equal(silhouetteFor({ ...naval, name: 'U-boat patrol' }), 'uboat');
+  assert.equal(silhouetteFor({ ...naval, name: 'USS Gato' }), 'uboat');
+  assert.equal(silhouetteFor({ ...naval, name: 'Virginia-class submarine' }), 'submarine');
+  assert.equal(silhouetteFor({ ...naval, name: 'LCVP Higgins boats' }), 'higgins');
+  assert.equal(silhouetteFor({ ...naval, name: 'LCAC hovercraft' }), 'lcac');
+  assert.equal(silhouetteFor({ ...naval, name: 'LCU landing craft' }), 'landingcraft');
+
+  const air = { ...armor, type: 'air' as const };
+  assert.equal(silhouetteFor({ ...air, name: 'Mi-8 Hip flight' }), 'mi8');
+  assert.equal(silhouetteFor({ ...air, name: 'Mi-17 transports' }), 'mi8');
+  assert.equal(silhouetteFor({ ...air, name: 'Mi-24 Hind' }), 'attackheli');
+  assert.equal(silhouetteFor({ ...air, name: 'UH-60 Black Hawks' }), 'heli');
+});
+
 test('melee involving archers never becomes an arrow or missile effect', () => {
   assert.equal(weaponKind('Archers join the melee with mallets and swords'), 'melee');
   assert.equal(weaponKind('Mounted raid on the baggage'), 'melee');

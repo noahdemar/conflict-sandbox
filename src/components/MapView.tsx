@@ -2168,6 +2168,9 @@ export default function MapView() {
             }
             const dist = Math.hypot(b.x - a.x, b.y - a.y);
             const lofted = from.type !== 'air';
+            // gravity bombs released from aircraft fall below the release point:
+            // no apex, descent accelerates (z follows f², like a real drop)
+            const drop = kind === 'bomb' && from.type === 'air';
             // keep lofted arcs on screen: cap apex height (~1.2 km, stylized)
             const apexCap = maplibregl.MercatorCoordinate.fromLngLat({ lng: x.lng, lat: x.lat }).meterInMercatorCoordinateUnits() * 1200;
             const apex =
@@ -2176,23 +2179,30 @@ export default function MapView() {
                 : kind === 'arrow'
                   ? dist * 0.3 // volleys are loosed high and drop onto the target
                   : kind === 'bomb'
-                    ? dist * 0.08
+                    ? drop
+                      ? 0
+                      : dist * 0.08
                     : lofted
                       ? Math.min(dist * (x.targetStrikeId ? 0.18 : 0.22), apexCap)
                       : dist * 0.12;
-            return { a, b, apex, kind, launchAt: strikeLaunchAt(st.scenario, x) };
+            return { a, b, apex, kind, drop, launchAt: strikeLaunchAt(st.scenario, x) };
           };
           const arcPos = (
             arc: NonNullable<ReturnType<typeof arcFor>>,
             f: number,
-          ) => ({
-            x: arc.a.x + (arc.b.x - arc.a.x) * f,
-            y: arc.a.y + (arc.b.y - arc.a.y) * f,
-            z:
-              arc.a.z +
-              (arc.b.z - arc.a.z) * f +
-              4 * arc.apex * f * (1 - f),
-          });
+          ) => {
+            // forward motion stays linear (the bomb keeps the aircraft's speed);
+            // a dropped bomb loses height slowly at first, then faster
+            const fz = arc.drop ? f * f : f;
+            return {
+              x: arc.a.x + (arc.b.x - arc.a.x) * f,
+              y: arc.a.y + (arc.b.y - arc.a.y) * f,
+              z:
+                arc.a.z +
+                (arc.b.z - arc.a.z) * fz +
+                4 * arc.apex * f * (1 - f),
+            };
+          };
           const interceptPos = (tgt: Strike, atTime: number) => {
             const arc = arcFor(tgt);
             if (!arc) return null;
@@ -2238,7 +2248,7 @@ export default function MapView() {
             const p = arcPos(arc, f);
             const vx = arc.b.x - arc.a.x;
             const vy = arc.b.y - arc.a.y;
-            const vz = arc.b.z - arc.a.z + 4 * arc.apex * (1 - 2 * f);
+            const vz = (arc.b.z - arc.a.z) * (arc.drop ? 2 * f : 1) + 4 * arc.apex * (1 - 2 * f);
             const yaw = Math.atan2(-vy, vx);
             const pitch = Math.atan2(vz, Math.hypot(vx, vy));
             fx.dart.matrixAutoUpdate = false;
