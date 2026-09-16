@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { assetUrl, saveAsset, MAX_ASSET_MB } from '../assets';
 import {
   Download,
   Image,
@@ -46,7 +47,13 @@ export default function RosterPanel() {
     wikiTitle: string;
   } | null>(null);
   const [fetching, setFetching] = useState(false);
+  const [newIcon, setNewIcon] = useState<string | undefined>();
+  const [newModelAsset, setNewModelAsset] = useState<{ ref: string; name: string } | undefined>();
+  /** Roster entry waiting for an uploaded icon, if the upload came from a row. */
+  const [iconTarget, setIconTarget] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const iconRef = useRef<HTMLInputElement>(null);
+  const modelRef = useRef<HTMLInputElement>(null);
 
   if (tool !== 'unit') return null;
 
@@ -78,6 +85,16 @@ export default function RosterPanel() {
     URL.revokeObjectURL(url);
   };
 
+  /** Store an uploaded file, reporting anything the browser refuses. */
+  const upload = async (file: File, kind: 'icon' | 'model') => {
+    try {
+      return await saveAsset(file, kind);
+    } catch (err) {
+      alert(`Could not add that file. ${(err as Error).message}`);
+      return undefined;
+    }
+  };
+
   const submitNew = () => {
     if (!newName.trim()) return;
     addRosterEntry({
@@ -89,6 +106,8 @@ export default function RosterPanel() {
       rangeKm: newRange.trim() ? Number(newRange) : undefined,
       imageUrl: newImage?.imageUrl,
       wikiTitle: newImage?.wikiTitle,
+      iconImage: newIcon,
+      ...(newModelAsset ? { modelUrl: newModelAsset.ref } : {}),
     });
     setNewName('');
     setNewFaction('');
@@ -96,6 +115,8 @@ export default function RosterPanel() {
     setNewModelYaw('');
     setNewRange('');
     setNewImage(null);
+    setNewIcon(undefined);
+    setNewModelAsset(undefined);
     setAdding(false);
   };
 
@@ -158,6 +179,36 @@ export default function RosterPanel() {
         }}
       />
 
+      <input
+        ref={iconRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+        style={{ display: 'none' }}
+        onChange={async (ev) => {
+          const f = ev.target.files?.[0];
+          ev.target.value = '';
+          if (!f) return;
+          const ref = await upload(f, 'icon');
+          if (!ref) return;
+          if (iconTarget) updateRosterEntry(iconTarget, { iconImage: ref });
+          else setNewIcon(ref);
+          setIconTarget(null);
+        }}
+      />
+      <input
+        ref={modelRef}
+        type="file"
+        accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+        style={{ display: 'none' }}
+        onChange={async (ev) => {
+          const f = ev.target.files?.[0];
+          ev.target.value = '';
+          if (!f) return;
+          const ref = await upload(f, 'model');
+          if (ref) setNewModelAsset({ ref, name: f.name });
+        }}
+      />
+
       {adding && (
         <div className="roster-add">
           <input
@@ -184,12 +235,22 @@ export default function RosterPanel() {
               onKeyDown={(e) => e.key === 'Enter' && submitNew()}
             />
           </div>
+          <div className="roster-add-row">
+            <button className="roster-add-submit" onClick={() => { setIconTarget(null); iconRef.current?.click(); }}>
+              <Upload size={12} /> {newIcon ? 'Icon added' : 'Upload icon'}
+            </button>
+            {newIcon && <img className="roster-img-preview" src={assetUrl(newIcon)} alt="" />}
+            <button className="roster-add-submit" onClick={() => modelRef.current?.click()}>
+              <Upload size={12} /> {newModelAsset ? '3D model added' : 'Upload 3D model'}
+            </button>
+          </div>
+          {newModelAsset && <div className="roster-note">{newModelAsset.name}</div>}
           <input
             placeholder="3D model URL (.glb, opt.)"
             value={newModelUrl}
             onChange={(e) => setNewModelUrl(e.target.value)}
           />
-          {newModelUrl.trim() && (
+          {(newModelUrl.trim() || newModelAsset) && (
             <input
               placeholder="Model yaw offset ° (opt.)"
               value={newModelYaw}
@@ -221,6 +282,10 @@ export default function RosterPanel() {
           <button className="roster-add-submit" onClick={submitNew}>
             Add to roster
           </button>
+          <div className="roster-note">
+            Uploads stay in this browser (icons up to {MAX_ASSET_MB.icon} MB, models up to {MAX_ASSET_MB.model} MB). They are not
+            included in share links or exported scenarios.
+          </div>
         </div>
       )}
 
@@ -239,12 +304,29 @@ export default function RosterPanel() {
             onClick={() => pickRoster(e.id)}
             title={`${UNIT_TYPE_LABELS[e.type]}${e.faction ? `, ${e.faction}` : ''}${e.modelUrl ? ', custom 3D model' : ''}`}
           >
-            <span
-              className="unit-glyph"
-              style={{ background: color }}
-              dangerouslySetInnerHTML={{ __html: unitGlyphSvg(e.type) }}
-            />
+            {e.iconImage ? (
+              <span className="unit-glyph custom">
+                <img src={assetUrl(e.iconImage)} alt="" />
+              </span>
+            ) : (
+              <span
+                className="unit-glyph"
+                style={{ background: color }}
+                dangerouslySetInnerHTML={{ __html: unitGlyphSvg(e.type) }}
+              />
+            )}
             <span className="roster-name">{e.name}</span>
+            <button
+              className="icon-btn"
+              title={e.iconImage ? 'Replace uploaded icon' : 'Upload a custom icon'}
+              onClick={(ev) => {
+                ev.stopPropagation();
+                setIconTarget(e.id);
+                iconRef.current?.click();
+              }}
+            >
+              <Upload size={12} />
+            </button>
             <button
               className="icon-btn"
               title="Fetch Wikipedia image"

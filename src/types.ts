@@ -173,8 +173,10 @@ export interface RosterEntry {
   faction?: string;
   /** Icon from the shared library used by units placed from this entry */
   icon?: string;
-  /** URL of a .glb/.gltf model to render instead of the built-in symbol */
+  /** URL of a .glb/.gltf model to render instead of the built-in symbol, or "asset:<id>" for an upload */
   modelUrl?: string;
+  /** Custom map icon: an image URL, or "asset:<id>" for an upload. Replaces the library icon */
+  iconImage?: string;
   /** Extra yaw (degrees) to correct model forward axis */
   modelYaw?: number;
   /** Default range ring (km) applied to placed units */

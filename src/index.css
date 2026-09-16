@@ -4595,3 +4595,41 @@ body {
   margin-top: 1px;
   color: var(--accent);
 }
+
+/* ---------- uploaded icons and models ---------- */
+.stk-custom {
+  display: block;
+  width: var(--sz, 42px);
+  height: var(--sz, 42px);
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.mk.destroyed .stk-custom {
+  filter: grayscale(1) brightness(0.55);
+}
+
+.unit-glyph.custom {
+  display: grid;
+  place-items: center;
+  background: rgba(24, 34, 48, 0.06);
+  overflow: hidden;
+}
+
+.unit-glyph.custom img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.roster-note {
+  padding: 2px 2px 4px;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.roster-add-submit svg {
+  margin-right: 4px;
+  vertical-align: -2px;
+}

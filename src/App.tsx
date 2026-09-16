@@ -12,6 +12,7 @@ import { arrowVolley, boom, gallop, gunshot, meleeClash, setRotor } from './audi
 import { expandStrikes, weaponKind } from './particles';
 import { realismWarnings, strikeLaunchAt } from './realism';
 import { startRouting } from './routing';
+import { preloadAssets } from './assets';
 import { clearShareHash, readShareLink } from './share';
 import { demoFromUrl } from './demos';
 import { iconFallbacks } from './iconCatalog';
@@ -403,6 +404,11 @@ export default function App() {
       stopNarration();
     };
   }, [playing]);
+
+  // uploaded icons and models live in this browser; load them once
+  useEffect(() => {
+    void preloadAssets();
+  }, []);
 
   // snap ground movement to real roads
   useEffect(() => startRouting(), []);

@@ -9,6 +9,7 @@ import { FACILITY_META, facilityIconSvg } from '../facilities';
 import { STATUS_META, activeEffects, statusIconSvg } from '../statusEffects';
 import { onElevationLoaded, viewshed } from '../elevation';
 import { unitAmmo } from '../combat';
+import { assetUrl } from '../assets';
 import { groundProgress, strikeLaunchAt } from '../realism';
 import { lightingFromSun, nightPolygon, sunElevation, utcInstant, windVector } from '../environment';
 import { APP6_FILL, factionAffiliation, unitSymbolSvg } from '../natoSymbols';
@@ -419,8 +420,9 @@ export default function MapView() {
       const entry = u.rosterId
         ? useStore.getState().unitLibrary.find((e) => e.id === u.rosterId)
         : undefined;
-      if (!entry?.modelUrl) return null;
-      const tpl = loadGlbModel(entry.modelUrl, entry.modelYaw ?? 0, () =>
+      const modelSrc = assetUrl(entry?.modelUrl);
+      if (!modelSrc) return null;
+      const tpl = loadGlbModel(modelSrc, entry?.modelYaw ?? 0, () =>
         map.triggerRepaint(),
       );
       return tpl ? { obj: tpl, sig: `glb:${tpl.uuid}` } : null;
@@ -1090,11 +1092,14 @@ export default function MapView() {
         const img = u.rosterId
           ? st.unitLibrary.find((e) => e.id === u.rosterId)?.imageUrl
           : undefined;
-        const key = silhouetteFor(u, u.rosterId ? st.unitLibrary.find((e) => e.id === u.rosterId) : undefined);
+        const rosterEntry = u.rosterId ? st.unitLibrary.find((e) => e.id === u.rosterId) : undefined;
+        const key = silhouetteFor(u, rosterEntry);
+        // an uploaded icon replaces the library silhouette
+        const customIcon = assetUrl(rosterEntry?.iconImage);
         const destroyed = u.destroyedAt !== undefined && st.time >= u.destroyedAt;
         const air = u.type === 'air';
         const symbols = st.iconStyle === 'symbols' && st.scenario.era !== 'historical';
-        const sig = `${key}|${color}|${destroyed}|${u.name}|${img ?? ''}|${st.iconStyle}|${st.scenario.era ?? ''}`;
+        const sig = `${key}|${color}|${destroyed}|${u.name}|${img ?? ''}|${st.iconStyle}|${st.scenario.era ?? ''}|${customIcon ?? ''}`;
         if (el.dataset.sig !== sig) {
           el.dataset.sig = sig;
           const sz = `${Math.round((air ? 70 : 58) * silhouetteScale(key))}px`;
@@ -1102,7 +1107,9 @@ export default function MapView() {
             e.style.setProperty('--fc', color);
             e.style.setProperty('--sz', sz);
           }
-          if (symbols) {
+          if (customIcon) {
+            el.innerHTML = `<div class="mk-box stk${air ? ' air' : ''}"><div class="fx-rings"></div><div class="stk-rot"><img class="stk-custom" src="${customIcon}" alt="" /></div></div>`;
+          } else if (symbols) {
             // standard affiliation frame + type symbol, upright on screen
             const aff = factionAffiliation(
               st.scenario.factions.find((f) => f.id === u.factionId),
@@ -1117,15 +1124,15 @@ export default function MapView() {
               air ? `<div class="stk-shadow">${shadowSvg(key)}</div>` : ''
             }<div class="stk-rot">${silhouetteSvg(key, color, destroyed)}</div></div>`;
           }
-          mk.setPitchAlignment(symbols ? 'viewport' : 'map');
-          mk.setRotationAlignment(symbols ? 'viewport' : 'map');
+          mk.setPitchAlignment(symbols && !customIcon ? 'viewport' : 'map');
+          mk.setRotationAlignment(symbols && !customIcon ? 'viewport' : 'map');
           tagEl.innerHTML = `${
             img ? `<img class="mk-img" src="${img}" alt="" />` : ''
           }<div class="mk-status"></div><div class="mk-gap"><span class="mk-count" hidden></span></div><div class="mk-name"><span class="mk-label"></span><span class="mk-bars"><i class="ammo" hidden><b></b></i></span></div>`;
           tagEl.querySelector<HTMLElement>('.mk-label')!.textContent = u.name || '';
         }
         const pose = unitPose(u);
-        mk.setRotation(symbols ? 0 : pose.bearing);
+        mk.setRotation(symbols && !customIcon ? 0 : pose.bearing);
         tagMk.setLngLat(pose.point);
         const highlighted = highlightedIds.has(u.id);
         el.classList.toggle('destroyed', destroyed);
