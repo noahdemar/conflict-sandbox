@@ -398,7 +398,15 @@
         },
         "spreadM": {
           "type": "number",
-          "description": "Salvo scatter radius in meters (default 120)"
+          "description": "Salvo scatter radius in meters (default 120; half-length when pattern is \"line\")"
+        },
+        "pattern": {
+          "type": "string",
+          "enum": [
+            "disc",
+            "line"
+          ],
+          "description": "Salvo spread shape. \"disc\" scatters rounds around the aim point (artillery sheaf — the default for ground weapons). \"line\" walks them along the attack axis from the firing unit toward the aim point: strafing runs, bomb sticks and rocket ripples. Needs fromUnitId. Air-launched gun, bomb and missile salvos use \"line\" automatically unless set to \"disc\"."
         }
       },
       "required": [

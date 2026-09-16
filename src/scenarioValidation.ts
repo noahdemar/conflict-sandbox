@@ -89,7 +89,7 @@ const FIELD_REFERENCE = [
   'arrow:     id*, factionId*, points*([[lng,lat],...]), name*, appearAt*, duration*, followRoads?, hideLine?, hideAt?, times?',
   'territory: id*, factionId*, points*([[lng,lat] ring]), name*, appearAt*, duration*, label?, labelAt?, labelRotate?',
   'label:     id*, text*, lat*, lng*, size*, color*, appearAt*, flag?, facility?',
-  'strike:    id*, lat*, lng*, name*, size*, appearAt*, impactStyle?("blast"|"fireball"), fromUnitId?, launchAt?, targetStrikeId?, targetUnitId?, salvo?, spreadM?',
+  'strike:    id*, lat*, lng*, name*, size*, appearAt*, impactStyle?("blast"|"fireball"), fromUnitId?, launchAt?, targetStrikeId?, targetUnitId?, salvo?, spreadM?, pattern?("disc"|"line")',
   'keyframe:  id*, time*, lng*, lat*, zoom*, pitch*, bearing*, caption*, highlightUnitIds?, followUnitId?, followMode?("track"|"chase"), orbitSpeed?, narrate?, sensor?("normal"|"nvg"|"thermal"), aerial?, overlay?("orbat"), overlayFactionIds?, media?',
   'effect:    id*, kind*("radio"|"datalink"|"jamming"|"panic"|"wounded"|"noammo"), unitId*, start*, duration*, targetUnitId?, radiusM?, label?',
   'roster:    id*, name*, type*, faction?, icon?, modelUrl?, modelYaw?, rangeKm?, imageUrl?, wikiTitle?',
@@ -112,6 +112,24 @@ const REFERENCE_NOTES = [
   '- river-crossing.json: the minimal valid skeleton — two factions, a handful of units, one arrow, a few captioned keyframes. Start small like this, then add detail.',
 ].join('\n');
 
+/**
+ * Self-verification loop for assistants that can drive a browser: the
+ * published site validates and plays any fetchable scenario, so an agent can
+ * watch its own work with no repo or install.
+ */
+function agentWorkflow(site: string): string {
+  return [
+    'If you can drive a web browser (Claude Code, Codex CLI, Gemini CLI, Cursor, Windsurf/Devin, VS Code Copilot agent mode), verify your work in the real player instead of guessing:',
+    `1. Open ${site}?scenario=<url> where <url> is anywhere your JSON file can be fetched:`,
+    '   - quickest: publish it as a public gist (`gh gist create scenario.json --public`) and use the raw file URL, or any static host that allows cross-origin fetches;',
+    '   - no hosting needed: append encodeURIComponent("data:application/json;base64," + base64(your file)) after ?scenario= .',
+    '2. The page validates before it plays: schema and semantic errors are listed on screen and in the browser console, and realism warnings appear too. Fix the JSON and reload until it plays cleanly.',
+    '3. Watch the whole timeline: label overlaps, unit spacing, camera composition, effect timing and caption readability — then iterate on the JSON until it looks right.',
+    '4. Deliver the finished JSON plus the preview URL.',
+    'If you are a chat-only assistant with no tools, tell the user this prompt produces much better results inside one of those agentic tools — then still output valid JSON now so they can use it immediately.',
+  ].join('\n');
+}
+
 export function llmPrompt(description?: string): string {
   const site = siteForAssistants();
   return [
@@ -124,6 +142,8 @@ export function llmPrompt(description?: string): string {
     FIELD_REFERENCE,
     '',
     REFERENCE_NOTES,
+    '',
+    agentWorkflow(site),
     '',
     'Output only the JSON document (the {"format": "conflict-sandbox-scenario", ...} wrapper), no prose.',
     'Use [longitude, latitude] order in "points" arrays, unique ids, and times within "duration".',

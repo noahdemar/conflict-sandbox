@@ -10,6 +10,20 @@ import type { RosterEntry, Scenario } from '../types';
 const STEPS = ['Describe', 'Copy prompt', 'Paste reply', 'Review & publish'] as const;
 
 /**
+ * Agentic environments the browser can reach: app URI schemes open the
+ * installed tool, https links open the tool's web surface in a new tab.
+ * Neither can carry the prompt — each button copies it to the clipboard
+ * first so the user just pastes into the chat.
+ */
+const IDES: { id: string; name: string; scheme: string; note: string }[] = [
+  { id: 'codex', name: 'Codex', scheme: 'https://chatgpt.com/codex', note: 'Cloud or CLI' },
+  { id: 'cursor', name: 'Cursor', scheme: 'cursor://', note: 'Agent chat' },
+  { id: 'windsurf', name: 'Windsurf', scheme: 'windsurf://', note: 'Cascade / Devin' },
+  { id: 'zed', name: 'Zed', scheme: 'zed://', note: 'Agent panel' },
+  { id: 'claude', name: 'Claude', scheme: 'claude://', note: 'App or Claude Code' },
+];
+
+/**
  * "Create a Brief": the guided path from an idea to a published article.
  * Describe the event, copy a ready-made prompt into an AI chat assistant,
  * paste its JSON reply back, then review and share.
@@ -112,8 +126,8 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
                   <Sparkles size={15} /> AI-assisted
                 </h4>
                 <p>
-                  Describe the event, copy a ready-made prompt into ChatGPT, Claude or Gemini, then paste the JSON
-                  reply back here.
+                  Describe the event, copy a ready-made prompt into an AI assistant, then paste the JSON reply back
+                  here. Agentic coding tools (Claude Code, Codex, Cursor) can preview and fix their own work.
                 </p>
                 <div className="create-actions">
                   <button className="top-btn" onClick={() => setPath('ai')}>
@@ -175,11 +189,47 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
             <ol className="create-howto">
               <li>Copy the prompt below. It points the assistant at the OpenBrief format guide and includes your description.</li>
               <li>
-                Open ChatGPT, Claude, Gemini or another assistant in a new tab and paste it in. Assistants that can browse
-                the web will follow the guide links most reliably.
+                <b>Best results:</b> paste it into an agentic coding assistant — Claude Code, Codex CLI, Gemini CLI,
+                Cursor, Windsurf/Devin or VS Code Copilot agent mode. It can load its JSON straight into this site,
+                see validation errors and watch its own scenes play, so it fixes mistakes before you ever see them.
+              </li>
+              <li>
+                A chat assistant works too: open ChatGPT, Claude or Gemini in a new tab and paste the prompt in.
+                Assistants that can browse the web will follow the guide links most reliably.
               </li>
               <li>Wait for a single JSON document in reply, then copy the whole reply.</li>
             </ol>
+            <div className="ide-launch">
+              <span>Copy the prompt and open your assistant:</span>
+              <div className="ide-grid">
+                {IDES.map((ide) => (
+                  <button
+                    key={ide.id}
+                    className="ide-btn"
+                    title={`Copy the prompt and open ${ide.name} (paste it into the agent chat)`}
+                    onClick={() => {
+                      copy('prompt', prompt);
+                      if (ide.scheme.startsWith('http')) window.open(ide.scheme, '_blank', 'noreferrer');
+                      else window.location.href = ide.scheme;
+                    }}
+                  >
+                    {ide.name}
+                    <small>{ide.note}</small>
+                  </button>
+                ))}
+                <button
+                  className="ide-btn"
+                  title="Copy the prompt for Gemini CLI, Aider, a chat assistant or anything else"
+                  onClick={() => copy('prompt', prompt)}
+                >
+                  Something else
+                  <small>Gemini CLI, a chat bot…</small>
+                </button>
+              </div>
+              {copied === 'prompt' && (
+                <p className="ide-hint">Prompt copied — paste it into the agent chat. If the app didn’t open, it may not be installed.</p>
+              )}
+            </div>
             <textarea className="create-text mono" rows={9} readOnly value={prompt} onFocus={(e) => e.target.select()} />
             <div className="create-actions">
               <button className="top-btn" onClick={() => setStep(0)}>

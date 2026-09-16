@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { Strike } from './types';
+import type { LngLat } from './geo';
+import type { Strike, Unit } from './types';
 
 /**
  * Stateless GPU particle system for the 3D layer. Every frame the emitters
@@ -154,8 +155,17 @@ export function rnd(seed: string, i: number): number {
 
 export const MAX_SALVO_ROUNDS = 256;
 
-/** Expand salvo strikes into individual rounds scattered around the aim point. */
-export function expandStrikes(strikes: Strike[]): Strike[] {
+/**
+ * Expand salvo strikes into individual rounds scattered around the aim point.
+ * `units` + `at` resolve the firing unit's position at launch so "line"
+ * salvos (strafe runs, bomb sticks — automatic for air-launched gun/bomb/
+ * missile salvos) walk the rounds along the attack axis.
+ */
+export function expandStrikes(
+  strikes: Strike[],
+  units: Unit[] = [],
+  at?: (u: Unit, t: number) => LngLat,
+): Strike[] {
   const out: Strike[] = [];
   for (const x of strikes) {
     const n = Math.min(MAX_SALVO_ROUNDS, Math.max(1, Math.round(x.salvo ?? 1)));
@@ -163,22 +173,52 @@ export function expandStrikes(strikes: Strike[]): Strike[] {
       out.push(x);
       continue;
     }
+    const kind = weaponKind(x.name);
+    const from = x.fromUnitId ? units.find((u) => u.id === x.fromUnitId) : undefined;
+    // attack-axis spread for strafing runs and bomb sticks
+    const lineWanted =
+      x.pattern === 'line' ||
+      (x.pattern === undefined &&
+        !!from &&
+        from.type === 'air' &&
+        (kind === 'gun' || kind === 'bomb' || kind === 'missile'));
+    let dir: [number, number] | null = null;
+    if (lineWanted && from) {
+      const src = at ? at(from, x.launchAt ?? x.appearAt) : ([from.lng, from.lat] as LngLat);
+      const cosLat = Math.cos((x.lat * Math.PI) / 180);
+      const ex = (x.lng - src[0]) * 111320 * cosLat;
+      const ny = (x.lat - src[1]) * 111320;
+      const d = Math.hypot(ex, ny);
+      if (d > 1) dir = [ex / d, ny / d];
+    }
     const spread = x.spreadM ?? 120;
     // small-arms salvos are bursts: aimed pairs/triples ~0.2s apart,
     // automatic fire ~0.09s; heavy salvos keep the slow ripple
-    const gun = weaponKind(x.name) === 'gun';
+    const gun = kind === 'gun';
     const gap = !gun ? 0.32 : n <= 4 ? 0.2 : 0.09;
+    const cosLat = Math.cos((x.lat * Math.PI) / 180);
     for (let i = 0; i < n; i++) {
-      const ang = rnd(x.id, i * 7 + 1) * Math.PI * 2;
-      const rad = i === 0 ? 0 : Math.sqrt(rnd(x.id, i * 7 + 2)) * spread;
-      const dLat = (rad * Math.sin(ang)) / 111320;
-      const dLng = (rad * Math.cos(ang)) / (111320 * Math.cos((x.lat * Math.PI) / 180));
+      let eM: number;
+      let nM: number;
+      if (dir) {
+        // rounds land in firing order, walking from behind the aim point
+        // through it and past it; tight lateral dispersion
+        const along = (i / (n - 1)) * 2 - 1;
+        const across = (rnd(x.id, i * 7 + 2) - 0.5) * spread * 0.15;
+        eM = along * spread * dir[0] - across * dir[1];
+        nM = along * spread * dir[1] + across * dir[0];
+      } else {
+        const ang = rnd(x.id, i * 7 + 1) * Math.PI * 2;
+        const rad = i === 0 ? 0 : Math.sqrt(rnd(x.id, i * 7 + 2)) * spread;
+        eM = rad * Math.cos(ang);
+        nM = rad * Math.sin(ang);
+      }
       const dt = i === 0 ? 0 : i * gap + rnd(x.id, i * 7 + 3) * gap * 0.45;
       out.push({
         ...x,
         id: i === 0 ? x.id : `${x.id}#${i}`,
-        lat: x.lat + dLat,
-        lng: x.lng + dLng,
+        lat: x.lat + nM / 111320,
+        lng: x.lng + eM / (111320 * cosLat),
         size: x.size * (i === 0 ? 1 : 0.6 + rnd(x.id, i * 7 + 4) * 0.3),
         appearAt: x.appearAt + dt,
         launchAt: x.launchAt !== undefined ? x.launchAt + dt : undefined,

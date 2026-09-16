@@ -101,8 +101,14 @@ export interface Strike {
   targetUnitId?: string;
   /** Number of rounds in a salvo (gunship/artillery); impacts scatter around the aim point */
   salvo?: number;
-  /** Salvo scatter radius in meters (default 120) */
+  /** Salvo scatter radius in meters (default 120; half-length when pattern is "line") */
   spreadM?: number;
+  /** Salvo spread shape. "disc" scatters rounds around the aim point (artillery
+   *  sheaf — the default for ground weapons). "line" walks them along the
+   *  attack axis from the firing unit toward the aim point: strafing runs,
+   *  bomb sticks and rocket ripples. Needs fromUnitId. Air-launched gun, bomb
+   *  and missile salvos use "line" automatically unless set to "disc". */
+  pattern?: 'disc' | 'line';
 }
 
 export interface Arrow {

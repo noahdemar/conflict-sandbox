@@ -20,6 +20,32 @@ against the schema, then load it in the app (see "Loading" below).
 Output ONLY the JSON document when asked for a scenario: no prose, no comments,
 no trailing commas.
 
+## Agentic authoring loop (browser access)
+
+If you are an AI assistant that can drive a browser (Claude Code, Codex CLI,
+Gemini CLI, Cursor, Windsurf/Devin, VS Code Copilot agent mode), do not just
+emit JSON and hope — the published site validates and plays any fetchable
+scenario. No repository or install needed:
+
+1. Write the scenario JSON, then open
+   `https://noahdemar.github.io/conflict-sandbox/?scenario=<url>` where <url>
+   is anywhere the file can be fetched:
+   - quickest: `gh gist create scenario.json --public` and use the raw file
+     URL, or any static host that allows cross-origin fetches;
+   - no hosting: append `encodeURIComponent("data:application/json;base64," +
+     base64(file))` after `?scenario=` and open that (fine for typical
+     scenario sizes; prefer a hosted URL for very large documents).
+2. The page validates before it plays: schema and semantic errors are listed
+   on screen and in the browser console, and realism warnings appear too.
+   Fix the JSON and reload until it plays cleanly.
+3. Watch the whole timeline: label overlaps, unit spacing, camera composition,
+   effect timing and caption readability. Iterate on the JSON until it looks
+   right.
+4. Deliver the JSON plus the preview URL.
+
+If you have no tools, tell the user this workflow exists and produces much
+better results — then still return valid JSON.
+
 ## Top-level shape
 
 Use the exported file wrapper (recommended):
@@ -146,7 +172,16 @@ Optional: fromUnitId + launchAt (fly from that unit; without launchAt the
 flight time is derived from weapon type and distance), targetUnitId (impact
 follows that unit's position at impact time; use this for moving targets),
 salvo + spreadM (multiple rounds), targetStrikeId (interceptor),
-impactStyle: "blast" (default) or "fireball" (explicit fuel-rich treatment).
+impactStyle: "blast" (default) or "fireball" (explicit fuel-rich treatment),
+pattern: "disc" or "line" (salvo spread shape).
+
+Salvo patterns: "disc" scatters rounds around the aim point (artillery sheaf —
+the default for ground weapons). "line" walks them along the attack axis from
+fromUnitId toward the aim point in firing order — use it for strafing runs
+("Strafing run", "30mm gun run"), bomb sticks and rocket ripples. Gun, bomb
+and missile salvos launched by an AIR unit get "line" automatically; set
+pattern: "disc" to opt out. spreadM is the disc radius or the line half-length
+in meters; a strafe over 60 to 120 meters reads well.
 
 Use "blast" for normal high-explosive impacts. A large weapon is not automatically
 a fuel explosion: only choose "fireball" when the target/event supports it.

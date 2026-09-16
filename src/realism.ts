@@ -314,7 +314,7 @@ export function realismWarnings(s: Scenario): string[] {
       );
     }
   }
-  for (const x of expandStrikes(s.strikes)) {
+  for (const x of expandStrikes(s.strikes, s.units, (u, t) => roughPosition(s, u, t))) {
     const from = x.fromUnitId ? s.units.find((u) => u.id === x.fromUnitId) : undefined;
     if (!from || x.targetStrikeId) continue;
     const kind = weaponKind(x.name);

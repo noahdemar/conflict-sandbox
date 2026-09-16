@@ -101,6 +101,31 @@ test('repeated gunfire reuses its sound buffer', () => {
   assert.equal(FakeContext.buffers - before, 1);
 });
 
+test('air-launched salvos walk impacts along the attack line', () => {
+  const plane = { id: 'p', factionId: 'f', type: 'air', name: 'A-10', lat: 0, lng: -0.1, appearAt: 0 };
+  const strike = {
+    id: 'st', name: 'Strafing run', lat: 0, lng: 0, size: 0.3, appearAt: 5,
+    fromUnitId: 'p', salvo: 9, spreadM: 100,
+  };
+  const rounds = expandStrikes([strike], [plane as never]);
+  assert.equal(rounds.length, 9);
+  // shooter is ~11 km west of the aim point: the line runs east-west, so
+  // latitude stays tight while longitude covers the run
+  const dLats = rounds.map((r) => Math.abs(r.lat));
+  const dLngs = rounds.map((r) => Math.abs(r.lng));
+  assert.ok(Math.max(...dLats) < Math.max(...dLngs) * 0.25);
+  assert.ok(Math.max(...dLngs) > 0.0008);
+  // the run walks through the aim point: rounds land on both sides along the axis
+  assert.ok(rounds.some((r) => r.lng < 0) && rounds.some((r) => r.lng > 0));
+  // explicit "line" works for ground shooters too
+  const tank = { ...plane, id: 't', type: 'armor', name: 'BMP' };
+  const lined = expandStrikes([{ ...strike, id: 'lt', fromUnitId: 't', pattern: 'line' }], [tank as never]);
+  assert.ok(Math.max(...lined.map((r) => Math.abs(r.lat))) < Math.max(...lined.map((r) => Math.abs(r.lng))) * 0.25);
+  // "disc" opts an aircraft back into radial scatter
+  const disc = expandStrikes([{ ...strike, pattern: 'disc' }], [plane as never]);
+  assert.ok(Math.max(...disc.map((r) => Math.abs(r.lat))) > Math.max(...dLats));
+});
+
 test('salvo expansion is bounded for oversized imported values', () => {
   const rounds = expandStrikes([{ id: 'huge', name: 'Rifle', lat: 0, lng: 0, size: 0.08, appearAt: 2, salvo: 1e9 }]);
   assert.equal(rounds.length, MAX_SALVO_ROUNDS);

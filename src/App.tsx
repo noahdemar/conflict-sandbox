@@ -10,15 +10,16 @@ import { useStore } from './store';
 import { loadNarrationPack, narrate, narrateRecorded, preloadKokoro, preloadNarrationPack, setVoiceGeneration, stopNarration } from './narration';
 import { arrowVolley, boom, gallop, gunshot, meleeClash, setRotor } from './audio';
 import { expandStrikes, weaponKind } from './particles';
-import { strikeLaunchAt } from './realism';
+import { realismWarnings, strikeLaunchAt } from './realism';
 import { startRouting } from './routing';
 import { clearShareHash, readShareLink } from './share';
 import { demoFromUrl } from './demos';
+import { iconFallbacks } from './iconCatalog';
 import { validateScenarioJson } from './scenarioValidation';
 import { lossesByFaction } from './combat';
 import { hourAt } from './environment';
 import OrbatOverlay from './components/OrbatOverlay';
-import type { ShotOverlay, Unit, UnitType } from './types';
+import type { RosterEntry, Scenario, ShotOverlay, Unit, UnitType } from './types';
 import EnvironmentPanel from './components/EnvironmentPanel';
 import TranscriptPane from './components/TranscriptPane';
 import ConsentModal from './components/ConsentModal';
@@ -289,6 +290,8 @@ export default function App() {
   // an editor explicitly allowed generating voice for unrecorded lines
   const allowGeneration = useStore((s) => !s.viewer && s.narration.allowGeneration);
   const overlay = useActiveOverlay();
+  const [remoteError, setRemoteError] = useState<string[] | null>(null);
+  const [remoteWarnings, setRemoteWarnings] = useState<string[]>([]);
   const spokenRef = useRef<string | null>(null);
   const spokenCaptionRef = useRef<string | null>(null);
   const prevTimeRef = useRef(0);
@@ -316,7 +319,7 @@ export default function App() {
       }
       if (eventScenario !== st.scenario) {
         eventScenario = st.scenario;
-        events = expandStrikes(st.scenario.strikes).flatMap((strike) => {
+        events = expandStrikes(st.scenario.strikes, st.scenario.units).flatMap((strike) => {
           const kind = weaponKind(strike.name);
           const at = kind === 'gun' || kind === 'arrow' ? strikeLaunchAt(st.scenario, strike) : strike.appearAt;
           if (kind !== 'gun' && kind !== 'arrow' && st.scenario.strikes.some((x) =>
@@ -445,14 +448,28 @@ export default function App() {
             .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
             .then(async (json) => {
               const { ok, errors } = await validateScenarioJson(json);
-              if (!ok) throw new Error(`invalid scenario:\n${errors.slice(0, 8).join('\n')}`);
+              if (!ok) {
+                // in-page + console so browser-driving assistants can read them too
+                console.error(`scenario failed validation:\n${errors.join('\n')}`);
+                setRemoteError(errors.slice(0, 12));
+                return;
+              }
               const st = useStore.getState();
               if (st.importScenario(json, { persist: false })) {
                 st.setViewer(true);
                 st.setCameraLock(true);
+                const doc = JSON.parse(json) as { scenario?: Scenario; roster?: RosterEntry[] } & Scenario;
+                const warns = [...iconFallbacks(doc.scenario ?? doc, doc.roster), ...realismWarnings(doc.scenario ?? doc)];
+                if (warns.length) {
+                  console.warn(`scenario warnings:\n${warns.join('\n')}`);
+                  setRemoteWarnings(warns);
+                }
               }
             })
-            .catch((e) => alert(`Could not load scenario from URL.\n${(e as Error).message}`));
+            .catch((e) => {
+              console.error('scenario load failed:', e);
+              setRemoteError([`Could not load scenario from URL: ${(e as Error).message}`]);
+            });
           return;
         }
         const demo = demoFromUrl();
@@ -553,6 +570,32 @@ export default function App() {
         </>
       )}
       <ConsentModal />
+      {remoteError && (
+        <div className="remote-report" role="alert">
+          <div className="remote-report-head">
+            <strong>Scenario failed validation</strong>
+            <button className="icon-btn" onClick={() => setRemoteError(null)} title="Dismiss">×</button>
+          </div>
+          <ul>
+            {remoteError.map((e) => (
+              <li key={e}>{e}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {remoteWarnings.length > 0 && (
+        <div className="remote-report remote-warnings" role="status">
+          <div className="remote-report-head">
+            <strong>{remoteWarnings.length} realism warning{remoteWarnings.length === 1 ? '' : 's'}</strong>
+            <button className="icon-btn" onClick={() => setRemoteWarnings([])} title="Dismiss">×</button>
+          </div>
+          <ul>
+            {remoteWarnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

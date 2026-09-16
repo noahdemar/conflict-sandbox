@@ -443,7 +443,7 @@ export default function MapView() {
         const [lng, lat] = unitPose(u, x.appearAt).point;
         return { ...x, lng, lat };
       });
-      expanded = expandStrikes(resolved);
+      expanded = expandStrikes(resolved, st.scenario.units, (u, t) => unitPose(u, t).point);
       return resolved;
     };
     const expandedStrikes = () => {

@@ -4478,3 +4478,99 @@ body {
     transform: translateX(-50%) scale(0.62);
   }
 }
+
+/* report for ?scenario= loads: validation errors and realism warnings,
+   readable on screen and by browser-driving assistants */
+.remote-report {
+  position: fixed;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: min(560px, calc(100vw - 32px));
+  max-height: 45vh;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid rgba(217, 58, 47, 0.4);
+  border-radius: 9px;
+  background: rgba(20, 16, 14, 0.92);
+  color: var(--text);
+  font-size: 11.5px;
+  backdrop-filter: blur(6px);
+}
+
+.remote-report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--danger);
+}
+
+.remote-report ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+.remote-report .icon-btn {
+  color: var(--text-dim);
+}
+
+.remote-warnings {
+  border-color: rgba(217, 160, 47, 0.4);
+}
+
+.remote-warnings .remote-report-head {
+  color: #d9a02f;
+}
+
+/* IDE launch picker in Create a Brief: copies the prompt, then tries the
+   app's URI scheme (browsers can't carry the prompt or detect installs) */
+.ide-launch {
+  margin: 10px 0 8px;
+}
+
+.ide-launch > span {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.ide-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.ide-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 6px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.ide-btn:hover {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.ide-btn small {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.ide-hint {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  color: var(--accent);
+}
