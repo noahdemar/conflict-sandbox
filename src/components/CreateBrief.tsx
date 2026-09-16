@@ -31,7 +31,6 @@ const IDES: { id: string; name: string; scheme: string; note: string }[] = [
 export default function CreateBrief({ onClose, onShare }: { onClose: () => void; onShare: () => void }) {
   const importScenario = useStore((s) => s.importScenario);
   const newScenario = useStore((s) => s.newScenario);
-  const empty = useStore((s) => s.scenario.units.length === 0 && s.scenario.keyframes.length === 0);
   const [path, setPath] = useState<'choose' | 'ai'>('choose');
   const [step, setStep] = useState(0);
   const [description, setDescription] = useState('');
@@ -97,32 +96,6 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
             <div className="create-paths">
               <div className="create-path">
                 <h4>
-                  <PenLine size={15} /> Manually
-                </h4>
-                <p>
-                  Place units, routes and keyframes on the map yourself, then write the article by hand. No AI
-                  assistant needed.
-                </p>
-                <div className="create-actions">
-                  <button className="top-btn primary" onClick={onClose}>
-                    Start building <ArrowRight size={14} />
-                  </button>
-                  {!empty && (
-                    <button
-                      className="top-btn"
-                      onClick={() => {
-                        newScenario();
-                        onClose();
-                      }}
-                      title="Clear the current brief and start with a blank canvas"
-                    >
-                      New blank brief
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="create-path">
-                <h4>
                   <Sparkles size={15} /> AI-assisted
                 </h4>
                 <p>
@@ -130,8 +103,29 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
                   here. Agentic coding tools (Claude Code, Codex, Cursor) can preview and fix their own work.
                 </p>
                 <div className="create-actions">
-                  <button className="top-btn" onClick={() => setPath('ai')}>
-                    Describe the event <ArrowRight size={14} />
+                  <button className="top-btn primary" onClick={() => setPath('ai')}>
+                    Start building <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+              <div className="create-path">
+                <h4>
+                  <PenLine size={15} /> Manually
+                </h4>
+                <p>
+                  Place units, routes and keyframes on the map yourself, then write the article by hand. No AI
+                  assistant needed.
+                </p>
+                <div className="create-actions">
+                  <button
+                    className="top-btn"
+                    onClick={() => {
+                      newScenario();
+                      onClose();
+                    }}
+                    title="Start with a blank canvas (replaces the current brief)"
+                  >
+                    New blank brief
                   </button>
                 </div>
               </div>
