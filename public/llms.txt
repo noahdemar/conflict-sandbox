@@ -106,8 +106,12 @@ Optional:
 - sensorKm: terrain-aware line-of-sight area for ground units
 - airDefenseKm: engagement envelope that turns red when enemy aircraft enter
 - landAtEnd (aircraft set down at route end instead of loitering)
-- altitudeKm (+ orbitRole "relay" | "imaging", captureAt): renders a satellite
-  in 3D at that altitude above its ground track
+- altitudeKm + orbitRole "relay" | "imaging" (+ captureAt for an imaging
+  pass): renders a satellite in 3D above its ground track. Altitude must be
+  over 100 km (the edge of space) and is typically 500+ km for imaging
+  satellites. Every non-geostationary satellite MOVES: give it an arrowId
+  route. Only a geostationary satellite (altitudeKm about 35786) may hold
+  position.
 
 Aircraft without landAtEnd circle over the end of their route. Ground vehicles
 sharing one route queue, drive in column and halt in line automatically; they

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, Check, ClipboardCopy, ExternalLink, FileText, Share2, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ClipboardCopy, ExternalLink, FileText, PenLine, Share2, Sparkles, X } from 'lucide-react';
 import { useStore } from '../store';
 import { llmPrompt, validateScenarioJson } from '../scenarioValidation';
 import { realismWarnings } from '../realism';
@@ -16,6 +16,9 @@ const STEPS = ['Describe', 'Copy prompt', 'Paste reply', 'Review & publish'] as 
  */
 export default function CreateBrief({ onClose, onShare }: { onClose: () => void; onShare: () => void }) {
   const importScenario = useStore((s) => s.importScenario);
+  const newScenario = useStore((s) => s.newScenario);
+  const empty = useStore((s) => s.scenario.units.length === 0 && s.scenario.keyframes.length === 0);
+  const [path, setPath] = useState<'choose' | 'ai'>('choose');
   const [step, setStep] = useState(0);
   const [description, setDescription] = useState('');
   const [reply, setReply] = useState('');
@@ -67,13 +70,61 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
             <h2 id="create-title">
               <Sparkles size={18} /> Create a Brief
             </h2>
-            <p>Turn a real event into an illustrated article with animated map scenes, using any AI chat assistant.</p>
+            <p>Turn a real event into an illustrated article with animated map scenes — built by hand or drafted with an AI assistant.</p>
           </div>
           <button className="icon-btn" onClick={onClose} title="Close">
             <X size={15} />
           </button>
         </div>
 
+        {path === 'choose' ? (
+          <section className="create-body">
+            <h3>How do you want to build it?</h3>
+            <div className="create-paths">
+              <div className="create-path">
+                <h4>
+                  <PenLine size={15} /> Manually
+                </h4>
+                <p>
+                  Place units, routes and keyframes on the map yourself, then write the article by hand. No AI
+                  assistant needed.
+                </p>
+                <div className="create-actions">
+                  <button className="top-btn primary" onClick={onClose}>
+                    Start building <ArrowRight size={14} />
+                  </button>
+                  {!empty && (
+                    <button
+                      className="top-btn"
+                      onClick={() => {
+                        newScenario();
+                        onClose();
+                      }}
+                      title="Clear the current brief and start with a blank canvas"
+                    >
+                      New blank brief
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="create-path">
+                <h4>
+                  <Sparkles size={15} /> AI-assisted
+                </h4>
+                <p>
+                  Describe the event, copy a ready-made prompt into ChatGPT, Claude or Gemini, then paste the JSON
+                  reply back here.
+                </p>
+                <div className="create-actions">
+                  <button className="top-btn" onClick={() => setPath('ai')}>
+                    Describe the event <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <>
         <ol className="create-steps">
           {STEPS.map((label, i) => (
             <li key={label} className={i === step ? 'current' : i < step ? 'done' : ''}>
@@ -108,6 +159,9 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
               ))}
             </div>
             <div className="create-actions">
+              <button className="top-btn" onClick={() => setPath('choose')}>
+                Back
+              </button>
               <button className="top-btn primary" onClick={() => setStep(1)}>
                 Next: get your prompt <ArrowRight size={14} />
               </button>
@@ -259,6 +313,8 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
               </button>
             </div>
           </section>
+        )}
+          </>
         )}
       </div>
     </div>

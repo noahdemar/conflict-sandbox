@@ -192,6 +192,14 @@ export function weaponRangeKm(name: string): { km: number; label: string } | nul
  * ground units moving faster than their vehicles could even on a compressed
  * timeline, munitions that arrive implausibly fast, and events out of order.
  */
+/** Nominal geostationary altitude (km): the only orbit where a satellite holds position. */
+const GEO_KM = 35786;
+const GEO_TOLERANCE_KM = 2000;
+
+/** A unit representing a satellite: explicit altitude/orbit role, or named like one. */
+const isSatellite = (u: Unit) =>
+  u.altitudeKm !== undefined || u.orbitRole !== undefined || /\bsatellite\b/i.test(u.name);
+
 export function scenarioErrors(s: Scenario, duration = s.duration): string[] {
   const errors: string[] = [];
   const lists = { factions: s.factions, units: s.units, arrows: s.arrows, strikes: s.strikes, keyframes: s.keyframes,
@@ -216,6 +224,21 @@ export function scenarioErrors(s: Scenario, duration = s.duration): string[] {
     for (const key of ['appearAt', 'destroyedAt', 'leavesAt', 'captureAt'] as const) time(`/units/${i}/${key}`, u[key]);
     if ((u.destroyedAt ?? Infinity) < u.appearAt || (u.leavesAt ?? Infinity) < u.appearAt)
       errors.push(`/units/${i} leaves or is destroyed before appearing`);
+    if (isSatellite(u)) {
+      const geo = u.altitudeKm !== undefined && Math.abs(u.altitudeKm - GEO_KM) < GEO_TOLERANCE_KM;
+      if (u.altitudeKm === undefined) {
+        errors.push(
+          `/units/${i}/altitudeKm is required for a satellite (over 100 km; typically 500+ km for imaging, ${GEO_KM} km geostationary)`,
+        );
+      } else if (u.altitudeKm < 100) {
+        errors.push(`/units/${i}/altitudeKm must be over 100 km (the edge of space); use ~500+ km for imaging satellites`);
+      }
+      if (!geo && !u.arrowId) {
+        errors.push(
+          `/units/${i} is a non-geostationary satellite: give it an arrowId route so it moves across the sky; only geostationary (~${GEO_KM} km) satellites hold position`,
+        );
+      }
+    }
   });
   s.arrows.forEach((a, i) => {
     ref(`/arrows/${i}/factionId`, a.factionId, s.factions);
@@ -274,6 +297,9 @@ export function realismWarnings(s: Scenario): string[] {
   // compressed timelines are expected; only flag moves beyond ~200x real speed
   const MAX_COMPRESSION = 200;
   for (const u of s.units) {
+    if (u.altitudeKm !== undefined && u.altitudeKm >= 100 && u.altitudeKm < 500) {
+      out.push(`Unit "${u.name}" orbits at ${u.altitudeKm} km; most imaging satellites fly at 500 km or higher.`);
+    }
     const a = u.arrowId ? s.arrows.find((x) => x.id === u.arrowId) : undefined;
     if (!a || u.type === 'air' || a.points.length < 2) continue;
     let m = 0;

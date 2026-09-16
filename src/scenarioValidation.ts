@@ -100,6 +100,18 @@ const FIELD_REFERENCE = [
   'Common mistakes to avoid: keep the wrapper and scenario separate — "format" sits at the top level while "name", "subtitle", "sources" and "article" go INSIDE "scenario", never at the top level; arrows and territories use "name" (never "label"); every event uses "appearAt" in timeline seconds (never "time"); a strike\'s shooter is "fromUnitId" (never "attackerUnitId"); labels require "size" and "color"; strikes have no "type" or "description" — put detail in "name" and the keyframe "caption".',
 ].join('\n');
 
+/**
+ * What each published example demonstrates, distilled so the prompt carries
+ * the design patterns even when the assistant never fetches the JSON.
+ */
+const REFERENCE_NOTES = [
+  'What the reference examples demonstrate (reuse these patterns):',
+  '- binladen-raid.json: a roster of named assets with icons and Wikipedia images; helicopters with hover waypoints and landAtEnd; per-shot "nvg"/"thermal" sensors; highlightUnitIds naming exactly the units each caption mentions; overlay "orbat" on assault shots; an imaging satellite at 500 km moving on a route with orbitRole "imaging" and captureAt; article scenes that stop cleanly at keyframe boundaries.',
+  '- khasham.json: an attack column as units queued on a single route; every strike has fromUnitId and a launchAt inside the shooter\'s route; a faction-filtered ORBAT; a night environment; datalink effects showing the counter-battery handoff.',
+  '- dogfight.json: a 3D aerial scene over real terrain; flight tracks sampled about every second so bank and pitch look smooth; chase/overview/compare camera shots; holds that freeze the aircraft for explanation; weapons fired only inside realistic envelopes.',
+  '- river-crossing.json: the minimal valid skeleton — two factions, a handful of units, one arrow, a few captioned keyframes. Start small like this, then add detail.',
+].join('\n');
+
 export function llmPrompt(description?: string): string {
   const site = siteForAssistants();
   return [
@@ -111,10 +123,13 @@ export function llmPrompt(description?: string): string {
     '',
     FIELD_REFERENCE,
     '',
+    REFERENCE_NOTES,
+    '',
     'Output only the JSON document (the {"format": "conflict-sandbox-scenario", ...} wrapper), no prose.',
     'Use [longitude, latitude] order in "points" arrays, unique ids, and times within "duration".',
     'Mark anything approximate or invented in names or captions; never invent sources, electronic jamming, sensor footage or precise target assignments.',
     'Use restrained default blast effects, small rifle bursts, explicit aircraft launch times within routes, and hover waypoints for helicopter landings.',
+    'Satellites need altitudeKm over 100 (about 500+ for imaging satellites, 35786 for geostationary) and must move along an arrowId route; only geostationary satellites hold position.',
     'Compose readable shots with selective highlights and optional faction-filtered ORBAT overlays. Leave enough time for the final salvo round and narration plus 0.5 seconds.',
     'Keep continuous action inside one article scene: scenes deliberately hold at their boundaries. Follow the guide quality checklist and resolve validation errors before delivery.',
     'Give every unit an "icon" from this library, using the closest match. If nothing fits, still name what you wanted; OpenBrief shows a generic icon and reports it:',

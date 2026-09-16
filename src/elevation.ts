@@ -21,6 +21,18 @@ export function onElevationLoaded(fn: () => void): () => void {
   return () => listeners.delete(fn);
 }
 
+// one shared canvas for decoding tiles: creating a canvas per tile adds GC
+// pressure exactly when a scenario load pulls in a burst of terrain
+let decodeCanvas: { c: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null = null;
+function decoder() {
+  if (!decodeCanvas) {
+    const c = document.createElement('canvas');
+    c.width = c.height = SIZE;
+    decodeCanvas = { c, ctx: c.getContext('2d', { willReadFrequently: true })! };
+  }
+  return decodeCanvas;
+}
+
 function load(x: number, y: number) {
   const key = `${x}/${y}`;
   if (tiles.has(key) || pending.has(key)) return;
@@ -29,9 +41,7 @@ function load(x: number, y: number) {
   img.crossOrigin = 'anonymous';
   img.onload = () => {
     try {
-      const c = document.createElement('canvas');
-      c.width = c.height = SIZE;
-      const ctx = c.getContext('2d', { willReadFrequently: true })!;
+      const { ctx } = decoder();
       ctx.drawImage(img, 0, 0);
       const d = ctx.getImageData(0, 0, SIZE, SIZE).data;
       const h = new Float32Array(SIZE * SIZE);

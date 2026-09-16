@@ -89,14 +89,34 @@ async function fetchRoute(points: LngLat[]): Promise<LngLat[] | null> {
 const failed = new Set<string>();
 let running = false;
 
-/** Route every arrow that needs it, one at a time. */
+/**
+ * Route every arrow that needs it, one at a time.
+ * Results are batched and flushed every few seconds (and once at the end):
+ * a single store update per flush instead of a full scenario persist +
+ * map sync per routed leg, which made loading a large scenario stutter.
+ */
 async function pump() {
   if (running) return;
   running = true;
+  const pending = new Map<string, { key: string; patch: Partial<Arrow> }>();
+  const flush = () => {
+    if (!pending.size) return;
+    const s = useStore.getState().scenario;
+    const patches: Record<string, Partial<Arrow>> = {};
+    for (const [id, p] of pending) {
+      const cur = s.arrows.find((a) => a.id === id);
+      // skip if the arrow was edited (or the scenario replaced) since it queued
+      if (cur && routeKey(cur.points) === p.key) patches[id] = p.patch;
+    }
+    pending.clear();
+    if (Object.keys(patches).length) useStore.getState().updateArrows(patches);
+  };
+  let lastFlush = Date.now();
   try {
     for (;;) {
       const s = useStore.getState().scenario;
       const next = s.arrows.find((a) => {
+        if (pending.has(a.id)) return false;
         const key = routeKey(a.points);
         if (!wantsRoads(s, a)) return !!a.route; // clear stale routes
         return a.routeKey !== key && !failed.has(key);
@@ -104,26 +124,32 @@ async function pump() {
       if (!next) break;
       const key = routeKey(next.points);
       if (!wantsRoads(s, next)) {
-        useStore.getState().updateArrow(next.id, { route: undefined, routeKey: undefined });
-        continue;
-      }
-      let route: LngLat[] | null = null;
-      try {
-        route = await fetchRoute(next.points);
-      } catch {
-        route = null;
-      }
-      // arrow may have been edited or deleted while the request was in flight
-      const cur = useStore.getState().scenario.arrows.find((a) => a.id === next.id);
-      if (!cur || routeKey(cur.points) !== key) continue;
-      if (route) {
-        useStore.getState().updateArrow(next.id, { route, routeKey: key });
+        pending.set(next.id, { key, patch: { route: undefined, routeKey: undefined } });
       } else {
-        failed.add(key);
-        if (cur.route) useStore.getState().updateArrow(next.id, { route: undefined, routeKey: undefined });
+        let route: LngLat[] | null = null;
+        try {
+          route = await fetchRoute(next.points);
+        } catch {
+          route = null;
+        }
+        // arrow may have been edited or deleted while the request was in flight
+        const cur = useStore.getState().scenario.arrows.find((a) => a.id === next.id);
+        if (cur && routeKey(cur.points) === key) {
+          if (route) {
+            pending.set(next.id, { key, patch: { route, routeKey: key } });
+          } else {
+            failed.add(key);
+            if (cur.route) pending.set(next.id, { key, patch: { route: undefined, routeKey: undefined } });
+          }
+        }
+      }
+      if (Date.now() - lastFlush > 2500) {
+        flush();
+        lastFlush = Date.now();
       }
     }
   } finally {
+    flush();
     running = false;
   }
 }

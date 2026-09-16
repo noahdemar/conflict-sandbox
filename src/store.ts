@@ -306,6 +306,8 @@ interface StoreState {
 
   updateUnit: (id: string, patch: Partial<Unit>) => void;
   updateArrow: (id: string, patch: Partial<Arrow>) => void;
+  /** Patch several arrows in one update (one persist, one render) — used by background road routing */
+  updateArrows: (patches: Record<string, Partial<Arrow>>) => void;
   updateTerritory: (id: string, patch: Partial<Territory>) => void;
   updateLabel: (id: string, patch: Partial<MapLabel>) => void;
   updateStrike: (id: string, patch: Partial<Strike>) => void;
@@ -368,6 +370,7 @@ function persist(s: Scenario) {
 }
 
 export const useStore = create<StoreState>((set, get) => {
+  const initial = loadScenario();
   const mutate = (fn: (s: Scenario) => Scenario) => {
     const next = fn(get().scenario);
     // the read-only player never overwrites the viewer's own saved scenario
@@ -376,15 +379,15 @@ export const useStore = create<StoreState>((set, get) => {
   };
 
   return {
-    scenario: loadScenario(),
+    scenario: initial,
     tool: 'select',
-    activeFactionId: loadScenario().factions[0]?.id ?? 'f-blue',
+    activeFactionId: initial.factions[0]?.id ?? 'f-blue',
     activeUnitType: 'infantry',
     draft: [],
     selection: null,
     time: 0,
     playing: false,
-    duration: loadScenario().duration ?? 60,
+    duration: initial.duration ?? 60,
     look: loadLook(),
     iconStyle: loadIconStyle(),
     setIconStyle: (iconStyle) => {
@@ -726,6 +729,11 @@ export const useStore = create<StoreState>((set, get) => {
       mutate((s) => ({
         ...s,
         arrows: s.arrows.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+      })),
+    updateArrows: (patches) =>
+      mutate((s) => ({
+        ...s,
+        arrows: s.arrows.map((a) => (patches[a.id] ? { ...a, ...patches[a.id] } : a)),
       })),
     updateTerritory: (id, patch) =>
       mutate((s) => ({

@@ -39,7 +39,7 @@ export default function TopBar() {
         title="Brief name"
       />
       <div className="topbar-actions">
-        <button className="top-btn create-btn" onClick={() => setCreating(true)} title="Guided: draft a brief with an AI assistant">
+        <button className="top-btn create-btn" onClick={() => setCreating(true)} title="Create a brief: build it manually or draft it with an AI assistant">
           <Sparkles size={14} />
           Create a Brief
         </button>

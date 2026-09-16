@@ -173,6 +173,33 @@ test('Western vehicles, naval and helicopter silhouettes resolve by name', () =>
   assert.equal(silhouetteFor({ ...air, name: 'UH-60 Black Hawks' }), 'heli');
 });
 
+test('satellites need orbital altitude and, unless geostationary, motion', () => {
+  const scen = (u: object, arrows: object[] = []) => ({
+    name: 't',
+    factions: [{ id: 'f', name: 'F', color: '#fff' }],
+    units: [u as never],
+    arrows: arrows as never[],
+    territories: [],
+    labels: [],
+    strikes: [],
+    keyframes: [],
+  });
+  const leo = { id: 's', factionId: 'f', type: 'air' as const, name: 'Imaging satellite', lat: 0, lng: 0, appearAt: 0, altitudeKm: 500 };
+  // LEO without a route is an error — it must move
+  assert.ok(scenarioErrors(scen(leo)).some((e) => e.includes('arrowId')));
+  // below the edge of space is an error
+  assert.ok(scenarioErrors(scen({ ...leo, altitudeKm: 80 })).some((e) => e.includes('100')));
+  // a satellite with no altitude at all is an error
+  assert.ok(scenarioErrors(scen({ ...leo, altitudeKm: undefined })).some((e) => e.includes('altitudeKm')));
+  // geostationary may hold position
+  assert.deepEqual(scenarioErrors(scen({ ...leo, altitudeKm: 35786 })), []);
+  // moving LEO is fine
+  const arrows = [{ id: 'a', factionId: 'f', points: [[0, 0], [1, 1]], name: 'pass', appearAt: 0, duration: 60 }];
+  assert.deepEqual(scenarioErrors(scen({ ...leo, arrowId: 'a' }, arrows)), []);
+  // unusually low orbit is a warning, not an error
+  assert.ok(realismWarnings(scen({ ...leo, altitudeKm: 300, arrowId: 'a' }, arrows)).some((w) => w.includes('500')));
+});
+
 test('melee involving archers never becomes an arrow or missile effect', () => {
   assert.equal(weaponKind('Archers join the melee with mallets and swords'), 'melee');
   assert.equal(weaponKind('Mounted raid on the baggage'), 'melee');
