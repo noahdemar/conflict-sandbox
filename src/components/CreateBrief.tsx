@@ -186,13 +186,16 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
         {step === 1 && (
           <section className="create-body">
             <h3>Copy the prompt into your AI assistant</h3>
-            <ol className="create-howto">
-              <li>Copy the prompt below. It points the assistant at the OpenBrief format guide and includes your description.</li>
-              <li>
+            <p className="ide-recommend">
+              <Sparkles size={14} />
+              <span>
                 <b>Best results:</b> paste it into an agentic coding assistant — Claude Code, Codex CLI, Gemini CLI,
                 Cursor, Windsurf/Devin or VS Code Copilot agent mode. It can load its JSON straight into this site,
                 see validation errors and watch its own scenes play, so it fixes mistakes before you ever see them.
-              </li>
+              </span>
+            </p>
+            <ol className="create-howto">
+              <li>Copy the prompt below. It points the assistant at the OpenBrief format guide and includes your description.</li>
               <li>
                 A chat assistant works too: open ChatGPT, Claude or Gemini in a new tab and paste the prompt in.
                 Assistants that can browse the web will follow the guide links most reliably.

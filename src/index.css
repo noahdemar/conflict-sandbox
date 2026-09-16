@@ -4574,3 +4574,24 @@ body {
   font-size: 11.5px;
   color: var(--accent);
 }
+
+/* "best results" callout: the agentic-assistant recommendation banner */
+.ide-recommend {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-left-width: 3px;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.ide-recommend svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--accent);
+}
