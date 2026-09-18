@@ -33,6 +33,21 @@ export interface Selection {
 
 export type Affiliation = 'friend' | 'hostile' | 'neutral' | 'unknown';
 
+/**
+ * Historical period. The authoring content — icons, packs, macros, guidance
+ * and examples — is split along these, so an author only ever sees material
+ * that belongs together. `era` remains the visual treatment; see eras.ts.
+ */
+export type Period =
+  | 'ancient'
+  | 'medieval'
+  | 'gunpowder'
+  | 'industrial'
+  | 'ww1'
+  | 'ww2'
+  | 'coldwar'
+  | 'modern';
+
 export interface Faction {
   id: string;
   name: string;
@@ -433,6 +448,12 @@ export interface Scenario {
    * interface elements; for events before the modern period.
    */
   era?: 'modern' | 'historical';
+  /**
+   * Historical period the scenario is authored in. Selects the content packs,
+   * icons and guidance an author is offered, and implies `era` when that is
+   * not set. See eras.ts.
+   */
+  period?: Period;
   /** 3D air-combat scene shown by keyframes that set `aerial` */
   aerial?: AerialScene;
   /** Article presentation: prose with embedded map scenes. Generated from captions when absent */

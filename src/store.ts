@@ -12,12 +12,15 @@ import type {
   StatusKind,
   Strike,
   Territory,
+  Period,
   Tool,
   Unit,
   UnitType,
 } from './types';
 import type { CameraPose } from './geo';
 import { DEMOS, type DemoId } from './demos';
+import type { ReviewIssue } from './review';
+import { packById } from './packs';
 
 export interface MapApi {
   getCamera: () => CameraPose;
@@ -213,6 +216,7 @@ function loadScenario(): Scenario {
       sources: parsed.sources,
       article: parsed.article,
       era: parsed.era,
+      period: parsed.period,
       aerial: parsed.aerial,
     };
   } catch {
@@ -276,6 +280,14 @@ interface StoreState {
   setCameraLock: (v: boolean) => void;
   setMapApi: (api: MapApi | null) => void;
   setScenarioName: (n: string) => void;
+  /**
+   * Historical period: selects the icons, packs and rules that belong
+   * together, and the visual era with them. Setting it clears any explicit
+   * `era` so the period's own look applies.
+   */
+  setPeriod: (p: Period | undefined) => void;
+  /** Merge a content pack's roster into the unit library, by id. Returns how many were new. */
+  addPackToLibrary: (packId: string) => number;
 
   addKeyframe: () => void;
   updateKeyframe: (id: string, patch: Partial<Keyframe>) => void;
@@ -331,6 +343,18 @@ interface StoreState {
   /** Read-only presentation mode (opened from a view link) */
   viewer: boolean;
   setViewer: (viewer: boolean) => void;
+  /**
+   * Things to check in the scenario just loaded: schema and reference errors,
+   * plausibility warnings and composition findings, each with the object to
+   * select. Set after an import so the editor can walk the author through
+   * them instead of printing a wall of text.
+   */
+  review: ReviewIssue[];
+  reviewAt: number;
+  setReview: (issues: ReviewIssue[]) => void;
+  /** Select the nth issue and put its object on screen */
+  goToReview: (index: number) => void;
+  dismissReview: () => void;
   /** Opened inside another site's iframe (?embed=1): article only, no editor links */
   embed: boolean;
   /** Reader turned on recorded narration for article scenes */
@@ -456,6 +480,28 @@ export const useStore = create<StoreState>((set, get) => {
     setCameraLock: (cameraLock) => set({ cameraLock }),
     setMapApi: (mapApi) => set({ mapApi }),
     setScenarioName: (name) => mutate((s) => ({ ...s, name })),
+    setPeriod: (period) => mutate((s) => ({ ...s, period, era: undefined })),
+    addPackToLibrary: (packId) => {
+      const pack = packById(packId);
+      if (!pack?.roster?.length) return 0;
+      const lib = [...get().unitLibrary];
+      let added = 0;
+      for (const entry of pack.roster) {
+        const i = lib.findIndex((x) => x.id === entry.id);
+        if (i >= 0) lib[i] = { ...lib[i], ...entry };
+        else {
+          lib.push({ ...entry });
+          added++;
+        }
+      }
+      try {
+        localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+      } catch {
+        /* ignore */
+      }
+      set({ unitLibrary: lib });
+      return added;
+    },
 
     addKeyframe: () => {
       const st = get();
@@ -921,6 +967,42 @@ export const useStore = create<StoreState>((set, get) => {
     },
     viewer: false,
     setViewer: (viewer) => set({ viewer }),
+    review: [],
+    reviewAt: 0,
+    setReview: (review) => set({ review, reviewAt: 0 }),
+    dismissReview: () => set({ review: [], reviewAt: 0 }),
+    goToReview: (index) => {
+      const st = get();
+      if (!st.review.length) return;
+      const at = Math.max(0, Math.min(st.review.length - 1, index));
+      const issue = st.review[at];
+      set({ reviewAt: at });
+      if (!issue.selection) return;
+      if (issue.selection.kind === 'keyframe') {
+        st.goToKeyframe(issue.selection.id);
+        return;
+      }
+      st.setSelection(issue.selection);
+      // put the object on screen at a time it exists, so the author sees the problem
+      const { kind, id } = issue.selection;
+      const lists = {
+        unit: st.scenario.units,
+        strike: st.scenario.strikes,
+        label: st.scenario.labels,
+      } as const;
+      const point = kind in lists ? (lists as Record<string, { id: string; lat: number; lng: number; appearAt: number }[]>)[kind].find((x) => x.id === id) : undefined;
+      const shape = kind === 'arrow' || kind === 'territory'
+        ? [...st.scenario.arrows, ...st.scenario.territories].find((x) => x.id === id)
+        : undefined;
+      const target = point
+        ? { lng: point.lng, lat: point.lat, at: point.appearAt }
+        : shape?.points.length
+          ? { lng: shape.points[0][0], lat: shape.points[0][1], at: shape.appearAt }
+          : null;
+      if (!target) return;
+      set({ time: Math.max(0, target.at), playing: false, cameraLock: false });
+      st.mapApi?.flyTo({ lng: target.lng, lat: target.lat, zoom: 14, pitch: 45, bearing: 0 });
+    },
     embed: typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('embed'),
     articleNarration: false,
     articlePreview: false,
@@ -955,6 +1037,7 @@ export const useStore = create<StoreState>((set, get) => {
           sources: parsed.sources,
           article: parsed.article,
           era: parsed.era,
+          period: parsed.period,
           aerial: parsed.aerial,
         };
         // merge bundled roster entries (by id) into the local library

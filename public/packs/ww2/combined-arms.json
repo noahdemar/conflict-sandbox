@@ -1,0 +1,165 @@
+{
+  "id": "ww2/combined-arms",
+  "name": "Second World War combined arms",
+  "period": "ww2",
+  "description": "Armour, half-tracks, piston aircraft, landing craft and U-boats.",
+  "roster": [
+    {
+      "id": "ww2_squad",
+      "name": "Rifle squad",
+      "type": "infantry",
+      "icon": "troops",
+      "wikiTitle": "Squad"
+    },
+    {
+      "id": "ww2_sherman",
+      "name": "M4 Sherman",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "M4 Sherman"
+    },
+    {
+      "id": "ww2_t34",
+      "name": "T-34",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "T-34"
+    },
+    {
+      "id": "ww2_panzer4",
+      "name": "Panzer IV",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "Panzer IV"
+    },
+    {
+      "id": "ww2_tiger",
+      "name": "Tiger I",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "Tiger I"
+    },
+    {
+      "id": "ww2_halftrack",
+      "name": "M3 half-track",
+      "type": "armor",
+      "icon": "halftrack",
+      "wikiTitle": "M3 half-track"
+    },
+    {
+      "id": "ww2_jeep",
+      "name": "Willys jeep",
+      "type": "infantry",
+      "icon": "jeep",
+      "wikiTitle": "Willys MB"
+    },
+    {
+      "id": "ww2_88",
+      "name": "8.8 cm Flak",
+      "type": "artillery",
+      "icon": "aagun",
+      "wikiTitle": "8.8 cm Flak 18/36/37/41"
+    },
+    {
+      "id": "ww2_105",
+      "name": "M2A1 105 mm battery",
+      "type": "artillery",
+      "icon": "howitzer",
+      "wikiTitle": "M101 howitzer"
+    },
+    {
+      "id": "ww2_katyusha",
+      "name": "BM-13 Katyusha",
+      "type": "missile",
+      "icon": "launcher",
+      "wikiTitle": "Katyusha rocket launcher"
+    },
+    {
+      "id": "ww2_p51",
+      "name": "P-51 Mustang",
+      "type": "air",
+      "icon": "propfighter",
+      "wikiTitle": "North American P-51 Mustang"
+    },
+    {
+      "id": "ww2_spitfire",
+      "name": "Supermarine Spitfire",
+      "type": "air",
+      "icon": "propfighter",
+      "wikiTitle": "Supermarine Spitfire"
+    },
+    {
+      "id": "ww2_bf109",
+      "name": "Messerschmitt Bf 109",
+      "type": "air",
+      "icon": "propfighter",
+      "wikiTitle": "Messerschmitt Bf 109"
+    },
+    {
+      "id": "ww2_b17",
+      "name": "B-17 Flying Fortress",
+      "type": "air",
+      "icon": "propbomber",
+      "wikiTitle": "Boeing B-17 Flying Fortress"
+    },
+    {
+      "id": "ww2_ju87",
+      "name": "Ju 87 Stuka",
+      "type": "air",
+      "icon": "propfighter",
+      "wikiTitle": "Junkers Ju 87"
+    },
+    {
+      "id": "ww2_c47",
+      "name": "C-47 Skytrain",
+      "type": "air",
+      "icon": "proptransport",
+      "wikiTitle": "Douglas C-47 Skytrain"
+    },
+    {
+      "id": "ww2_lcvp",
+      "name": "LCVP (Higgins boat)",
+      "type": "naval",
+      "icon": "higgins",
+      "wikiTitle": "Higgins boat"
+    },
+    {
+      "id": "ww2_destroyer",
+      "name": "Destroyer",
+      "type": "naval",
+      "icon": "ship",
+      "wikiTitle": "Destroyer"
+    },
+    {
+      "id": "ww2_uboat",
+      "name": "Type VII U-boat",
+      "type": "naval",
+      "icon": "uboat",
+      "wikiTitle": "German Type VII submarine"
+    }
+  ],
+  "macros": [
+    {
+      "macro": "column",
+      "id": "preset_armoured_thrust",
+      "factionId": "f_axis",
+      "unit": {
+        "name": "Panzer IV",
+        "type": "armor",
+        "icon": "tank",
+        "rosterId": "ww2_panzer4"
+      },
+      "count": 5,
+      "via": [
+        "Assembly area",
+        "Crossroads",
+        "Objective"
+      ],
+      "spacingSeconds": 1.5
+    }
+  ],
+  "notes": [
+    "Bomb sticks and strafing runs use pattern \"line\" so the impacts walk along the attack axis.",
+    "No jets, helicopters, drones, satellites or guided weapons."
+  ]
+}

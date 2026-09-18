@@ -1,0 +1,169 @@
+{
+  "id": "modern/nato",
+  "name": "Modern Western forces",
+  "period": "modern",
+  "description": "Precision fires, rotary wing, drones and sensors.",
+  "roster": [
+    {
+      "id": "mod_platoon",
+      "name": "Rifle platoon",
+      "type": "infantry",
+      "icon": "troops",
+      "wikiTitle": "Platoon"
+    },
+    {
+      "id": "mod_sof",
+      "name": "Special operations team",
+      "type": "infantry",
+      "icon": "soldier",
+      "wikiTitle": "Special forces"
+    },
+    {
+      "id": "mod_abrams",
+      "name": "M1A2 Abrams",
+      "type": "armor",
+      "icon": "abrams",
+      "wikiTitle": "M1 Abrams"
+    },
+    {
+      "id": "mod_bradley",
+      "name": "M2 Bradley",
+      "type": "armor",
+      "icon": "bradley",
+      "wikiTitle": "Bradley Fighting Vehicle"
+    },
+    {
+      "id": "mod_stryker",
+      "name": "Stryker",
+      "type": "armor",
+      "icon": "apc",
+      "wikiTitle": "Stryker"
+    },
+    {
+      "id": "mod_jltv",
+      "name": "JLTV",
+      "type": "infantry",
+      "icon": "jeep",
+      "wikiTitle": "Oshkosh JLTV"
+    },
+    {
+      "id": "mod_m777",
+      "name": "M777 howitzer battery",
+      "type": "artillery",
+      "icon": "howitzer",
+      "rangeKm": 30,
+      "wikiTitle": "M777 howitzer"
+    },
+    {
+      "id": "mod_himars",
+      "name": "M142 HIMARS",
+      "type": "missile",
+      "icon": "launcher",
+      "rangeKm": 85,
+      "wikiTitle": "M142 HIMARS"
+    },
+    {
+      "id": "mod_patriot",
+      "name": "Patriot battery",
+      "type": "missile",
+      "icon": "sam",
+      "rangeKm": 70,
+      "wikiTitle": "MIM-104 Patriot"
+    },
+    {
+      "id": "mod_f15e",
+      "name": "F-15E Strike Eagle",
+      "type": "air",
+      "icon": "f15",
+      "wikiTitle": "McDonnell Douglas F-15E Strike Eagle"
+    },
+    {
+      "id": "mod_f22",
+      "name": "F-22 Raptor",
+      "type": "air",
+      "icon": "f22",
+      "wikiTitle": "Lockheed Martin F-22 Raptor"
+    },
+    {
+      "id": "mod_f35",
+      "name": "F-35A Lightning II",
+      "type": "air",
+      "icon": "jet",
+      "wikiTitle": "Lockheed Martin F-35 Lightning II"
+    },
+    {
+      "id": "mod_ah64",
+      "name": "AH-64 Apache",
+      "type": "air",
+      "icon": "attackheli",
+      "wikiTitle": "Boeing AH-64 Apache"
+    },
+    {
+      "id": "mod_uh60",
+      "name": "UH-60 Black Hawk",
+      "type": "air",
+      "icon": "heli",
+      "wikiTitle": "Sikorsky UH-60 Black Hawk"
+    },
+    {
+      "id": "mod_ch47",
+      "name": "CH-47 Chinook",
+      "type": "air",
+      "icon": "heli",
+      "wikiTitle": "Boeing CH-47 Chinook"
+    },
+    {
+      "id": "mod_mq9",
+      "name": "MQ-9 Reaper",
+      "type": "air",
+      "icon": "drone",
+      "wikiTitle": "General Atomics MQ-9 Reaper"
+    },
+    {
+      "id": "mod_ac130",
+      "name": "AC-130J Ghostrider",
+      "type": "air",
+      "icon": "gunship",
+      "wikiTitle": "Lockheed AC-130"
+    },
+    {
+      "id": "mod_c17",
+      "name": "C-17 Globemaster III",
+      "type": "air",
+      "icon": "transport",
+      "wikiTitle": "Boeing C-17 Globemaster III"
+    },
+    {
+      "id": "mod_imagesat",
+      "name": "Imaging satellite",
+      "type": "air",
+      "icon": "satellite",
+      "wikiTitle": "Reconnaissance satellite"
+    },
+    {
+      "id": "mod_hq",
+      "name": "Tactical operations centre",
+      "type": "hq",
+      "icon": "hq",
+      "wikiTitle": "Command and control"
+    }
+  ],
+  "macros": [
+    {
+      "macro": "strike-package",
+      "id": "preset_precision_strike",
+      "from": "u_f15e",
+      "targets": [
+        "u_t72_lead",
+        "u_t72_second"
+      ],
+      "weapon": "GBU-38 JDAM",
+      "at": "k_strike",
+      "intervalSeconds": 2.5
+    }
+  ],
+  "notes": [
+    "Give precision weapons an explicit launchAt inside the shooter’s route, and a targetUnitId when the target moves.",
+    "Show the sensing as well as the shooting: sensorKm, airDefenseKm, datalink effects, a satellite pass."
+  ]
+}

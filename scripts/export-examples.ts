@@ -16,6 +16,12 @@ mkdirSync(dir, { recursive: true });
 
 const index: { id: string; name: string; file: string; features: string[] }[] = [
   { id: 'river-crossing', name: 'River crossing (hypothetical, minimal)', file: 'river-crossing.json', features: ['units', 'arrows', 'strikes', 'keyframes'] },
+  {
+    id: 'authored-river-crossing',
+    name: 'River crossing, written with the authoring shortcuts',
+    file: 'authored-river-crossing.json',
+    features: ['named places', 'relative times', 'column macro', 'story beats', 'auto camera', 'content packs'],
+  },
 ];
 
 /** Demos still being finished; not offered to assistants until they validate cleanly. */

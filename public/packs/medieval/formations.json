@@ -1,0 +1,96 @@
+{
+  "id": "medieval/formations",
+  "name": "Medieval formations",
+  "period": "medieval",
+  "description": "Men-at-arms, longbows, knights, siege and the baggage train.",
+  "roster": [
+    {
+      "id": "med_menatarms",
+      "name": "Dismounted men-at-arms",
+      "type": "infantry",
+      "icon": "menatarms",
+      "wikiTitle": "Man-at-arms"
+    },
+    {
+      "id": "med_longbow",
+      "name": "Longbowmen",
+      "type": "infantry",
+      "icon": "archers",
+      "wikiTitle": "English longbow"
+    },
+    {
+      "id": "med_crossbow",
+      "name": "Crossbowmen",
+      "type": "infantry",
+      "icon": "archers",
+      "wikiTitle": "Crossbow"
+    },
+    {
+      "id": "med_spear",
+      "name": "Spearmen",
+      "type": "infantry",
+      "icon": "spearmen",
+      "wikiTitle": "Spearman"
+    },
+    {
+      "id": "med_knights",
+      "name": "Mounted knights",
+      "type": "infantry",
+      "icon": "cavalry",
+      "wikiTitle": "Knight"
+    },
+    {
+      "id": "med_trebuchet",
+      "name": "Trebuchet",
+      "type": "artillery",
+      "icon": "siege",
+      "wikiTitle": "Trebuchet"
+    },
+    {
+      "id": "med_banner",
+      "name": "Royal standard",
+      "type": "hq",
+      "icon": "banner",
+      "wikiTitle": "War flag"
+    },
+    {
+      "id": "med_baggage",
+      "name": "Baggage train",
+      "type": "infantry",
+      "icon": "baggage",
+      "wikiTitle": "Baggage train"
+    },
+    {
+      "id": "med_castle",
+      "name": "Castle",
+      "type": "hq",
+      "icon": "fort",
+      "wikiTitle": "Castle"
+    },
+    {
+      "id": "med_cog",
+      "name": "Cog",
+      "type": "naval",
+      "icon": "sailingship",
+      "wikiTitle": "Cog (ship)"
+    }
+  ],
+  "macros": [
+    {
+      "macro": "volley",
+      "id": "preset_longbow_volley",
+      "from": "u_longbow_left",
+      "target": "u_french_van",
+      "name": "Longbow volley",
+      "at": 20,
+      "count": 4,
+      "intervalSeconds": 3,
+      "rounds": 14,
+      "spreadM": 70
+    }
+  ],
+  "notes": [
+    "Longbow range is about 300 m: put archers within that of the target or the plausibility check will say so.",
+    "Name the close fight \"Melee\" and the charge \"Cavalry charge\"; keep explosives out of the scene."
+  ]
+}

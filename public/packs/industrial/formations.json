@@ -1,0 +1,75 @@
+{
+  "id": "industrial/formations",
+  "name": "Industrial-age formations",
+  "period": "industrial",
+  "description": "Rifle regiments, massed batteries, cavalry screens and ironclads.",
+  "roster": [
+    {
+      "id": "ind_rifles",
+      "name": "Rifle regiment",
+      "type": "infantry",
+      "icon": "musketeers",
+      "wikiTitle": "Rifleman"
+    },
+    {
+      "id": "ind_skirmish",
+      "name": "Skirmish line",
+      "type": "infantry",
+      "icon": "troops",
+      "wikiTitle": "Skirmisher"
+    },
+    {
+      "id": "ind_battery",
+      "name": "Field battery",
+      "type": "artillery",
+      "icon": "cannon",
+      "wikiTitle": "Field artillery in the American Civil War"
+    },
+    {
+      "id": "ind_cavalry",
+      "name": "Cavalry squadron",
+      "type": "infantry",
+      "icon": "cavalry",
+      "wikiTitle": "Cavalry"
+    },
+    {
+      "id": "ind_hq",
+      "name": "Corps headquarters",
+      "type": "hq",
+      "icon": "hq",
+      "wikiTitle": "Headquarters"
+    },
+    {
+      "id": "ind_supply",
+      "name": "Supply train",
+      "type": "infantry",
+      "icon": "baggage",
+      "wikiTitle": "Military logistics"
+    },
+    {
+      "id": "ind_ironclad",
+      "name": "Ironclad",
+      "type": "naval",
+      "icon": "ship",
+      "wikiTitle": "Ironclad warship"
+    }
+  ],
+  "macros": [
+    {
+      "macro": "strike-package",
+      "id": "preset_barrage",
+      "from": "u_battery",
+      "targets": [
+        "u_defenders"
+      ],
+      "weapon": "Artillery barrage",
+      "at": 30,
+      "salvo": 10,
+      "size": 0.8
+    }
+  ],
+  "notes": [
+    "Rifled muskets reach about 500 m and field guns 2 to 3 km: long enough to matter, short enough to see.",
+    "Railways and the telegraph shape the approach; keep routes off present-day motorways."
+  ]
+}

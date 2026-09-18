@@ -1,0 +1,179 @@
+{
+  "periods": [
+    {
+      "id": "ancient",
+      "label": "Ancient",
+      "years": "to about 500 AD",
+      "era": "historical",
+      "summary": "Massed foot and horse, chariots, oared ships.",
+      "guidance": [
+        "Name formations, not head counts: \"Hoplite phalanx\", \"Skirmishers\", \"Companion cavalry\".",
+        "Weapons are melee, javelin, sling and bow. Name strikes \"Melee\", \"Cavalry charge\", \"Javelin volley\" or \"Arrow volley\".",
+        "There is no road network: routes cross open ground and follow the terrain."
+      ],
+      "packs": [
+        {
+          "id": "ancient/formations",
+          "name": "Ancient formations",
+          "file": "ancient/formations.json",
+          "description": "Phalanx, legion, skirmishers, horse and chariots.",
+          "units": 9
+        }
+      ]
+    },
+    {
+      "id": "medieval",
+      "label": "Medieval",
+      "years": "about 500 to 1500",
+      "era": "historical",
+      "summary": "Men-at-arms, longbows, knights, castles and siege engines.",
+      "guidance": [
+        "Name formations clearly: \"Longbowmen\", \"Dismounted men-at-arms\", \"Mounted knights\", \"Royal standard\", \"Baggage train\".",
+        "Name strikes \"Longbow volley\" for arrows and \"Melee\" or \"Cavalry charge\" for close combat.",
+        "Ground is the story: mud, woods and a narrow frontage decide these battles. Say so in the captions."
+      ],
+      "packs": [
+        {
+          "id": "medieval/formations",
+          "name": "Medieval formations",
+          "file": "medieval/formations.json",
+          "description": "Men-at-arms, longbows, knights, siege and the baggage train.",
+          "units": 10
+        }
+      ]
+    },
+    {
+      "id": "gunpowder",
+      "label": "Gunpowder",
+      "years": "about 1500 to 1800",
+      "era": "historical",
+      "summary": "Pike and shot, musket lines, field cannon, sailing warships.",
+      "guidance": [
+        "Formations are battalions and squadrons: \"Line infantry\", \"Pike block\", \"Grenadiers\", \"Horse\".",
+        "Name strikes \"Musket volley\", \"Cannonade\" or \"Broadside\". Ranges are short: a few hundred metres for muskets.",
+        "Powder smoke hangs over the field; a little haze suits these scenes."
+      ],
+      "packs": [
+        {
+          "id": "gunpowder/formations",
+          "name": "Pike and shot",
+          "file": "gunpowder/formations.json",
+          "description": "Musket lines, pike blocks, field guns and ships of the line.",
+          "units": 8
+        }
+      ]
+    },
+    {
+      "id": "industrial",
+      "label": "Industrial",
+      "years": "about 1800 to 1913",
+      "era": "historical",
+      "summary": "Rifled muskets, massed artillery, railways, ironclads.",
+      "guidance": [
+        "Formations are regiments and batteries: \"Rifle regiment\", \"Field battery\", \"Cavalry squadron\".",
+        "Name strikes \"Rifle volley\", \"Artillery barrage\" or \"Naval gunfire\".",
+        "Railways and the telegraph shape the approach march; the present-day road network does not, so keep routes off modern highways."
+      ],
+      "packs": [
+        {
+          "id": "industrial/formations",
+          "name": "Industrial-age formations",
+          "file": "industrial/formations.json",
+          "description": "Rifle regiments, massed batteries, cavalry screens and ironclads.",
+          "units": 7
+        }
+      ]
+    },
+    {
+      "id": "ww1",
+      "label": "First World War",
+      "years": "1914 to 1918",
+      "era": "modern",
+      "summary": "Trench lines, barrages, early tanks and aircraft.",
+      "guidance": [
+        "Front lines are territories, not units: draw trench systems as territories and the attack as arrows across no man’s land.",
+        "Name strikes \"Creeping barrage\", \"Counter-battery fire\" or \"Machine gun fire\". A barrage is a salvo, not a single blast.",
+        "Aircraft are scouts and observers; do not give them guided weapons."
+      ],
+      "packs": [
+        {
+          "id": "ww1/western-front",
+          "name": "Western Front 1914–18",
+          "file": "ww1/western-front.json",
+          "description": "Trench garrisons, barrages, the first tanks and scout aircraft.",
+          "units": 11
+        }
+      ]
+    },
+    {
+      "id": "ww2",
+      "label": "Second World War",
+      "years": "1939 to 1945",
+      "era": "modern",
+      "summary": "Combined arms, armoured thrusts, amphibious landings, strategic bombing.",
+      "guidance": [
+        "Use period icons: halftrack, propfighter, propbomber, higgins, uboat. No jets, drones, helicopters or satellites.",
+        "Name strikes \"Bomb run\", \"Artillery barrage\", \"Naval gunfire\" or \"Strafing run\"; bomb sticks and strafing runs use pattern \"line\".",
+        "Radio exists; datalink and precision guidance do not. Keep effects to radio calls."
+      ],
+      "packs": [
+        {
+          "id": "ww2/combined-arms",
+          "name": "Second World War combined arms",
+          "file": "ww2/combined-arms.json",
+          "description": "Armour, half-tracks, piston aircraft, landing craft and U-boats.",
+          "units": 19
+        }
+      ]
+    },
+    {
+      "id": "coldwar",
+      "label": "Cold War",
+      "years": "1946 to 1991",
+      "era": "modern",
+      "summary": "Jets, helicopters, missile air defence, mechanised corps.",
+      "guidance": [
+        "Guided weapons exist but are few; most fires are guns, rockets and unguided bombs.",
+        "Air defence is a real constraint: give launcher units airDefenseKm and route aircraft around it.",
+        "No armed drones and no live satellite imagery feeds; reconnaissance is film and photo passes."
+      ],
+      "packs": [
+        {
+          "id": "coldwar/mech-forces",
+          "name": "Cold War mechanised forces",
+          "file": "coldwar/mech-forces.json",
+          "description": "Mechanised divisions, jets, helicopters and missile air defence.",
+          "units": 17
+        }
+      ]
+    },
+    {
+      "id": "modern",
+      "label": "Modern",
+      "years": "1991 onwards",
+      "era": "modern",
+      "summary": "Precision fires, drones, networked sensors, satellites.",
+      "guidance": [
+        "Precision weapons need explicit launchAt and targetUnitId so the flight time reads correctly.",
+        "Show sensing as well as shooting: sensorKm, airDefenseKm, datalink effects and an imaging satellite pass.",
+        "Do not invent jamming, casualty figures or sensor footage that sources do not support."
+      ],
+      "packs": [
+        {
+          "id": "modern/nato",
+          "name": "Modern Western forces",
+          "file": "modern/nato.json",
+          "description": "Precision fires, rotary wing, drones and sensors.",
+          "units": 20
+        },
+        {
+          "id": "modern/opfor",
+          "name": "Modern Eastern and irregular forces",
+          "file": "modern/opfor.json",
+          "description": "Mechanised regiments, technicals, layered air defence.",
+          "units": 18
+        }
+      ]
+    }
+  ]
+}

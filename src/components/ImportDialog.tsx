@@ -2,16 +2,16 @@ import { useRef, useState } from 'react';
 import { Check, Copy, FileUp, X } from 'lucide-react';
 import { useStore } from '../store';
 import { llmPrompt, validateScenarioJson } from '../scenarioValidation';
-import { realismWarnings } from '../realism';
-import { iconFallbacks } from '../iconCatalog';
-import type { RosterEntry, Scenario } from '../types';
+import { reviewScenario } from '../review';
 
 /** Paste or pick scenario JSON, validate it against the schema, and load it. */
 export default function ImportDialog({ onClose }: { onClose: () => void }) {
   const importScenario = useStore((s) => s.importScenario);
+  const setReview = useStore((s) => s.setReview);
   const [text, setText] = useState('');
   const [errors, setErrors] = useState<string[]>([]);
   const [warnings, setWarnings] = useState<string[] | null>(null);
+  const [notes, setNotes] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<'prompt' | 'errors' | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -19,23 +19,27 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
 
   const load = async (json: string) => {
     setBusy(true);
+    // authoring documents (places, relative times, macros, beats) are resolved
+    // here; what gets loaded is always the plain scenario that came back
     const result = await validateScenarioJson(json);
     setBusy(false);
-    if (!result.ok) {
+    setNotes(result.notes);
+    if (!result.ok || !result.json || !result.scenario) {
       setErrors(result.errors);
       return;
     }
-    // plausibility issues don't block loading, but are shown once first
-    if (warnings === null) {
-      const doc = JSON.parse(json) as { scenario?: Scenario; roster?: RosterEntry[] } & Scenario;
-      const found = [...iconFallbacks(doc.scenario ?? doc, doc.roster), ...realismWarnings(doc.scenario ?? doc)];
-      if (found.length) {
-        setWarnings(found);
-        return;
-      }
+    const report = reviewScenario(result.scenario, result.roster, result.duration);
+    // things to check don't block loading, but are shown once first
+    if (warnings === null && report.issues.length) {
+      setWarnings(report.issues.map((i) => `${i.message}${i.fix ? ` — ${i.fix}` : ''}`));
+      return;
     }
-    if (importScenario(json)) onClose();
-    else setErrors(['The document validated but could not be loaded (it needs at least one faction).']);
+    if (importScenario(result.json)) {
+      setReview(report.issues);
+      onClose();
+    } else {
+      setErrors(['The document validated but could not be loaded (it needs at least one faction).']);
+    }
   };
 
   const copy = async (what: 'prompt' | 'errors') => {
@@ -86,6 +90,7 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
             setText(e.target.value);
             setErrors([]);
             setWarnings(null);
+            setNotes([]);
           }}
         />
 
@@ -101,6 +106,17 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
             <ul>
               {errors.map((e) => (
                 <li key={e}>{e}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {notes.length > 0 && (
+          <div className="import-notes" role="status">
+            <strong>Filled in for you</strong>
+            <ul>
+              {notes.map((n) => (
+                <li key={n}>{n}</li>
               ))}
             </ul>
           </div>

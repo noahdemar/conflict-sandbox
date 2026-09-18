@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { ArrowRight, Check, ClipboardCopy, ExternalLink, FileText, PenLine, Share2, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ClipboardCopy, Copy, ExternalLink, FileText, PenLine, Share2, Sparkles, X } from 'lucide-react';
 import { useStore } from '../store';
 import { llmPrompt, validateScenarioJson } from '../scenarioValidation';
-import { realismWarnings } from '../realism';
-import { iconFallbacks } from '../iconCatalog';
+import { reviewScenario } from '../review';
+import { PERIODS, PERIOD_IDS } from '../eras';
+import { packsForPeriod } from '../packs';
 import { DEMOS } from '../demos';
-import type { RosterEntry, Scenario } from '../types';
+import type { Period } from '../types';
 
 const STEPS = ['Describe', 'Copy prompt', 'Paste reply', 'Review & publish'] as const;
 
@@ -31,15 +32,19 @@ const IDES: { id: string; name: string; scheme: string; note: string }[] = [
 export default function CreateBrief({ onClose, onShare }: { onClose: () => void; onShare: () => void }) {
   const importScenario = useStore((s) => s.importScenario);
   const newScenario = useStore((s) => s.newScenario);
+  const loadDemo = useStore((s) => s.loadDemo);
+  const setReview = useStore((s) => s.setReview);
   const [path, setPath] = useState<'choose' | 'ai'>('choose');
   const [step, setStep] = useState(0);
   const [description, setDescription] = useState('');
+  const [period, setPeriod] = useState<Period>('modern');
+  const [notes, setNotes] = useState<string[]>([]);
   const [reply, setReply] = useState('');
   const [errors, setErrors] = useState<string[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const prompt = llmPrompt(description);
+  const prompt = llmPrompt(description, period);
   const site = `${window.location.origin}${import.meta.env.BASE_URL}`;
 
   const copy = async (key: string, text: string) => {
@@ -56,18 +61,22 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
     setBusy(true);
     // assistants often wrap JSON in a ```json fence; accept that
     const json = reply.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+    // an authoring document (places, relative times, macros, beats) is resolved
+    // here; what gets loaded is the plain scenario that came back
     const result = await validateScenarioJson(json);
     setBusy(false);
-    if (!result.ok) {
+    setNotes(result.notes);
+    if (!result.ok || !result.json || !result.scenario) {
       setErrors(result.errors);
       return;
     }
-    if (!importScenario(json)) {
+    if (!importScenario(result.json)) {
       setErrors(['The reply validated but could not be loaded (it needs at least one faction).']);
       return;
     }
-    const doc = JSON.parse(json) as { scenario?: Scenario; roster?: RosterEntry[] } & Scenario;
-    setWarnings([...iconFallbacks(doc.scenario ?? doc, doc.roster), ...realismWarnings(doc.scenario ?? doc)]);
+    const report = reviewScenario(result.scenario, result.roster, result.duration);
+    setReview(report.issues);
+    setWarnings(report.issues.map((i) => `${i.message}${i.fix ? ` — ${i.fix}` : ''}`));
     setErrors([]);
     setStep(3);
   };
@@ -106,6 +115,30 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
                   <button className="top-btn primary" onClick={() => setPath('ai')}>
                     Start building <ArrowRight size={14} />
                   </button>
+                </div>
+              </div>
+              <div className="create-path">
+                <h4>
+                  <Copy size={15} /> Remix an example
+                </h4>
+                <p>
+                  Start from a finished brief and change it. The quickest way to learn what good composition looks
+                  like — every example loads straight into the editor, ready to edit.
+                </p>
+                <div className="create-remix">
+                  {DEMOS.map((d) => (
+                    <button
+                      key={d.id}
+                      className="top-btn"
+                      title={`Load "${d.name}" into the editor (replaces the current brief)`}
+                      onClick={() => {
+                        loadDemo(d.id);
+                        onClose();
+                      }}
+                    >
+                      Remix {d.name}
+                    </button>
+                  ))}
                 </div>
               </div>
               <div className="create-path">
@@ -158,6 +191,24 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
               placeholder="e.g. The Battle of Khasham, eastern Syria, night of 7–8 February 2018. A pro-government column attacked the Conoco gas plant held by US special operators and the SDF; US aircraft and artillery broke the attack over about four hours. Focus on the advance, the air response and the aftermath."
               onChange={(e) => setDescription(e.target.value)}
             />
+            <div className="create-period">
+              <label htmlFor="create-period-select">Period</label>
+              <select
+                id="create-period-select"
+                value={period}
+                onChange={(e) => setPeriod(e.target.value as Period)}
+              >
+                {PERIOD_IDS.map((id) => (
+                  <option key={id} value={id}>
+                    {PERIODS[id].label} ({PERIODS[id].years})
+                  </option>
+                ))}
+              </select>
+              <small>
+                {PERIODS[period].summary} The prompt will carry this period’s icons, rules and unit packs
+                {packsForPeriod(period).length ? ` (${packsForPeriod(period).map((p) => p.name).join(', ')})` : ''}.
+              </small>
+            </div>
             <div className="create-examples">
               <span>See finished examples:</span>
               {DEMOS.map((d) => (
@@ -317,6 +368,16 @@ export default function CreateBrief({ onClose, onShare }: { onClose: () => void;
                 <b>Publish.</b> <em>Share</em> gives you a view link or embed code for your own website.
               </li>
             </ol>
+            {notes.length > 0 && (
+              <div className="import-notes" role="status">
+                <strong>Filled in for you</strong>
+                <ul>
+                  {notes.map((n) => (
+                    <li key={n}>{n}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {warnings.length > 0 && (
               <div className="import-errors" role="status">
                 <div className="import-errors-head">

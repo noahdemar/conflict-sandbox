@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Download, FilePlus, Upload } from 'lucide-react';
 import { KOKORO_VOICES, onKokoroStatus, type KokoroProgress } from '../narration';
+import { PERIODS, PERIOD_IDS, periodOf } from '../eras';
+import { packsForPeriod } from '../packs';
 import { useStore } from '../store';
+import type { Period } from '../types';
 import ImportDialog from './ImportDialog';
 import PanelTitle, { useCollapsed } from './PanelTitle';
 
@@ -42,8 +45,12 @@ export default function SettingsPanel() {
   const narration = useStore((s) => s.narration);
   const setNarration = useStore((s) => s.setNarration);
   const hasPack = useStore((s) => !!s.scenario.narrationPack);
+  const period = useStore((s) => periodOf(s.scenario));
+  const setPeriod = useStore((s) => s.setPeriod);
+  const addPackToLibrary = useStore((s) => s.addPackToLibrary);
   const [model, setModel] = useState<KokoroProgress | null>(null);
   const [importing, setImporting] = useState(false);
+  const [packAdded, setPackAdded] = useState<string | null>(null);
   const fold = useCollapsed();
   useEffect(() => onKokoroStatus(setModel), []);
 
@@ -71,6 +78,37 @@ export default function SettingsPanel() {
         <button className="top-btn" onClick={doExport} title="Download this brief as JSON">
           <Download size={13} /> Export
         </button>
+      </div>
+
+      <div className="settings-label">Period</div>
+      <div className="settings-period">
+        <select
+          value={period}
+          onChange={(e) => setPeriod(e.target.value as Period)}
+          title="Sets the icons, unit packs and rules that belong together, and the map treatment with them"
+        >
+          {PERIOD_IDS.map((id) => (
+            <option key={id} value={id}>
+              {PERIODS[id].label} ({PERIODS[id].years})
+            </option>
+          ))}
+        </select>
+        <small>{PERIODS[period].summary}</small>
+        {packsForPeriod(period).map((pack) => (
+          <button
+            key={pack.id}
+            className="top-btn"
+            title={`${pack.description ?? pack.name}: adds ${pack.roster?.length ?? 0} named units to your library`}
+            onClick={() => {
+              const added = addPackToLibrary(pack.id);
+              setPackAdded(added ? `Added ${added} units from ${pack.name}.` : `${pack.name} is already in your library.`);
+              setTimeout(() => setPackAdded(null), 2600);
+            }}
+          >
+            Add {pack.name}
+          </button>
+        ))}
+        {packAdded && <small role="status">{packAdded}</small>}
       </div>
 
       <div className="settings-label">Map display</div>

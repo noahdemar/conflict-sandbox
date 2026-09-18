@@ -1,0 +1,132 @@
+{
+  "format": "openbrief-authoring",
+  "version": 1,
+  "duration": 45,
+  "include": ["modern/nato", "modern/opfor"],
+  "places": {
+    "Bridge": [35.045, 48.446],
+    "Staging area": [35.03, 48.43],
+    "Ridge": [35.052, 48.452]
+  },
+  "scenario": {
+    "name": "Hypothetical: river crossing at dawn",
+    "subtitle": "Illustrative scenario · no real event",
+    "period": "modern",
+    "factions": [
+      { "id": "f_blue", "name": "Blue", "color": "#3a6fc0", "affiliation": "friend" },
+      { "id": "f_red", "name": "Red", "color": "#cf5a50", "affiliation": "hostile" }
+    ],
+    "units": [
+      {
+        "id": "u_def",
+        "factionId": "f_blue",
+        "type": "infantry",
+        "name": "Rifle platoon",
+        "icon": "troops",
+        "rosterId": "mod_platoon",
+        "at": "Ridge",
+        "heading": 200,
+        "sensorKm": 3
+      },
+      {
+        "id": "u_heli",
+        "factionId": "f_blue",
+        "type": "air",
+        "name": "AH-64",
+        "icon": "attackheli",
+        "rosterId": "mod_ah64",
+        "near": { "of": "Bridge", "bearingDeg": 45, "km": 6 },
+        "arrowId": "a_heli",
+        "appearAt": "s_hellfire-16"
+      }
+    ],
+    "macros": [
+      {
+        "macro": "column",
+        "id": "m_red",
+        "factionId": "f_red",
+        "count": 4,
+        "name": "Red advance",
+        "startAt": 4,
+        "duration": 24,
+        "via": ["Staging area", { "of": "Bridge", "bearingDeg": 200, "km": 1.2 }, "Bridge"],
+        "unit": { "name": "T-72", "type": "armor", "icon": "tank", "rosterId": "opf_t72" }
+      }
+    ],
+    "arrows": [
+      {
+        "id": "a_heli",
+        "factionId": "f_blue",
+        "name": "Apache attack run",
+        "appearAt": "u_heli",
+        "duration": 12,
+        "via": [{ "of": "Bridge", "bearingDeg": 45, "km": 6 }, { "of": "Bridge", "bearingDeg": 30, "km": 1 }]
+      }
+    ],
+    "territories": [
+      {
+        "id": "t_blue",
+        "factionId": "f_blue",
+        "name": "Blue-held bank",
+        "label": "BLUE",
+        "via": [[35.0, 48.45], [35.12, 48.45], [35.12, 48.5], [35.0, 48.5]]
+      }
+    ],
+    "labels": [{ "id": "l_bridge", "text": "Bridge", "facility": "bridge", "at": "Bridge" }],
+    "strikes": [
+      {
+        "id": "s_hellfire",
+        "name": "AGM-114 Hellfire",
+        "fromUnitId": "u_heli",
+        "targetUnitId": "m_red_1",
+        "at": "Bridge",
+        "appearAt": 30,
+        "launchAt": "s_hellfire-5"
+      }
+    ],
+    "effects": [
+      { "id": "fx_call", "kind": "radio", "unitId": "u_def", "start": 8, "duration": 4, "label": "REQUESTING AIR SUPPORT" }
+    ],
+    "keyframes": "auto",
+    "beats": [
+      {
+        "at": 0,
+        "caption": "A Red armoured column moves on the bridge at dawn.",
+        "shot": "establish",
+        "focus": ["m_red_1", "u_def", "l_bridge"]
+      },
+      {
+        "at": 9,
+        "caption": "Blue infantry on the ridge see the column and call for air support.",
+        "shot": "approach",
+        "focus": ["u_def", "m_red_1"]
+      },
+      {
+        "at": "s_hellfire-7",
+        "caption": "An Apache runs in from the north east.",
+        "shot": "action",
+        "focus": ["u_heli", "m_red_1"]
+      },
+      {
+        "at": "s_hellfire-1",
+        "caption": "The lead tank is hit short of the crossing.",
+        "shot": "action",
+        "focus": ["s_hellfire", "m_red_1", "u_heli"]
+      },
+      {
+        "caption": "The crossing is held.",
+        "shot": "aftermath",
+        "focus": ["u_def", "l_bridge", "m_red_2"]
+      }
+    ],
+    "environment": {
+      "startHour": 5,
+      "endHour": 6.2,
+      "date": "2024-06-01",
+      "utcOffset": 3,
+      "windDirDeg": 90,
+      "windKph": 12,
+      "haze": 0.1
+    }
+  }
+}

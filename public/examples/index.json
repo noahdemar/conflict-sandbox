@@ -11,6 +11,19 @@
     ]
   },
   {
+    "id": "authored-river-crossing",
+    "name": "River crossing, written with the authoring shortcuts",
+    "file": "authored-river-crossing.json",
+    "features": [
+      "named places",
+      "relative times",
+      "column macro",
+      "story beats",
+      "auto camera",
+      "content packs"
+    ]
+  },
+  {
     "id": "khasham",
     "name": "Battle of Khasham (2018)",
     "file": "khasham.json",

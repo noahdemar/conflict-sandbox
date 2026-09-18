@@ -2,10 +2,16 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://noahdemar.github.io/conflict-sandbox/schema/scenario.schema.json",
   "title": "OpenBrief scenario",
-  "description": "A map scenario for OpenBrief. Either a bare Scenario object, or the exported file wrapper {format, version, duration, roster, scenario}. Times are timeline seconds; coordinates are [longitude, latitude] or {lat, lng}.",
-  "oneOf": [
+  "description": "A map scenario for OpenBrief. Either a bare Scenario object, the exported file wrapper {format, version, duration, roster, scenario}, or an authoring document — the same thing with named places, relative times, macros, story beats and \"keyframes\": \"auto\", which the app resolves before playing. Times are timeline seconds; coordinates are [longitude, latitude] or {lat, lng}.",
+  "anyOf": [
+    {
+      "$ref": "#/definitions/AuthoringDocument"
+    },
     {
       "$ref": "#/definitions/ScenarioFile"
+    },
+    {
+      "$ref": "#/definitions/AuthoredScenario"
     },
     {
       "$ref": "#/definitions/Scenario"
@@ -769,6 +775,20 @@
       "additionalProperties": false,
       "description": "Lighting and weather over the scenario timeline."
     },
+    "Period": {
+      "type": "string",
+      "enum": [
+        "ancient",
+        "medieval",
+        "gunpowder",
+        "industrial",
+        "ww1",
+        "ww2",
+        "coldwar",
+        "modern"
+      ],
+      "description": "Historical period. The authoring content — icons, packs, macros, guidance and examples — is split along these, so an author only ever sees material that belongs together. `era` remains the visual treatment; see eras.ts."
+    },
     "AerialScene": {
       "type": "object",
       "properties": {
@@ -1078,6 +1098,1181 @@
       ],
       "description": "One block of the article presentation. A scene embeds the map and plays the timeline from keyframe `from` up to the keyframe that follows `to` (or the end), holding on its last frame."
     },
+    "RosterEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "Also drives the unit silhouette, e.g. \"T-72 Tank\", \"AH-64 Apache\", \"MQ-9 Reaper\"."
+        },
+        "type": {
+          "$ref": "#/definitions/UnitType"
+        },
+        "faction": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon library key used by units placed from this entry."
+        },
+        "iconImage": {
+          "type": "string",
+          "description": "Custom map icon: an image URL, or \"asset:<id>\" for an upload."
+        },
+        "modelUrl": {
+          "type": "string"
+        },
+        "modelYaw": {
+          "type": "number"
+        },
+        "rangeKm": {
+          "type": "number"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "wikiTitle": {
+          "type": "string"
+        }
+      }
+    },
+    "AuthoredScenario": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "environment": {
+          "$ref": "#/definitions/Environment",
+          "description": "Lighting & weather; optional (defaults to midday, calm, clear)"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Timeline length in seconds (defaults to 60)"
+        },
+        "narrationPack": {
+          "type": "string",
+          "description": "Folder of pre-recorded caption narration (with manifest.json), relative to the site base"
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Standfirst under the article headline, e.g. \"Deir ez-Zor, Syria · 7–8 February 2018\""
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "References listed at the end of the article, e.g. \"US Department of Defense briefing, 13 February 2018\""
+        },
+        "era": {
+          "type": "string",
+          "enum": [
+            "modern",
+            "historical"
+          ],
+          "description": "Visual era. \"historical\" hides modern map features (roads, buildings, borders, place labels), uses an aged parchment palette, and drops modern interface elements; for events before the modern period."
+        },
+        "period": {
+          "$ref": "#/definitions/Period",
+          "description": "Historical period; selects content packs and implies `era`"
+        },
+        "aerial": {
+          "$ref": "#/definitions/AerialScene",
+          "description": "3D air-combat scene shown by keyframes that set `aerial`"
+        },
+        "article": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ArticleBlock"
+          },
+          "description": "Article presentation: prose with embedded map scenes. Generated from captions when absent"
+        },
+        "factions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Faction"
+          }
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthoredUnit"
+          }
+        },
+        "arrows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthoredArrow"
+          }
+        },
+        "strikes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthoredStrike"
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthoredLabel"
+          }
+        },
+        "territories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthoredTerritory"
+          }
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthoredEffect"
+          }
+        },
+        "keyframes": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AuthoredKeyframe"
+              }
+            },
+            {
+              "type": "string",
+              "const": "auto"
+            }
+          ],
+          "description": "\"auto\" composes the camera from `beats` (or from the events themselves)"
+        },
+        "beats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Beat"
+          },
+          "description": "Story beats the camera composer turns into shots"
+        },
+        "macros": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Macro"
+          },
+          "description": "Structures expanded into units, routes and strikes"
+        },
+        "places": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "Named anchor points every `at`/`near`/`via` can refer to"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ]
+    },
+    "AuthoredUnit": {
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "string",
+          "description": "Place name from `places`, or the id of another placed object"
+        },
+        "near": {
+          "$ref": "#/definitions/NearSpec",
+          "description": "Position relative to another object or place"
+        },
+        "id": {
+          "type": "string"
+        },
+        "factionId": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/UnitType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "arrowId": {
+          "type": "string",
+          "description": "Arrow id this unit advances along during playback"
+        },
+        "rosterId": {
+          "type": "string",
+          "description": "Roster entry this unit was placed from (enables custom 3D assets)"
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon from the shared library (see the catalog in llms.txt), e.g. \"tank\", \"archers\", \"carrier\". Unknown names fall back to a generic icon for the unit type and are reported when the scenario is imported."
+        },
+        "heading": {
+          "type": "number",
+          "description": "Facing direction in degrees when not following an arrow"
+        },
+        "rangeKm": {
+          "type": "number",
+          "description": "Weapon/sensor range ring in km; 0/undefined = none"
+        },
+        "sensorKm": {
+          "type": "number",
+          "description": "Observation/sensor range in km: draws a terrain-aware line-of-sight area"
+        },
+        "airDefenseKm": {
+          "type": "number",
+          "description": "Air-defense engagement range in km: draws an envelope that reacts to enemy aircraft"
+        },
+        "landAtEnd": {
+          "type": "boolean",
+          "description": "Aircraft sets down at the end of its route instead of loitering"
+        },
+        "altitudeKm": {
+          "type": "number",
+          "description": "Orbital/very-high altitude in km: rendered in 3D space above its ground track"
+        },
+        "orbitRole": {
+          "type": "string",
+          "enum": [
+            "relay",
+            "imaging"
+          ],
+          "description": "Orbital payload role: wide relay coverage or a narrow imaging footprint"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "appearAt": {
+          "$ref": "#/definitions/TimeExpr"
+        },
+        "destroyedAt": {
+          "$ref": "#/definitions/TimeExpr"
+        },
+        "leavesAt": {
+          "$ref": "#/definitions/TimeExpr"
+        },
+        "captureAt": {
+          "$ref": "#/definitions/TimeExpr"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "factionId",
+        "id",
+        "name",
+        "type"
+      ]
+    },
+    "NearSpec": {
+      "type": "object",
+      "properties": {
+        "of": {
+          "type": "string",
+          "description": "Unit id, label id, strike id, or a name from `places`"
+        },
+        "bearingDeg": {
+          "type": "number",
+          "description": "Compass bearing in degrees to travel from that anchor (0 = north)"
+        },
+        "km": {
+          "type": "number",
+          "description": "Distance in kilometres (default 0.5)"
+        }
+      },
+      "required": [
+        "of"
+      ],
+      "additionalProperties": false,
+      "description": "A point offset from something already placed: \"1.2 km on bearing 210 from u_hq\"."
+    },
+    "TimeExpr": {
+      "type": [
+        "number",
+        "string"
+      ],
+      "description": "A time in timeline seconds, or an expression anchored to something else:   \"start\" | \"end\"          the timeline ends   \"u_heli\"                 when that object starts (appearAt/time/start)   \"s_hit.end\"              when it ends (impact, route end, effect end)   \"s_hit-4\" | \"k2+1.5\"     any anchor, offset in seconds"
+    },
+    "AuthoredArrow": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "factionId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "followRoads": {
+          "type": "boolean",
+          "description": "Snap ground units on this arrow to real roads (default true)"
+        },
+        "hideLine": {
+          "type": "boolean",
+          "description": "Movement path only: don't draw the arrow on the map"
+        },
+        "hideAt": {
+          "type": "number",
+          "description": "Timeline time after which the arrow is no longer drawn"
+        },
+        "route": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "Cached road route [lng, lat] through the control points"
+        },
+        "routeKey": {
+          "type": "string",
+          "description": "Control-point signature the cached route was computed for"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "via": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PointRef"
+          },
+          "description": "Route written as places, ids or offsets instead of raw coordinates"
+        },
+        "appearAt": {
+          "$ref": "#/definitions/TimeExpr"
+        },
+        "duration": {
+          "type": "number"
+        },
+        "times": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TimeExpr"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "factionId",
+        "id",
+        "name"
+      ]
+    },
+    "PointRef": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "$ref": "#/definitions/NearSpec"
+        }
+      ],
+      "description": "A point: a literal [lng, lat], a name from `places`, the id of something already placed, or an offset from one of those."
+    },
+    "AuthoredStrike": {
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "string",
+          "description": "Place name from `places`, or the id of another placed object"
+        },
+        "near": {
+          "$ref": "#/definitions/NearSpec",
+          "description": "Position relative to another object or place"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "impactStyle": {
+          "type": "string",
+          "enum": [
+            "blast",
+            "fireball"
+          ]
+        },
+        "fromUnitId": {
+          "type": "string",
+          "description": "Unit the missile launches from; ballistic arc is rendered in flight"
+        },
+        "targetStrikeId": {
+          "type": "string",
+          "description": "Target strike id for interceptor strikes"
+        },
+        "targetUnitId": {
+          "type": "string",
+          "description": "Unit being hit: impact follows that unit's position at detonation time"
+        },
+        "salvo": {
+          "type": "number",
+          "description": "Number of rounds in a salvo (gunship/artillery); impacts scatter around the aim point"
+        },
+        "spreadM": {
+          "type": "number",
+          "description": "Salvo scatter radius in meters (default 120; half-length when pattern is \"line\")"
+        },
+        "pattern": {
+          "type": "string",
+          "enum": [
+            "disc",
+            "line"
+          ],
+          "description": "Salvo spread shape. \"disc\" scatters rounds around the aim point (artillery sheaf — the default for ground weapons). \"line\" walks them along the attack axis from the firing unit toward the aim point: strafing runs, bomb sticks and rocket ripples. Needs fromUnitId. Air-launched gun, bomb and missile salvos use \"line\" automatically unless set to \"disc\"."
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "size": {
+          "type": "number",
+          "description": "Blast scale; defaults to a size that suits the weapon name"
+        },
+        "appearAt": {
+          "$ref": "#/definitions/TimeExpr"
+        },
+        "launchAt": {
+          "$ref": "#/definitions/TimeExpr"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "AuthoredLabel": {
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "string",
+          "description": "Place name from `places`, or the id of another placed object"
+        },
+        "near": {
+          "$ref": "#/definitions/NearSpec",
+          "description": "Position relative to another object or place"
+        },
+        "id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "flag": {
+          "type": "string",
+          "description": "ISO 3166 country code: render a flag sticker instead of plain text"
+        },
+        "facility": {
+          "$ref": "#/definitions/FacilityKind",
+          "description": "Render as a facility marker (icon sticker + caption)"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "size": {
+          "type": "number"
+        },
+        "color": {
+          "type": "string"
+        },
+        "appearAt": {
+          "$ref": "#/definitions/TimeExpr"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "text"
+      ]
+    },
+    "AuthoredTerritory": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "factionId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string",
+          "description": "Large watermark text drawn across the territory (e.g. \"SDF\")"
+        },
+        "labelAt": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Watermark position [lng, lat]; defaults to the polygon centroid"
+        },
+        "labelRotate": {
+          "type": "number",
+          "description": "Watermark rotation in degrees"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "via": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PointRef"
+          },
+          "description": "Ring written as places, ids or offsets"
+        },
+        "appearAt": {
+          "$ref": "#/definitions/TimeExpr"
+        },
+        "duration": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "factionId",
+        "id",
+        "name"
+      ]
+    },
+    "AuthoredEffect": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/StatusKind"
+        },
+        "unitId": {
+          "type": "string"
+        },
+        "targetUnitId": {
+          "type": "string",
+          "description": "Other end of a datalink"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Seconds it lasts"
+        },
+        "radiusM": {
+          "type": "number",
+          "description": "Jamming radius in meters"
+        },
+        "label": {
+          "type": "string",
+          "description": "Custom badge text (defaults per kind)"
+        },
+        "start": {
+          "$ref": "#/definitions/TimeExpr"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "duration",
+        "id",
+        "kind",
+        "unitId"
+      ]
+    },
+    "AuthoredKeyframe": {
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "string",
+          "description": "Place name from `places`, or the id of another placed object"
+        },
+        "near": {
+          "$ref": "#/definitions/NearSpec",
+          "description": "Position relative to another object or place"
+        },
+        "id": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string",
+          "description": "Slide-style caption shown while this keyframe is active"
+        },
+        "highlightUnitIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Units emphasized on the map and in the caption while this keyframe is active"
+        },
+        "followUnitId": {
+          "type": "string",
+          "description": "Camera tracks this unit while the keyframe is active"
+        },
+        "followMode": {
+          "type": "string",
+          "enum": [
+            "track",
+            "chase"
+          ],
+          "description": "'track' keeps unit centered; 'chase' also turns camera to unit heading"
+        },
+        "orbitSpeed": {
+          "type": "number",
+          "description": "Camera orbit speed in deg/s while this keyframe is active"
+        },
+        "narrate": {
+          "type": "boolean",
+          "description": "Speak this caption aloud (default true); false shows it as text only"
+        },
+        "sensor": {
+          "$ref": "#/definitions/SensorView",
+          "description": "Sensor view applied while this keyframe is active"
+        },
+        "aerial": {
+          "$ref": "#/definitions/AerialShot",
+          "description": "While this keyframe is active, show the 3D aerial scene from this camera shot instead of the map"
+        },
+        "overlay": {
+          "$ref": "#/definitions/ShotOverlay",
+          "description": "On-screen graphic flashed up while this keyframe is active"
+        },
+        "overlayFactionIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Factions included when the order-of-battle overlay is active"
+        },
+        "media": {
+          "type": "object",
+          "properties": {
+            "src": {
+              "type": "string"
+            },
+            "caption": {
+              "type": "string"
+            },
+            "credit": {
+              "type": "string"
+            },
+            "anchor": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Place the image beside this map point instead of at the screen edge"
+            },
+            "anchorRadiusM": {
+              "type": "number",
+              "description": "Half-width of the site at the anchor in meters, so the image clears it"
+            }
+          },
+          "required": [
+            "src"
+          ],
+          "additionalProperties": false,
+          "description": "Full-screen image card shown while this keyframe is active"
+        },
+        "time": {
+          "$ref": "#/definitions/TimeExpr"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "zoom": {
+          "type": "number"
+        },
+        "pitch": {
+          "type": "number"
+        },
+        "bearing": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "caption",
+        "id"
+      ]
+    },
+    "Beat": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "at": {
+          "$ref": "#/definitions/TimeExpr",
+          "description": "When it happens; omitted beats follow the previous one at reading pace"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "focus": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Ids of units, strikes or labels the shot must frame"
+        },
+        "shot": {
+          "$ref": "#/definitions/ShotKind"
+        },
+        "follow": {
+          "type": "string",
+          "description": "Track this unit through the shot"
+        },
+        "hold": {
+          "type": "number",
+          "description": "Extra seconds to hold after the caption has been read"
+        },
+        "sensor": {
+          "$ref": "#/definitions/SensorView"
+        },
+        "overlay": {
+          "$ref": "#/definitions/ShotOverlay"
+        },
+        "overlayFactionIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "narrate": {
+          "type": "boolean"
+        },
+        "media": {
+          "type": "object",
+          "properties": {
+            "src": {
+              "type": "string"
+            },
+            "caption": {
+              "type": "string"
+            },
+            "credit": {
+              "type": "string"
+            },
+            "anchor": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Place the image beside this map point instead of at the screen edge"
+            },
+            "anchorRadiusM": {
+              "type": "number",
+              "description": "Half-width of the site at the anchor in meters, so the image clears it"
+            }
+          },
+          "required": [
+            "src"
+          ],
+          "additionalProperties": false,
+          "description": "Full-screen image card shown while this keyframe is active"
+        }
+      },
+      "required": [
+        "caption"
+      ],
+      "additionalProperties": false,
+      "description": "One story beat. The author writes what happens and who matters; the camera composer works out where to put the camera, how wide to frame it and how long the shot needs to be for the caption to be read aloud."
+    },
+    "ShotKind": {
+      "type": "string",
+      "enum": [
+        "establish",
+        "approach",
+        "action",
+        "detail",
+        "aftermath"
+      ],
+      "description": "Which kind of shot the camera composer should build for a beat."
+    },
+    "Macro": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ColumnMacro"
+        },
+        {
+          "$ref": "#/definitions/FormationMacro"
+        },
+        {
+          "$ref": "#/definitions/StrikePackageMacro"
+        },
+        {
+          "$ref": "#/definitions/VolleyMacro"
+        }
+      ]
+    },
+    "ColumnMacro": {
+      "type": "object",
+      "properties": {
+        "macro": {
+          "type": "string",
+          "const": "column"
+        },
+        "id": {
+          "type": "string"
+        },
+        "factionId": {
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/UnitTemplate"
+        },
+        "count": {
+          "type": "number"
+        },
+        "via": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PointRef"
+          },
+          "description": "The route, as places, ids, offsets or literal [lng, lat]"
+        },
+        "name": {
+          "type": "string"
+        },
+        "spacingSeconds": {
+          "type": "number",
+          "description": "Seconds between vehicles entering the route (default 2)"
+        },
+        "startAt": {
+          "$ref": "#/definitions/TimeExpr"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Seconds the lead element takes to run the route"
+        },
+        "followRoads": {
+          "type": "boolean"
+        },
+        "hideLine": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "macro",
+        "id",
+        "factionId",
+        "unit",
+        "count",
+        "via"
+      ],
+      "additionalProperties": false,
+      "description": "A moving column: `count` units queued along one route, spaced in time."
+    },
+    "UnitTemplate": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/UnitType"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "rosterId": {
+          "type": "string"
+        },
+        "factionId": {
+          "type": "string"
+        },
+        "rangeKm": {
+          "type": "number"
+        },
+        "sensorKm": {
+          "type": "number"
+        },
+        "airDefenseKm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "Fields shared by the units a macro stamps out."
+    },
+    "FormationMacro": {
+      "type": "object",
+      "properties": {
+        "macro": {
+          "type": "string",
+          "const": "formation"
+        },
+        "id": {
+          "type": "string"
+        },
+        "factionId": {
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/UnitTemplate"
+        },
+        "count": {
+          "type": "number"
+        },
+        "center": {
+          "$ref": "#/definitions/PointRef"
+        },
+        "shape": {
+          "type": "string",
+          "enum": [
+            "line",
+            "wedge",
+            "block",
+            "column",
+            "shieldwall"
+          ],
+          "description": "line and shieldwall spread across the frontage; wedge and column go back from it"
+        },
+        "facingDeg": {
+          "type": "number",
+          "description": "Direction the formation faces, compass degrees (default 0)"
+        },
+        "frontageM": {
+          "type": "number",
+          "description": "Width of the formation in metres (default 400)"
+        },
+        "appearAt": {
+          "$ref": "#/definitions/TimeExpr"
+        }
+      },
+      "required": [
+        "macro",
+        "id",
+        "factionId",
+        "unit",
+        "count",
+        "center"
+      ],
+      "additionalProperties": false,
+      "description": "A static formation: units laid out around a centre point."
+    },
+    "StrikePackageMacro": {
+      "type": "object",
+      "properties": {
+        "macro": {
+          "type": "string",
+          "const": "strike-package"
+        },
+        "id": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string",
+          "description": "Firing unit id"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PointRef"
+          },
+          "description": "Unit ids, place names or points being hit, in order"
+        },
+        "weapon": {
+          "type": "string",
+          "description": "Weapon name, used for the strike name and its flight timing"
+        },
+        "at": {
+          "$ref": "#/definitions/TimeExpr",
+          "description": "Time of the first impact"
+        },
+        "intervalSeconds": {
+          "type": "number",
+          "description": "Seconds between impacts (default 2)"
+        },
+        "salvo": {
+          "type": "number"
+        },
+        "size": {
+          "type": "number"
+        },
+        "pattern": {
+          "type": "string",
+          "enum": [
+            "disc",
+            "line"
+          ]
+        }
+      },
+      "required": [
+        "macro",
+        "id",
+        "from",
+        "targets",
+        "weapon",
+        "at"
+      ],
+      "additionalProperties": false,
+      "description": "One shooter engaging several targets in sequence."
+    },
+    "VolleyMacro": {
+      "type": "object",
+      "properties": {
+        "macro": {
+          "type": "string",
+          "const": "volley"
+        },
+        "id": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/definitions/PointRef"
+        },
+        "name": {
+          "type": "string",
+          "description": "Strike name (default \"Arrow volley\")"
+        },
+        "at": {
+          "$ref": "#/definitions/TimeExpr"
+        },
+        "count": {
+          "type": "number",
+          "description": "Number of volleys (default 3)"
+        },
+        "intervalSeconds": {
+          "type": "number",
+          "description": "Seconds between volleys (default 3)"
+        },
+        "rounds": {
+          "type": "number",
+          "description": "Rounds per volley (default 12)"
+        },
+        "spreadM": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "macro",
+        "id",
+        "from",
+        "target",
+        "at"
+      ],
+      "additionalProperties": false,
+      "description": "Pre-modern massed ranged fire: repeated volleys onto one target area."
+    },
+    "AuthoringDocument": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": [
+            "conflict-sandbox-scenario",
+            "openbrief-authoring"
+          ]
+        },
+        "version": {
+          "type": "number"
+        },
+        "exportedAt": {
+          "type": "string"
+        },
+        "duration": {
+          "type": "number"
+        },
+        "roster": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RosterEntry"
+          }
+        },
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Content packs to merge in: \"modern/nato\", or any URL"
+        },
+        "places": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "Named anchor points, shared by everything in the document"
+        },
+        "scenario": {
+          "$ref": "#/definitions/AuthoredScenario"
+        }
+      },
+      "required": [
+        "format",
+        "scenario"
+      ],
+      "additionalProperties": false,
+      "description": "The document an author (or an assistant) writes. Everything except `scenario` is optional, and a plain exported scenario file is also a valid authoring document — the sugar is additive."
+    },
     "Scenario": {
       "type": "object",
       "properties": {
@@ -1164,6 +2359,10 @@
           ],
           "description": "Visual era. \"historical\" hides modern map features (roads, buildings, borders, place labels), uses an aged parchment palette, and drops modern interface elements; for events before the modern period."
         },
+        "period": {
+          "$ref": "#/definitions/Period",
+          "description": "Historical period the scenario is authored in. Selects the content packs, icons and guidance an author is offered, and implies `era` when that is not set. See eras.ts."
+        },
         "aerial": {
           "$ref": "#/definitions/AerialScene",
           "description": "3D air-combat scene shown by keyframes that set `aerial`"
@@ -1187,45 +2386,6 @@
         "keyframes"
       ],
       "additionalProperties": false
-    },
-    "RosterEntry": {
-      "type": "object",
-      "required": [
-        "id",
-        "name",
-        "type"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string",
-          "description": "Also drives the unit silhouette, e.g. \"T-72 Tank\", \"AH-64 Apache\", \"MQ-9 Reaper\"."
-        },
-        "type": {
-          "$ref": "#/definitions/UnitType"
-        },
-        "faction": {
-          "type": "string"
-        },
-        "modelUrl": {
-          "type": "string"
-        },
-        "modelYaw": {
-          "type": "number"
-        },
-        "rangeKm": {
-          "type": "number"
-        },
-        "imageUrl": {
-          "type": "string"
-        },
-        "wikiTitle": {
-          "type": "string"
-        }
-      }
     },
     "ScenarioFile": {
       "type": "object",

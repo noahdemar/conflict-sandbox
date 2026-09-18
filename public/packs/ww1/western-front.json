@@ -1,0 +1,106 @@
+{
+  "id": "ww1/western-front",
+  "name": "Western Front 1914–18",
+  "period": "ww1",
+  "description": "Trench garrisons, barrages, the first tanks and scout aircraft.",
+  "roster": [
+    {
+      "id": "ww1_platoon",
+      "name": "Infantry platoon",
+      "type": "infantry",
+      "icon": "troops",
+      "wikiTitle": "Trench warfare"
+    },
+    {
+      "id": "ww1_mg",
+      "name": "Vickers machine gun",
+      "type": "infantry",
+      "icon": "troops",
+      "wikiTitle": "Vickers machine gun"
+    },
+    {
+      "id": "ww1_mortar",
+      "name": "Trench mortar",
+      "type": "artillery",
+      "icon": "mortar",
+      "wikiTitle": "Stokes mortar"
+    },
+    {
+      "id": "ww1_18pdr",
+      "name": "QF 18-pounder battery",
+      "type": "artillery",
+      "icon": "howitzer",
+      "wikiTitle": "Ordnance QF 18-pounder"
+    },
+    {
+      "id": "ww1_77mm",
+      "name": "7.7 cm field gun battery",
+      "type": "artillery",
+      "icon": "howitzer",
+      "wikiTitle": "7.7 cm FK 96 n.A."
+    },
+    {
+      "id": "ww1_markiv",
+      "name": "Mark IV tank",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "Mark IV tank"
+    },
+    {
+      "id": "ww1_a7v",
+      "name": "A7V",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "A7V"
+    },
+    {
+      "id": "ww1_camel",
+      "name": "Sopwith Camel",
+      "type": "air",
+      "icon": "propfighter",
+      "wikiTitle": "Sopwith Camel"
+    },
+    {
+      "id": "ww1_drI",
+      "name": "Fokker Dr.I",
+      "type": "air",
+      "icon": "propfighter",
+      "wikiTitle": "Fokker Dr.I"
+    },
+    {
+      "id": "ww1_lorry",
+      "name": "Supply lorry",
+      "type": "infantry",
+      "icon": "truck",
+      "wikiTitle": "Military logistics"
+    },
+    {
+      "id": "ww1_hq",
+      "name": "Battalion headquarters",
+      "type": "hq",
+      "icon": "bunker",
+      "wikiTitle": "Dugout (shelter)"
+    }
+  ],
+  "macros": [
+    {
+      "macro": "strike-package",
+      "id": "preset_creeping_barrage",
+      "from": "u_18pdr",
+      "targets": [
+        "First objective",
+        "Second objective",
+        "Third objective"
+      ],
+      "weapon": "Creeping barrage",
+      "at": 20,
+      "intervalSeconds": 6,
+      "salvo": 12,
+      "size": 0.9
+    }
+  ],
+  "notes": [
+    "Draw the trench systems as territories and the attack as arrows across no man’s land.",
+    "Aircraft observe and fight each other; they carry no guided weapons."
+  ]
+}

@@ -10,8 +10,10 @@ A scenario is a single JSON document. To make one, produce JSON that validates
 against the schema, then load it in the app (see "Loading" below).
 
 - JSON Schema: https://noahdemar.github.io/conflict-sandbox/schema/scenario.schema.json
+- Content packs by period: https://noahdemar.github.io/conflict-sandbox/packs/index.json
 - Complete, valid examples (study the closest one before writing):
-  - https://noahdemar.github.io/conflict-sandbox/examples/river-crossing.json: minimal hypothetical battle
+  - https://noahdemar.github.io/conflict-sandbox/examples/river-crossing.json: minimal hypothetical battle, written out longhand
+  - https://noahdemar.github.io/conflict-sandbox/examples/authored-river-crossing.json: the same battle written with the shortcuts (named places, relative times, a macro, story beats, automatic camera)
   - https://noahdemar.github.io/conflict-sandbox/examples/khasham.json: modern battle with air strikes, article, callouts, order of battle
   - https://noahdemar.github.io/conflict-sandbox/examples/binladen-raid.json: raid with individual people, helicopters, night vision, satellite pass
   - https://noahdemar.github.io/conflict-sandbox/examples/dogfight.json: 3D aerial scene over real terrain with an aircraft comparison
@@ -35,13 +37,23 @@ scenario. No repository or install needed:
    - no hosting: append `encodeURIComponent("data:application/json;base64," +
      base64(file))` after `?scenario=` and open that (fine for typical
      scenario sizes; prefer a hosted URL for very large documents).
-2. The page validates before it plays: schema and semantic errors are listed
-   on screen and in the browser console, and realism warnings appear too.
-   Fix the JSON and reload until it plays cleanly.
-3. Watch the whole timeline: label overlaps, unit spacing, camera composition,
-   effect timing and caption readability. Iterate on the JSON until it looks
-   right.
-4. Deliver the JSON plus the preview URL.
+2. The page resolves and validates before it plays: schema errors, reference
+   errors, plausibility warnings and composition findings are listed on screen
+   and in the browser console. The whole report is also left on
+   `window.__openbriefReport`, so you can read it directly:
+   `await page.evaluate(() => window.__openbriefReport)` returns
+   `{ ok, errors, notes, issues: [{ path, message, severity, fix }] }`.
+   Fix the JSON and reload until it comes back ok.
+3. With the repository, the same check runs without a browser, and draws a
+   storyboard you can look at in one image instead of scrubbing the film:
+       npm run check -- scenario.json
+       npm run check -- scenario.json --json
+       npm run check -- scenario.json --storyboard sb.svg --resolved plain.json
+   `--resolved` writes the plain scenario the shortcuts expanded into: read it
+   to see exactly where things were placed and when they happen.
+4. Watch the timeline for what a still cannot show: unit spacing, effect
+   timing, how the camera moves. Iterate until it looks right.
+5. Deliver the JSON plus the preview URL.
 
 If you have no tools, tell the user this workflow exists and produces much
 better results — then still return valid JSON.
@@ -63,7 +75,101 @@ A bare Scenario object is also accepted.
 Scenario keys: name, subtitle (place and date line for the opening title
 card), sources (list of references for the closing card), factions, units, arrows, territories, labels, strikes,
 keyframes (all required arrays except name), plus optional effects,
-environment, duration.
+environment, duration, period.
+
+## Shortcuts: write less, get more (recommended)
+
+Everything under this heading is optional sugar. The app resolves it into an
+ordinary scenario before anything plays, so what you deliver stays editable by
+hand and the schema still applies. Use it: hand-computing coordinates and
+timings is where scenarios go wrong.
+
+Anchor the geography once, then hang everything off it:
+
+  "places": { "Bridge": [35.045, 48.446], "Ridge": [35.052, 48.452] }   // [lng, lat]
+
+  { "id": "u_def", "at": "Ridge", ... }
+  { "id": "u_heli", "near": { "of": "Bridge", "bearingDeg": 45, "km": 6 }, ... }
+  { "id": "a_route", "via": ["Staging area", { "of": "Bridge", "bearingDeg": 200, "km": 1.2 }, "Bridge"] }
+
+`at` and `near.of` accept a name from `places` or the id of anything already
+placed: a unit, a label, a strike, "a_route" for the first point of a route,
+"a_route.end" for its last. `via` replaces `points` on arrows and
+territories. Anything given lat/lng directly still works.
+
+TIMES may be expressions instead of numbers:
+
+  "start"        0
+  "end"          the end of the timeline (needs an explicit duration)
+  "u_heli"       when that object starts: appearAt / time / start
+  "a_route.end"  when it ends: route end, effect end
+  "s_hit"        when a strike LANDS (impact, not launch)
+  "s_hit-4"      four seconds before it lands; "+2" works the same way
+
+So "launchAt": "s_hit-8" is an eight-second flight, and
+"destroyedAt": "s_hit" kills the target exactly when the strike arrives.
+Change one time and everything hanging off it moves with it.
+
+MACROS expand into ordinary units, routes and strikes:
+
+  { "macro": "column", "id": "m_adv", "factionId": "f_red", "count": 6,
+    "via": ["Staging area", "Objective"], "startAt": 4, "duration": 24,
+    "unit": { "name": "T-72", "type": "armor", "icon": "tank" } }
+    -> one route plus six vehicles queued on it (the app spaces them out)
+
+  { "macro": "formation", "id": "m_line", "factionId": "f_blue", "count": 5,
+    "center": "Ridge", "shape": "line", "facingDeg": 180, "frontageM": 900,
+    "unit": { "name": "Longbowmen", "type": "infantry", "icon": "archers" } }
+    shapes: line | wedge | block | column | shieldwall
+
+  { "macro": "strike-package", "id": "m_fires", "from": "u_f15e",
+    "targets": ["u_t72_1", "u_t72_2"], "weapon": "GBU-38 JDAM",
+    "at": 42, "intervalSeconds": 2.5 }
+    targets may be unit ids, place names or [lng, lat]; a unit target becomes
+    targetUnitId, so the impact follows a moving vehicle
+
+  { "macro": "volley", "id": "m_arrows", "from": "u_archers",
+    "target": "u_vanguard", "at": 20, "count": 4, "rounds": 14 }
+    pre-modern massed ranged fire: repeated many-round volleys
+
+Macro output ids are "<macro id>_1", "<macro id>_2" and so on, and the route
+is "<macro id>_route", so strikes, beats and keyframes can reference them.
+
+THE CAMERA can compose itself. Write story beats and set
+"keyframes": "auto":
+
+  "keyframes": "auto",
+  "beats": [
+    { "at": 0, "caption": "A Red armoured column moves on the bridge at dawn.",
+      "shot": "establish", "focus": ["m_adv_1", "u_def", "l_bridge"] },
+    { "at": "s_hit-7", "caption": "An Apache runs in from the north east.",
+      "shot": "action", "focus": ["u_heli", "m_adv_1"] },
+    { "caption": "The crossing is held.", "shot": "aftermath",
+      "focus": ["u_def", "l_bridge"] }
+  ]
+
+Each beat becomes a shot framed on the ids in `focus` at that moment, tilted
+and zoomed to suit `shot` (establish | approach | action | detail |
+aftermath), long enough for the caption to be read aloud, tracking a single
+moving subject automatically. A beat without `at` follows the previous one at
+reading pace. Optional per beat: follow, hold, sensor, overlay,
+overlayFactionIds, narrate, media.
+
+Write keyframes by hand when you want exact control, and you can still leave
+work to the app: a keyframe with a caption and highlightUnitIds but no
+lng/lat/zoom is framed for you, and "at": "Bridge" centres it on a place.
+
+With no beats and no keyframes, "keyframes": "auto" composes a shot list from
+the events themselves and writes placeholder captions. Rewrite those captions.
+
+CONTENT PACKS carry period rosters and are pulled in at the top level:
+
+  "include": ["modern/nato", "modern/opfor"]
+
+then point units at them with "rosterId": "mod_abrams". The packs are listed
+at https://noahdemar.github.io/conflict-sandbox/packs/index.json and each one
+is published at .../packs/<id>.json. A period includes its own packs
+automatically.
 
 ## Conventions that matter
 
@@ -86,15 +192,43 @@ environment, duration.
 - Be factual for real events and mark anything invented or approximate in the
   caption or name, e.g. "approximately", "Illustrative:", "Hypothetical:".
 
-## Historical-era scenes
+## Periods: the content is split by era
 
-Use era: "historical" for pre-modern reconstructions. This disables automatic
-modern-road routing and uses the historical visual treatment. Name formations
-clearly: "Longbowmen", "Dismounted men-at-arms", "Mounted knights", "Royal
-standard" or "Baggage train". Name strikes "Longbow volley" for arrows and
-"Melee" or "Cavalry charge" for close combat. "Demolition charges" remain
-explosive, not melee. Do not introduce modern communications or weapons into
-these scenes. A group icon represents a formation, not a literal head count.
+Set "period" on the scenario. It selects the icons, unit packs and rules that
+belong together, and decides the visual treatment, so era never has to be
+thought about separately:
+
+  ancient      to about 500 AD        phalanx, legion, chariots, galleys
+  medieval     about 500 to 1500      men-at-arms, longbows, knights, siege
+  gunpowder    about 1500 to 1800     pike and shot, field cannon, sail
+  industrial   about 1800 to 1913     rifle regiments, massed batteries, rail
+  ww1          1914 to 1918           trenches, barrages, first tanks
+  ww2          1939 to 1945           armour, half-tracks, piston aircraft
+  coldwar      1946 to 1991           jets, helicopters, missile air defence
+  modern       1991 onwards           precision fires, drones, satellites
+
+The first four use the historical look: an aged palette with modern roads,
+buildings, borders and place names hidden, and no automatic road routing.
+"era": "historical" or "modern" still works and overrides the default.
+
+Rules that come with the period (the check reports icons out of place):
+
+- Pre-modern: name formations, not head counts, such as "Longbowmen",
+  "Dismounted men-at-arms", "Mounted knights", "Royal standard" or "Baggage
+  train". Name strikes "Longbow volley", "Melee", "Cavalry charge", "Musket
+  volley" or "Cannonade". A group icon is a formation, not a literal head
+  count. No modern communications or weapons; "Demolition charges" remain
+  explosive, not melee.
+- ww1: trench systems are territories, the attack is arrows across no
+  man’s land, a barrage is a salvo. Aircraft observe and fight each other;
+  they carry nothing guided.
+- ww2: halftrack, propfighter, propbomber, higgins, uboat. No jets,
+  helicopters, drones, satellites or guided weapons. Bomb sticks and strafing
+  runs use pattern "line".
+- coldwar: mostly unguided fires; air defence is a real constraint
+  (airDefenseKm). No armed drones and no live imagery feeds.
+- modern: precision weapons need explicit launchAt and targetUnitId; show the
+  sensing as well as the shooting.
 
 ## Factions
 
@@ -355,10 +489,11 @@ without a recording are shown as text; nothing is synthesized for viewers.
 6. Use small particle scales and restrained highlights. Keep only meaningful
    status effects and avoid overlapping large smoke plumes. Reuse movement routes
    and aggregate formations when individual people are not essential to the story.
-7. Run `npm run build`, `npm run validate -- scenario.json`, and `npm test` in the
-   repository. Validation checks schema, references, ordered waypoints and event
-   times; plausibility warnings are heuristics, not historical certification.
-   Review all warnings rather than treating a schema-valid result as approval.
+7. Run `npm run check -- scenario.json` (schema, references, event times,
+   plausibility and composition, with a storyboard), plus `npm run build` and
+   `npm test` in the repository. Plausibility warnings are heuristics, not
+   historical certification. Review every finding rather than treating a
+   schema-valid result as approval.
 8. Preview at normal and double speed, scrub both directions, pause during audio,
    switch scenes, and check a narrow viewport. Listen for overlapping narration,
    delayed effects and excessive loudness. Check browser frame timings on target
@@ -366,12 +501,16 @@ without a recording are shown as text; nothing is synthesized for viewers.
 
 ## Loading
 
-1. In the editor: Import → paste JSON (validated with exact error messages)
-   or choose a .json file.
+1. In the editor: Import → paste JSON (resolved and validated with exact error
+   messages) or choose a .json file. After loading, the editor walks through
+   every finding one at a time, selecting the object it is about.
 2. By URL: https://noahdemar.github.io/conflict-sandbox/?scenario=<URL of a
    publicly readable JSON file that allows cross-origin requests>
    (e.g. a GitHub Gist "raw" link).
-3. Share → copy a view link (article), an edit link, or embed code
+3. Remix a finished example in the editor:
+   https://noahdemar.github.io/conflict-sandbox/?remix=khasham
+   (also binladen-raid, dogfight, agincourt), or Create a Brief → Remix.
+4. Share → copy a view link (article), an edit link, or embed code
    (an <iframe> for another website; add ?embed=1 to any view URL).
 
 If validation fails, fix exactly the paths reported (e.g.

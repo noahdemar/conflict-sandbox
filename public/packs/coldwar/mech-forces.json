@@ -1,0 +1,152 @@
+{
+  "id": "coldwar/mech-forces",
+  "name": "Cold War mechanised forces",
+  "period": "coldwar",
+  "description": "Mechanised divisions, jets, helicopters and missile air defence.",
+  "roster": [
+    {
+      "id": "cw_motorrifle",
+      "name": "Motor rifle company",
+      "type": "infantry",
+      "icon": "troops",
+      "wikiTitle": "Motorized infantry"
+    },
+    {
+      "id": "cw_m60",
+      "name": "M60 Patton",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "M60 tank"
+    },
+    {
+      "id": "cw_t55",
+      "name": "T-55",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "T-54/T-55"
+    },
+    {
+      "id": "cw_t62",
+      "name": "T-62",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "T-62"
+    },
+    {
+      "id": "cw_m113",
+      "name": "M113",
+      "type": "armor",
+      "icon": "apc",
+      "wikiTitle": "M113 armored personnel carrier"
+    },
+    {
+      "id": "cw_bmp1",
+      "name": "BMP-1",
+      "type": "armor",
+      "icon": "ifv",
+      "wikiTitle": "BMP-1"
+    },
+    {
+      "id": "cw_m109",
+      "name": "M109 howitzer",
+      "type": "artillery",
+      "icon": "spg",
+      "wikiTitle": "M109 howitzer"
+    },
+    {
+      "id": "cw_grad",
+      "name": "BM-21 Grad",
+      "type": "missile",
+      "icon": "launcher",
+      "wikiTitle": "BM-21 Grad"
+    },
+    {
+      "id": "cw_zsu",
+      "name": "ZSU-23-4 Shilka",
+      "type": "artillery",
+      "icon": "aagun",
+      "wikiTitle": "ZSU-23-4 Shilka"
+    },
+    {
+      "id": "cw_sa6",
+      "name": "2K12 Kub (SA-6)",
+      "type": "missile",
+      "icon": "sam",
+      "rangeKm": 24,
+      "wikiTitle": "2K12 Kub"
+    },
+    {
+      "id": "cw_f4",
+      "name": "F-4 Phantom II",
+      "type": "air",
+      "icon": "jet",
+      "wikiTitle": "McDonnell Douglas F-4 Phantom II"
+    },
+    {
+      "id": "cw_mig21",
+      "name": "MiG-21",
+      "type": "air",
+      "icon": "jet",
+      "wikiTitle": "Mikoyan-Gurevich MiG-21"
+    },
+    {
+      "id": "cw_a10",
+      "name": "A-10 Thunderbolt II",
+      "type": "air",
+      "icon": "jet",
+      "wikiTitle": "Fairchild Republic A-10 Thunderbolt II"
+    },
+    {
+      "id": "cw_huey",
+      "name": "UH-1 Iroquois",
+      "type": "air",
+      "icon": "heli",
+      "wikiTitle": "Bell UH-1 Iroquois"
+    },
+    {
+      "id": "cw_mi24",
+      "name": "Mi-24 Hind",
+      "type": "air",
+      "icon": "attackheli",
+      "wikiTitle": "Mil Mi-24"
+    },
+    {
+      "id": "cw_mi8",
+      "name": "Mi-8",
+      "type": "air",
+      "icon": "mi8",
+      "wikiTitle": "Mil Mi-8"
+    },
+    {
+      "id": "cw_hq",
+      "name": "Regimental command post",
+      "type": "hq",
+      "icon": "hq",
+      "wikiTitle": "Command and control"
+    }
+  ],
+  "macros": [
+    {
+      "macro": "column",
+      "id": "preset_mech_advance",
+      "factionId": "f_red",
+      "unit": {
+        "name": "T-62",
+        "type": "armor",
+        "icon": "tank",
+        "rosterId": "cw_t62"
+      },
+      "count": 6,
+      "via": [
+        "Forming-up point",
+        "Valley road",
+        "Objective"
+      ],
+      "spacingSeconds": 2
+    }
+  ],
+  "notes": [
+    "Give air-defence units airDefenseKm and route strike aircraft around the envelope.",
+    "Most fires are guns, rockets and unguided bombs; guided weapons are the exception."
+  ]
+}

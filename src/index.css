@@ -4633,3 +4633,173 @@ body {
   margin-right: 4px;
   vertical-align: -2px;
 }
+
+/* Review bar: walks the author through everything the check found after an
+   import, selecting each object so the fix is a drag away. Frosted panel, to
+   sit with the rest of the interface rather than over it. */
+.review-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 118px;
+  transform: translateX(-50%);
+  z-index: 58;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(760px, calc(100vw - 32px));
+  padding: 8px 10px;
+  border: 1px solid var(--panel-border);
+  border-left: 3px solid #d9a02f;
+  border-radius: 12px;
+  background: var(--panel-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+  color: var(--text);
+  font-size: 11.5px;
+}
+
+.review-bar.sev-error {
+  border-left-color: var(--danger);
+}
+
+.review-bar.sev-info {
+  border-left-color: var(--text-dim);
+}
+
+.review-count {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  color: #a0741f;
+  font-variant-numeric: tabular-nums;
+}
+
+.review-bar.sev-error .review-count {
+  color: var(--danger);
+}
+
+.review-bar.sev-info .review-count {
+  color: var(--text-dim);
+}
+
+.review-count em {
+  font-style: normal;
+  color: var(--danger);
+}
+
+.review-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.review-body strong {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-body span {
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+/* What the resolver filled in (auto camera, derived durations, macros) */
+.import-notes {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--accent);
+  border-radius: 9px;
+  background: var(--accent-soft);
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.import-notes strong {
+  color: var(--text);
+}
+
+.import-notes ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+/* Period picker: the authoring content is split by era, so this choice
+   decides which icons, packs and rules the prompt carries. */
+.create-period {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 10px 0 2px;
+}
+
+.create-period label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.create-period select {
+  justify-self: start;
+  min-width: 260px;
+  padding: 5px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.create-period small {
+  grid-column: 1 / -1;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.create-remix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* Period picker in Settings: the one control that decides which icons, packs
+   and rules an author is working with, and how the map looks. */
+.settings-period {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 2px 6px;
+}
+
+.settings-period select {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.settings-period small {
+  color: var(--text-dim);
+  font-size: 10.5px;
+  line-height: 1.4;
+}

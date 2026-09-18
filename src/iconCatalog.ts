@@ -1,5 +1,6 @@
+import { ICON_PERIODS } from './eras';
 import { isIconKey, resolveIconName, silhouetteFor, type SilhouetteKey } from './silhouettes';
-import type { RosterEntry, Scenario } from './types';
+import type { Period, RosterEntry, Scenario } from './types';
 
 export type IconCategory = 'People' | 'Ground vehicles' | 'Aircraft' | 'Ships' | 'Structures' | 'Pre-modern';
 
@@ -87,11 +88,19 @@ export const ICON_CATALOG: Record<SilhouetteKey, { label: string; category: Icon
 
 export const ICON_CATEGORIES: IconCategory[] = ['People', 'Ground vehicles', 'Aircraft', 'Ships', 'Structures', 'Pre-modern'];
 
-/** Icon keys grouped by category, one line each, for prompts and docs. */
-export function iconCatalogText(): string {
-  return ICON_CATEGORIES.map(
-    (c) => `${c}: ${(Object.keys(ICON_CATALOG) as SilhouetteKey[]).filter((k) => ICON_CATALOG[k].category === c).join(', ')}`,
-  ).join('\n');
+/**
+ * Icon keys grouped by category, one line each, for prompts and docs. Given a
+ * period, only the icons that belong in it — an author writing a medieval
+ * battle is never shown an Apache.
+ */
+export function iconCatalogText(period?: Period): string {
+  const keys = (Object.keys(ICON_CATALOG) as SilhouetteKey[]).filter((k) => !period || ICON_PERIODS[k].includes(period));
+  return ICON_CATEGORIES.map((c) => {
+    const inCategory = keys.filter((k) => ICON_CATALOG[k].category === c);
+    return inCategory.length ? `${c}: ${inCategory.join(', ')}` : '';
+  })
+    .filter(Boolean)
+    .join('\n');
 }
 
 /**

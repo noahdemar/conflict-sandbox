@@ -1,0 +1,163 @@
+{
+  "id": "modern/opfor",
+  "name": "Modern Eastern and irregular forces",
+  "period": "modern",
+  "description": "Mechanised regiments, technicals, layered air defence.",
+  "roster": [
+    {
+      "id": "opf_motorrifle",
+      "name": "Motor rifle company",
+      "type": "infantry",
+      "icon": "troops",
+      "wikiTitle": "Motorized infantry"
+    },
+    {
+      "id": "opf_fighters",
+      "name": "Irregular fighters",
+      "type": "infantry",
+      "icon": "troops",
+      "wikiTitle": "Irregular military"
+    },
+    {
+      "id": "opf_t72",
+      "name": "T-72B3",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "T-72"
+    },
+    {
+      "id": "opf_t90",
+      "name": "T-90",
+      "type": "armor",
+      "icon": "tank",
+      "wikiTitle": "T-90"
+    },
+    {
+      "id": "opf_bmp2",
+      "name": "BMP-2",
+      "type": "armor",
+      "icon": "ifv",
+      "wikiTitle": "BMP-2"
+    },
+    {
+      "id": "opf_btr82",
+      "name": "BTR-82A",
+      "type": "armor",
+      "icon": "apc",
+      "wikiTitle": "BTR-82"
+    },
+    {
+      "id": "opf_technical",
+      "name": "Technical",
+      "type": "armor",
+      "icon": "truck",
+      "wikiTitle": "Technical (vehicle)"
+    },
+    {
+      "id": "opf_d30",
+      "name": "D-30 howitzer battery",
+      "type": "artillery",
+      "icon": "howitzer",
+      "rangeKm": 15,
+      "wikiTitle": "D-30 howitzer"
+    },
+    {
+      "id": "opf_msta",
+      "name": "2S19 Msta-S",
+      "type": "artillery",
+      "icon": "spg",
+      "rangeKm": 24,
+      "wikiTitle": "2S19 Msta"
+    },
+    {
+      "id": "opf_grad",
+      "name": "BM-21 Grad",
+      "type": "missile",
+      "icon": "launcher",
+      "rangeKm": 21,
+      "wikiTitle": "BM-21 Grad"
+    },
+    {
+      "id": "opf_s400",
+      "name": "S-400 battery",
+      "type": "missile",
+      "icon": "sam",
+      "rangeKm": 250,
+      "wikiTitle": "S-400 missile system"
+    },
+    {
+      "id": "opf_pantsir",
+      "name": "Pantsir-S1",
+      "type": "missile",
+      "icon": "sam",
+      "rangeKm": 20,
+      "wikiTitle": "Pantsir missile system"
+    },
+    {
+      "id": "opf_su25",
+      "name": "Su-25",
+      "type": "air",
+      "icon": "jet",
+      "wikiTitle": "Sukhoi Su-25"
+    },
+    {
+      "id": "opf_su34",
+      "name": "Su-34",
+      "type": "air",
+      "icon": "jet",
+      "wikiTitle": "Sukhoi Su-34"
+    },
+    {
+      "id": "opf_mi8",
+      "name": "Mi-8",
+      "type": "air",
+      "icon": "mi8",
+      "wikiTitle": "Mil Mi-8"
+    },
+    {
+      "id": "opf_mi24",
+      "name": "Mi-24",
+      "type": "air",
+      "icon": "attackheli",
+      "wikiTitle": "Mil Mi-24"
+    },
+    {
+      "id": "opf_shahed",
+      "name": "One-way attack drone",
+      "type": "air",
+      "icon": "drone",
+      "wikiTitle": "Loitering munition"
+    },
+    {
+      "id": "opf_radar",
+      "name": "Counter-battery radar",
+      "type": "hq",
+      "icon": "radar",
+      "wikiTitle": "Counter-battery radar"
+    }
+  ],
+  "macros": [
+    {
+      "macro": "column",
+      "id": "preset_attack_column",
+      "factionId": "f_red",
+      "unit": {
+        "name": "T-72B3",
+        "type": "armor",
+        "icon": "tank",
+        "rosterId": "opf_t72"
+      },
+      "count": 6,
+      "via": [
+        "Staging area",
+        "River road",
+        "Objective"
+      ],
+      "spacingSeconds": 2
+    }
+  ],
+  "notes": [
+    "Layer the air defence: a long-range battery plus a short-range point defence reads clearly on the map.",
+    "Counter-battery fire is a good use of a datalink effect between a radar and a gun line."
+  ]
+}

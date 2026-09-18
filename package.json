@@ -4,14 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "build": "node scripts/build-schema.mjs && tsx scripts/export-packs.ts && tsx scripts/export-examples.ts && tsc -b && vite build",
+    "check": "tsx scripts/check.ts",
     "dev": "vite",
-    "build": "node scripts/build-schema.mjs && tsx scripts/export-examples.ts && tsc -b && vite build",
     "examples": "tsx scripts/export-examples.ts",
-    "preview": "vite preview",
     "narration": "tsx scripts/render-narration.ts",
+    "packs": "tsx scripts/export-packs.ts",
+    "preview": "vite preview",
     "schema": "node scripts/build-schema.mjs",
-    "validate": "tsx scripts/validate-scenario.ts",
-    "test": "tsx --test scripts/quality.test.ts"
+    "test": "tsx --test scripts/quality.test.ts scripts/authoring.test.ts",
+    "validate": "tsx scripts/validate-scenario.ts"
   },
   "dependencies": {
     "ajv": "^8.20.0",

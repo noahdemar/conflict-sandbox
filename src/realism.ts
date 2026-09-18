@@ -127,7 +127,8 @@ export function flightSeconds(kind: WeaponKind, meters: number, interceptor = fa
 }
 
 /** Where a unit roughly is for timing purposes: route end if it moves, else its placement. */
-function roughPosition(s: Scenario, u: Unit, at?: number): LngLat {
+// exported for the camera composer and the composition lint
+export function roughPosition(s: Scenario, u: Unit, at?: number): LngLat {
   const a = u.arrowId ? s.arrows.find((x) => x.id === u.arrowId) : undefined;
   if (!a?.points.length) return [u.lng, u.lat];
   if (at === undefined) return a.points[a.points.length - 1];

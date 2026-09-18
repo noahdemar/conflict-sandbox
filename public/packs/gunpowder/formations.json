@@ -1,0 +1,86 @@
+{
+  "id": "gunpowder/formations",
+  "name": "Pike and shot",
+  "period": "gunpowder",
+  "description": "Musket lines, pike blocks, field guns and ships of the line.",
+  "roster": [
+    {
+      "id": "gun_line",
+      "name": "Line infantry",
+      "type": "infantry",
+      "icon": "musketeers",
+      "wikiTitle": "Line infantry"
+    },
+    {
+      "id": "gun_grenadiers",
+      "name": "Grenadiers",
+      "type": "infantry",
+      "icon": "musketeers",
+      "wikiTitle": "Grenadier"
+    },
+    {
+      "id": "gun_pike",
+      "name": "Pike block",
+      "type": "infantry",
+      "icon": "pikemen",
+      "wikiTitle": "Pike and shot"
+    },
+    {
+      "id": "gun_horse",
+      "name": "Horse",
+      "type": "infantry",
+      "icon": "cavalry",
+      "wikiTitle": "Cavalry"
+    },
+    {
+      "id": "gun_cannon",
+      "name": "Field battery",
+      "type": "artillery",
+      "icon": "cannon",
+      "wikiTitle": "Field artillery"
+    },
+    {
+      "id": "gun_colours",
+      "name": "Regimental colours",
+      "type": "hq",
+      "icon": "banner",
+      "wikiTitle": "Colours, standards and guidons"
+    },
+    {
+      "id": "gun_baggage",
+      "name": "Baggage train",
+      "type": "infantry",
+      "icon": "baggage",
+      "wikiTitle": "Baggage train"
+    },
+    {
+      "id": "gun_shipofline",
+      "name": "Ship of the line",
+      "type": "naval",
+      "icon": "sailingship",
+      "wikiTitle": "Ship of the line"
+    }
+  ],
+  "macros": [
+    {
+      "macro": "formation",
+      "id": "preset_line",
+      "factionId": "f_blue",
+      "unit": {
+        "name": "Line infantry",
+        "type": "infantry",
+        "icon": "musketeers",
+        "rosterId": "gun_line"
+      },
+      "count": 6,
+      "center": "Ridge",
+      "shape": "line",
+      "facingDeg": 180,
+      "frontageM": 1200
+    }
+  ],
+  "notes": [
+    "Musket range is a few hundred metres; cannon reach about 1 km with round shot.",
+    "Name strikes \"Musket volley\", \"Cannonade\" and \"Broadside\"."
+  ]
+}

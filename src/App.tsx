@@ -10,17 +10,18 @@ import { useStore } from './store';
 import { loadNarrationPack, narrate, narrateRecorded, preloadKokoro, preloadNarrationPack, setVoiceGeneration, stopNarration } from './narration';
 import { arrowVolley, boom, gallop, gunshot, meleeClash, setRotor } from './audio';
 import { expandStrikes, weaponKind } from './particles';
-import { realismWarnings, strikeLaunchAt } from './realism';
+import { strikeLaunchAt } from './realism';
 import { startRouting } from './routing';
 import { preloadAssets } from './assets';
 import { clearShareHash, readShareLink } from './share';
-import { demoFromUrl } from './demos';
-import { iconFallbacks } from './iconCatalog';
+import { DEMOS, demoFromUrl, type DemoId } from './demos';
 import { validateScenarioJson } from './scenarioValidation';
+import { reportLines, reviewScenario, type ReviewIssue } from './review';
+import ReviewBar from './components/ReviewBar';
 import { lossesByFaction } from './combat';
 import { hourAt } from './environment';
 import OrbatOverlay from './components/OrbatOverlay';
-import type { RosterEntry, Scenario, ShotOverlay, Unit, UnitType } from './types';
+import type { ShotOverlay, Unit, UnitType } from './types';
 import EnvironmentPanel from './components/EnvironmentPanel';
 import TranscriptPane from './components/TranscriptPane';
 import ConsentModal from './components/ConsentModal';
@@ -276,6 +277,16 @@ function SensorOverlay({ view }: { view: 'nvg' | 'thermal' }) {
   );
 }
 
+/**
+ * Parks the validation report where a browser-driving assistant can read it:
+ * `window.__openbriefReport`. Same content as the on-screen panel and the
+ * console output, so an agent can iterate without watching the film.
+ */
+function publishReport(report: { ok: boolean; errors: string[]; notes: string[]; issues: ReviewIssue[] }) {
+  (window as unknown as { __openbriefReport?: unknown }).__openbriefReport = report;
+  window.dispatchEvent(new CustomEvent('openbrief:report', { detail: report }));
+}
+
 export default function App() {
   const playing = useStore((s) => s.playing);
   const look = useStore((s) => s.look);
@@ -447,34 +458,53 @@ export default function App() {
   useEffect(() => {
     readShareLink().then((shared) => {
       if (!shared) {
-        // ?scenario=<url>: load a hosted scenario JSON (validated) into the read-only player
-        const remote = new URLSearchParams(window.location.search).get('scenario');
+        const params = new URLSearchParams(window.location.search);
+        // ?remix=<demo id>: open a finished example in the editor, ready to change
+        const remix = params.get('remix');
+        if (remix && DEMOS.some((d) => d.id === remix)) {
+          const st = useStore.getState();
+          st.loadDemo(remix as DemoId);
+          // land on the opening shot rather than wherever the map happened to be
+          const first = st.scenario.keyframes[0] ?? useStore.getState().scenario.keyframes[0];
+          if (first) setTimeout(() => useStore.getState().goToKeyframe(first.id), 300);
+          return;
+        }
+        // ?scenario=<url>: load a hosted scenario JSON (resolved and validated) into
+        // the read-only player. The whole report is also parked on
+        // window.__openbriefReport, so an assistant driving a browser can read it
+        // instead of squinting at screenshots.
+        const remote = params.get('scenario');
         if (remote) {
           fetch(remote)
             .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
             .then(async (json) => {
-              const { ok, errors } = await validateScenarioJson(json);
-              if (!ok) {
+              const result = await validateScenarioJson(json);
+              if (!result.ok || !result.json || !result.scenario) {
                 // in-page + console so browser-driving assistants can read them too
-                console.error(`scenario failed validation:\n${errors.join('\n')}`);
-                setRemoteError(errors.slice(0, 12));
+                console.error(`scenario failed validation:\n${result.errors.join('\n')}`);
+                setRemoteError(result.errors.slice(0, 12));
+                publishReport({ ok: false, errors: result.errors, notes: result.notes, issues: [] });
                 return;
               }
               const st = useStore.getState();
-              if (st.importScenario(json, { persist: false })) {
+              if (st.importScenario(result.json, { persist: false })) {
                 st.setViewer(true);
                 st.setCameraLock(true);
-                const doc = JSON.parse(json) as { scenario?: Scenario; roster?: RosterEntry[] } & Scenario;
-                const warns = [...iconFallbacks(doc.scenario ?? doc, doc.roster), ...realismWarnings(doc.scenario ?? doc)];
-                if (warns.length) {
-                  console.warn(`scenario warnings:\n${warns.join('\n')}`);
-                  setRemoteWarnings(warns);
+                const report = reviewScenario(result.scenario, result.roster, result.duration);
+                st.setReview(report.issues);
+                const lines = reportLines(report);
+                if (result.notes.length) console.info(`resolved:\n${result.notes.join('\n')}`);
+                if (lines.length) {
+                  console.warn(`scenario report:\n${lines.join('\n')}`);
+                  setRemoteWarnings(lines.slice(0, 20));
                 }
+                publishReport({ ok: report.ok, errors: [], notes: result.notes, issues: report.issues });
               }
             })
             .catch((e) => {
               console.error('scenario load failed:', e);
               setRemoteError([`Could not load scenario from URL: ${(e as Error).message}`]);
+              publishReport({ ok: false, errors: [(e as Error).message], notes: [], issues: [] });
             });
           return;
         }
@@ -576,6 +606,7 @@ export default function App() {
         </>
       )}
       <ConsentModal />
+      {!article && <ReviewBar />}
       {remoteError && (
         <div className="remote-report" role="alert">
           <div className="remote-report-head">
@@ -592,7 +623,7 @@ export default function App() {
       {remoteWarnings.length > 0 && (
         <div className="remote-report remote-warnings" role="status">
           <div className="remote-report-head">
-            <strong>{remoteWarnings.length} realism warning{remoteWarnings.length === 1 ? '' : 's'}</strong>
+            <strong>{remoteWarnings.length} thing{remoteWarnings.length === 1 ? '' : 's'} to check</strong>
             <button className="icon-btn" onClick={() => setRemoteWarnings([])} title="Dismiss">×</button>
           </div>
           <ul>
